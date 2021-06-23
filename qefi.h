@@ -5,6 +5,8 @@
 
 #include <QUuid>
 
+QEFI_EXPORT bool qefi_is_available();
+
 QEFI_EXPORT quint16 qefi_get_variable_uint16(QUuid uuid, QString name);
 // QEFI_EXPORT QString qefi_get_variable_string(QUuid uuid, QString name);
 QEFI_EXPORT QByteArray qefi_get_variable(QUuid uuid, QString name);

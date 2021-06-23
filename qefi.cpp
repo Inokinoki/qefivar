@@ -2,6 +2,12 @@
 
 #ifdef Q_OS_WIN
 /* Implementation based on Windows API */
+bool qefi_is_available()
+{
+    // TODO
+    return false;
+}
+
 quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 {
     // TODO
@@ -43,6 +49,11 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 /* Implementation based on libefivar */
 #include <efivar/efivar.h>
 #include <efivar/efiboot.h>
+
+bool qefi_is_available()
+{
+    return efi_variables_supported();
+}
 
 quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 {
