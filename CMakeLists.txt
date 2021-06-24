@@ -25,6 +25,7 @@ add_library(QEFI SHARED
   qefi.cpp
   qefi.h
 )
+set_target_properties(QEFI PROPERTIES PUBLIC_HEADER qefi.h)
 
 if(EFIVAR_FOUND)
     message("Use libefivar for EFI operations")
@@ -40,3 +41,6 @@ endif()
 target_link_libraries(QEFI PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 
 target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY)
+
+install(TARGETS QEFI PUBLIC_HEADER
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
