@@ -78,7 +78,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
         return 0;
     }
 
-    uint8_t *data = new uint8_t[var_size];
+    uint8_t *data;
     uint32_t attributes;
     return_code = efi_get_variable(guid, c_name, &data, &var_size, &attributes);
 
@@ -90,9 +90,9 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     else
     {
         value = ((data[1] << 8) | data[0]);
+        free(data);
     }
 
-    delete[] data;
     return value;
 }
 
@@ -162,7 +162,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
         return QByteArray();
     }
 
-    uint8_t *data = new uint8_t[var_size];
+    uint8_t *data;
     uint32_t attributes;
     return_code = efi_get_variable(guid, c_name, &data, &var_size, &attributes);
 
@@ -174,9 +174,9 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     else
     {
         value = QByteArray::fromRawData((char *)data, var_size);
+        free(data);
     }
 
-    delete[] data;
     return value;
 }
 
