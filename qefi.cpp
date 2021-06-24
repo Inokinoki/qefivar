@@ -91,7 +91,8 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     }
     else
     {
-        value = ((data[1] << 8) | data[0]);
+        // Read as uint16, platform-independant
+        value = *((quint16 *)data);
         free(data);
     }
 
