@@ -12,8 +12,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(QEFIVAR_LIB)
 set(QEFIVAR_INCLUDE)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(EFIVAR efivar)
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+    pkg_check_modules(EFIVAR efivar)
+endif()
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core REQUIRED)
