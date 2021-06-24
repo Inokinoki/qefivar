@@ -47,8 +47,10 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 
 #else
 /* Implementation based on libefivar */
+extern "C" {
 #include <efivar/efivar.h>
 #include <efivar/efiboot.h>
+}
 
 bool qefi_is_available()
 {
