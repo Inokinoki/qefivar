@@ -175,7 +175,9 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     }
     else
     {
-        value = QByteArray::fromRawData((char *)data, var_size);
+        for (size_t i = 0; i < var_size; i++) {
+            value.append(data[i]);
+        }
         free(data);
     }
 
