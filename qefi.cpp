@@ -7,11 +7,33 @@
 #include <tchar.h>
 #include <wbemidl.h>
 
+DWORD ObtainPrivileges(LPCTSTR privilege) {
+    HANDLE hToken;
+    TOKEN_PRIVILEGES tkp;
+    BOOL res;
+    // Obtain required privileges
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+    {
+        return GetLastError();
+    }
+
+    res = LookupPrivilegeValue(NULL, privilege, &tkp.Privileges[0].Luid);
+    if (!res)
+    {
+        return GetLastError();
+    }
+    tkp.PrivilegeCount = 1;
+    tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, (PTOKEN_PRIVILEGES)NULL, 0);
+
+    return GetLastError();
+}
+
 bool qefi_is_available()
 {
     FIRMWARE_TYPE fType;
     BOOL status = GetFirmwareType(&fType);
-    return status == 0 && fType == FirmwareTypeUefi;
+    return status == 0 && fType == FirmwareTypeUefi && ObtainPrivileges(SE_SYSTEM_ENVIRONMENT_NAME) == ERROR_SUCCESS;
 }
 
 DWORD read_efivar_win(LPCSTR name, LPCSTR uuid, LPSTR buffer, DWORD size)
