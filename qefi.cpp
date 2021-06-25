@@ -14,16 +14,67 @@ bool qefi_is_available()
     return status == 0 && fType == FirmwareTypeUefi;
 }
 
+DWORD read_efivar_win(LPCSTR name, LPCSTR uuid, LPSTR buffer, DWORD size)
+{
+    DWORD len = GetFirmwareEnvironmentVariable(name, uuid, buffer, size);
+    if (len == 0)
+    {
+        DWORD errorCode = GetLastError();
+        // std::cerr << "Error reading : code " << errorCode << "\n";
+    }
+    return len;
+}
+
+#define EFIVAR_BUFFER_SIZE 4096
+
 quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 {
-    // TODO
-    return 0;
+    std::string std_name = name.toStdString();
+    const char *c_name = std_name.c_str();
+    std::string std_uuid = uuid.toString(QUuid::WithBraces).toStdString();
+    const char *c_uuid = std_uuid.c_str();
+
+    // Create a buffer
+    char buffer[EFIVAR_BUFFER_SIZE];
+
+    size_t length = read_efivar_win(c_name, c_uuid, buffer, EFIVAR_BUFFER_SIZE);
+
+    if (length < 2)
+    {
+        return 0;
+    }
+
+    // Read as uint16, platform-independant
+    quint16 value = *((quint16 *)buffer);
+
+    return value;
 }
 
 QByteArray qefi_get_variable(QUuid uuid, QString name)
 {
-    // TODO
-    return QByteArray();
+    std::string std_name = name.toStdString();
+    const char *c_name = std_name.c_str();
+    std::string std_uuid = uuid.toString(QUuid::WithBraces).toStdString();
+    const char *c_uuid = std_uuid.c_str();
+
+    // Create a buffer
+    char buffer[EFIVAR_BUFFER_SIZE];
+
+    size_t length = read_efivar_win(c_name, c_uuid, buffer, EFIVAR_BUFFER_SIZE);
+
+    QByteArray value;
+    if (length == 0)
+    {
+        value.clear();
+    }
+    else
+    {
+        for (size_t i = 0; i < length; i++) {
+            value.append(buffer[i]);
+        }
+    }
+
+    return value;
 }
 
 void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
