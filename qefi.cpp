@@ -36,7 +36,7 @@ bool qefi_is_available()
     return status == 0 && fType == FirmwareTypeUefi && ObtainPrivileges(SE_SYSTEM_ENVIRONMENT_NAME) == ERROR_SUCCESS;
 }
 
-DWORD read_efivar_win(LPCSTR name, LPCSTR uuid, LPSTR buffer, DWORD size)
+DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, LPTSTR buffer, DWORD size)
 {
     DWORD len = GetFirmwareEnvironmentVariable(name, uuid, buffer, size);
     if (len == 0)
@@ -51,13 +51,18 @@ DWORD read_efivar_win(LPCSTR name, LPCSTR uuid, LPSTR buffer, DWORD size)
 
 quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 {
+#ifdef UNICODE
+    std::wstring std_name = name.toStdWString();
+    std::wstring std_uuid = uuid.toString(QUuid::WithBraces).toStdWString();
+#else
     std::string std_name = name.toStdString();
-    const char *c_name = std_name.c_str();
     std::string std_uuid = uuid.toString(QUuid::WithBraces).toStdString();
-    const char *c_uuid = std_uuid.c_str();
+#endif
+    LPCTSTR c_name = std_name.c_str();
+    LPCTSTR c_uuid = std_uuid.c_str();
 
     // Create a buffer
-    char buffer[EFIVAR_BUFFER_SIZE];
+    TCHAR buffer[EFIVAR_BUFFER_SIZE];
 
     size_t length = read_efivar_win(c_name, c_uuid, buffer, EFIVAR_BUFFER_SIZE);
 
@@ -74,13 +79,18 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 
 QByteArray qefi_get_variable(QUuid uuid, QString name)
 {
+#ifdef UNICODE
+    std::wstring std_name = name.toStdWString();
+    std::wstring std_uuid = uuid.toString(QUuid::WithBraces).toStdWString();
+#else
     std::string std_name = name.toStdString();
-    const char *c_name = std_name.c_str();
     std::string std_uuid = uuid.toString(QUuid::WithBraces).toStdString();
-    const char *c_uuid = std_uuid.c_str();
+#endif
+    LPCTSTR c_name = std_name.c_str();
+    LPCTSTR c_uuid = std_uuid.c_str();
 
     // Create a buffer
-    char buffer[EFIVAR_BUFFER_SIZE];
+    TCHAR buffer[EFIVAR_BUFFER_SIZE];
 
     size_t length = read_efivar_win(c_name, c_uuid, buffer, EFIVAR_BUFFER_SIZE);
 
