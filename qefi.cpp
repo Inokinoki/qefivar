@@ -2,10 +2,16 @@
 
 #ifdef Q_OS_WIN
 /* Implementation based on Windows API */
+#include <Windows.h>
+#include <WinBase.h>
+#include <tchar.h>
+#include <wbemidl.h>
+
 bool qefi_is_available()
 {
-    // TODO
-    return false;
+    FIRMWARE_TYPE fType;
+    BOOL status = GetFirmwareType(&fType);
+    return status == 0 && fType == FirmwareTypeUefi;
 }
 
 quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
