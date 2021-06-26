@@ -47,6 +47,17 @@ DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, LPTSTR buffer, DWORD size)
     return len;
 }
 
+DWORD write_efivar_win(LPCTSTR name, LPCTSTR uuid, LPTSTR buffer, DWORD size)
+{
+    DWORD len = SetFirmwareEnvironmentVariable(name, uuid, buffer, size);
+    if (len == 0)
+    {
+        DWORD errorCode = GetLastError();
+        // std::cerr << "Error writing : code " << errorCode << "\n";
+    }
+    return len;
+}
+
 #define EFIVAR_BUFFER_SIZE 4096
 
 quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
@@ -111,12 +122,37 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
 
 void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 {
-    // TODO
+#ifdef UNICODE
+    std::wstring std_name = name.toStdWString();
+    std::wstring std_uuid = uuid.toString(QUuid::WithBraces).toStdWString();
+#else
+    std::string std_name = name.toStdString();
+    std::string std_uuid = uuid.toString(QUuid::WithBraces).toStdString();
+#endif
+    LPCTSTR c_name = std_name.c_str();
+    LPCTSTR c_uuid = std_uuid.c_str();
+
+    // Create a buffer
+    TCHAR buffer[sizeof(quint16) / sizeof(TCHAR)];
+    quint16 *p = (quint16 *)buffer;
+    *p = value;
+
+    write_efivar_win(c_name, c_uuid, buffer, sizeof(quint16) / sizeof(TCHAR));
 }
 
 void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 {
-    // TODO
+#ifdef UNICODE
+    std::wstring std_name = name.toStdWString();
+    std::wstring std_uuid = uuid.toString(QUuid::WithBraces).toStdWString();
+#else
+    std::string std_name = name.toStdString();
+    std::string std_uuid = uuid.toString(QUuid::WithBraces).toStdString();
+#endif
+    LPCTSTR c_name = std_name.c_str();
+    LPCTSTR c_uuid = std_uuid.c_str();
+
+    write_efivar_win(c_name, c_uuid, value.data(), value.size());
 }
 
 #else
