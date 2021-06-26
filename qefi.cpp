@@ -33,7 +33,7 @@ bool qefi_is_available()
 {
     FIRMWARE_TYPE fType;
     BOOL status = GetFirmwareType(&fType);
-    return status == 0 && fType == FirmwareTypeUefi && ObtainPrivileges(SE_SYSTEM_ENVIRONMENT_NAME) == ERROR_SUCCESS;
+    return status && fType == FirmwareTypeUefi && ObtainPrivileges(SE_SYSTEM_ENVIRONMENT_NAME) == ERROR_SUCCESS;
 }
 
 DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, LPTSTR buffer, DWORD size)
