@@ -252,6 +252,11 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     return value;
 }
 
+
+const uint32_t default_write_attribute = EFI_VARIABLE_NON_VOLATILE |
+                                         EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                                         EFI_VARIABLE_RUNTIME_ACCESS;
+
 void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 {
     int return_code;
@@ -270,7 +275,8 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 
     uint8_t buffer[2];
     *((uint16_t *)buffer) = value;
-    return_code = efi_set_variable(guid, c_name, buffer, 2, 0, 0);
+    return_code = efi_set_variable(guid, c_name, buffer, 2,
+                                   default_write_attribute, 0644);
 
     // TODO: Detect return code
 }
@@ -291,7 +297,8 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
         return;
     }
 
-    return_code = efi_set_variable(guid, c_name, (uint8_t *)value.data(), value.size(), 0, 0);
+    return_code = efi_set_variable(guid, c_name, (uint8_t *)value.data(), value.size(),
+                                   default_write_attribute, 0644);
 
     // TODO: Detect return code
 }
