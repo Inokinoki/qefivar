@@ -252,6 +252,47 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     return value;
 }
 
-void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value);
-void qefi_set_variable(QUuid uuid, QString name, QByteArray value);
+void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
+{
+    int return_code;
+
+    std::string std_name = name.toStdString();
+    const char *c_name = std_name.c_str();
+    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
+    const char *c_uuid = std_uuid.c_str();
+
+    efi_guid_t guid;
+    return_code = efi_str_to_guid(c_uuid, &guid);
+    if (return_code != 0)
+    {
+        return;
+    }
+
+    uint8_t buffer[2];
+    *((uint16_t *)buffer) = value;
+    return_code = efi_set_variable(guid, c_name, buffer, 2, 0, 0);
+
+    // TODO: Detect return code
+}
+
+void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
+{
+    int return_code;
+
+    std::string std_name = name.toStdString();
+    const char *c_name = std_name.c_str();
+    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
+    const char *c_uuid = std_uuid.c_str();
+
+    efi_guid_t guid;
+    return_code = efi_str_to_guid(c_uuid, &guid);
+    if (return_code != 0)
+    {
+        return;
+    }
+
+    return_code = efi_set_variable(guid, c_name, (uint8_t *)value.data(), value.size(), 0, 0);
+
+    // TODO: Detect return code
+}
 #endif
