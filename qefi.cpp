@@ -303,3 +303,20 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
     // TODO: Detect return code
 }
 #endif
+
+#define EFI_BOOT_DESCRIPTION_OFFSET 6
+
+/* General functions */
+QString qefi_extract_name(QByteArray data)
+{
+    QString entry_name;
+    if (data.size() > EFI_BOOT_DESCRIPTION_OFFSET) {
+        quint16* c = (quint16*)data.data();
+        c = c + EFI_BOOT_DESCRIPTION_OFFSET / 2;
+        for (int index = EFI_BOOT_DESCRIPTION_OFFSET; index < data.size(); index += 2, c++) {
+            if (*c == 0) break;
+            entry_name.append(*c);
+        }
+    }
+    return entry_name;
+}
