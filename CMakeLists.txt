@@ -7,6 +7,9 @@ set(QEFI_VERSION ${QEFI_VERSION_MAJOR}.${QEFI_VERSION_MINOR}.${QEFI_VERSION_PATC
 
 project(QEFI LANGUAGES CXX VERSION ${QEFI_VERSION})
 
+# make cache variables for install destinations
+include(GNUInstallDirs)
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -26,7 +29,6 @@ find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core REQUIRED)
 
 add_library(QEFI SHARED
-  QEFI_global.h
   qefi.cpp
   qefi.h
 )
@@ -47,8 +49,12 @@ target_link_libraries(QEFI PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 
 target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY)
 
-install(TARGETS QEFI PUBLIC_HEADER
+install(TARGETS QEFI EXPORT QEFITargets PUBLIC_HEADER
         DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+install(EXPORT QEFITargets
+        FILE QEFITargets.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QEFI
+)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)
@@ -58,7 +64,7 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/QEFIConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/QEFIConfig.cmake
-    INSTALL_DESTINATION lib/cmake/QEFI
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QEFI
 )
 
 write_basic_package_version_file(
@@ -67,5 +73,5 @@ write_basic_package_version_file(
   COMPATIBILITY SameMajorVersion)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/QEFIConfig.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/QEFIConfigVersion.cmake
-        DESTINATION lib/cmake/QEFI
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QEFI
 )

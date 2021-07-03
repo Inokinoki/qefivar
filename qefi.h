@@ -1,7 +1,13 @@
 #ifndef QEFI_H
 #define QEFI_H
 
-#include "QEFI_global.h"
+#include <QtCore/qglobal.h>
+
+#if defined(QEFI_LIBRARY)
+#  define QEFI_EXPORT Q_DECL_EXPORT
+#else
+#  define QEFI_EXPORT Q_DECL_IMPORT
+#endif
 
 #include <QUuid>
 
