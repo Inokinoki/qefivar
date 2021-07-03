@@ -44,3 +44,8 @@ target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY)
 
 install(TARGETS QEFI PUBLIC_HEADER
         DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
