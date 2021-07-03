@@ -323,3 +323,39 @@ QString qefi_extract_name(QByteArray data)
     }
     return entry_name;
 }
+
+#define EFI_BOOT_DEVICE_PATH_HEADER_LENGTH 4
+
+QString qefi_extract_path(QByteArray data)
+{
+    QString path;
+    if (data.size() > EFI_BOOT_DESCRIPTION_OFFSET) {
+        quint16 *c = (quint16*)data.data();
+        quint16 dp_list_length = *(c + 2);
+
+        // Keep the remainder length
+        qint32 remainder_length = dp_list_length;
+        quint8 *list_pointer = ((quint8 *)data.data() + (data.size() - dp_list_length));
+        while (remainder_length > 0) {
+            quint8 type = *list_pointer;
+            quint8 subtype = *(list_pointer + 1);
+            quint16 length = *((quint16 *)(list_pointer + 2));
+            if (type == 0x04 && subtype == 0x04) {
+                // Media File
+                c = (quint16 *)(list_pointer + 4);
+                for (int index = 0; index < length - EFI_BOOT_DEVICE_PATH_HEADER_LENGTH - 2;
+                    index += 2, c++)
+                {
+                    path.append(*c);
+                }
+                break;
+            } else if (type == 0x7F) {
+                // End
+                break;
+            }
+            list_pointer += length;
+            remainder_length -= length;
+        }
+    }
+    return path;
+}

@@ -42,3 +42,4 @@ const unsigned char test_boot_data[TEST_BOOT_DATA_LENGTH] = {
 };
 
 const char* test_boot_name = "rEFInd Boot Manager";
+const char* test_boot_path = "\\EFI\\refind\\refind_x64.efi";

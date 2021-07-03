@@ -20,5 +20,6 @@ QEFI_EXPORT void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 valu
 QEFI_EXPORT void qefi_set_variable(QUuid uuid, QString name, QByteArray value);
 
 QEFI_EXPORT QString qefi_extract_name(QByteArray data);
+QEFI_EXPORT QString qefi_extract_path(QByteArray data);
 
 #endif // QEFI_H
