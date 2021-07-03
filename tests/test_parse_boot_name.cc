@@ -1,7 +1,7 @@
 #include <QtTest/QtTest>
 
 #include "test_data.h"
-#include <qefi.h>
+#include "../qefi.h"
 
 class TestParseBootName: public QObject
 {
@@ -13,7 +13,7 @@ private slots:
 
 void TestParseBootName::testParseTestBootData()
 {
-    QByteArray data(test_boot_data, TEST_BOOT_DATA_LENGTH);
+    QByteArray data((const char *)test_boot_data, TEST_BOOT_DATA_LENGTH);
     QString name = qefi_extract_name(data);
     QVERIFY(name == QString(test_boot_name));
 }
