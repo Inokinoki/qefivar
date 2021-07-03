@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(QEFI LANGUAGES CXX VERSION 0.0.1)
+set(QEFI_VERSION_MAJOR 0)
+set(QEFI_VERSION_MINOR 0)
+set(QEFI_VERSION_PATCH 1)
+set(QEFI_VERSION ${QEFI_VERSION_MAJOR}.${QEFI_VERSION_MINOR}.${QEFI_VERSION_PATCH})
+
+project(QEFI LANGUAGES CXX VERSION ${QEFI_VERSION})
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
@@ -49,3 +54,18 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/QEFIConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/QEFIConfig.cmake
+    INSTALL_DESTINATION lib/cmake/QEFI
+)
+
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/QEFIConfigVersion.cmake
+  VERSION ${QEFI_VERSION}
+  COMPATIBILITY SameMajorVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/QEFIConfig.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/QEFIConfigVersion.cmake
+        DESTINATION lib/cmake/QEFI
+)
