@@ -311,10 +311,13 @@ QString qefi_extract_name(QByteArray data)
 {
     QString entry_name;
     if (data.size() > EFI_BOOT_DESCRIPTION_OFFSET) {
-        quint16* c = (quint16*)data.data();
+        quint16 *c = (quint16*)data.data();
+        quint16 dp_list_length = *(c + 2);
         c = c + EFI_BOOT_DESCRIPTION_OFFSET / 2;
-        for (int index = EFI_BOOT_DESCRIPTION_OFFSET; index < data.size(); index += 2, c++) {
-            if (*c == 0) break;
+        for (int index = EFI_BOOT_DESCRIPTION_OFFSET;
+            index < data.size() - dp_list_length - 2;   // Exclude the last 0
+            index += 2, c++)
+        {
             entry_name.append(*c);
         }
     }
