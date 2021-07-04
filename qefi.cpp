@@ -318,6 +318,7 @@ QString qefi_extract_name(QByteArray data)
             index < data.size() - dp_list_length - 2;   // Exclude the last 0
             index += 2, c++)
         {
+            if (*c == 0) break;
             entry_name.append(*c);
         }
     }
