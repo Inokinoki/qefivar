@@ -334,9 +334,18 @@ QString qefi_extract_path(QByteArray data)
         quint16 *c = (quint16*)data.data();
         quint16 dp_list_length = *(c + 2);
 
+        c = c + EFI_BOOT_DESCRIPTION_OFFSET / 2;
+        for (int index = EFI_BOOT_DESCRIPTION_OFFSET;
+            index < data.size() - dp_list_length - 2;   // Exclude the last 0
+            index += 2, c++)
+        {
+            // Find the end of description
+            if (*c == 0) break;
+        }
+
         // Keep the remainder length
         qint32 remainder_length = dp_list_length;
-        quint8 *list_pointer = ((quint8 *)data.data() + (data.size() - dp_list_length));
+        quint8 *list_pointer = ((quint8 *)(c + 1));
         while (remainder_length > 0) {
             quint8 type = *list_pointer;
             quint8 subtype = *(list_pointer + 1);
