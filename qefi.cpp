@@ -33,7 +33,12 @@ bool qefi_is_available()
 {
     FIRMWARE_TYPE fType;
     BOOL status = GetFirmwareType(&fType);
-    return status && fType == FirmwareTypeUefi && ObtainPrivileges(SE_SYSTEM_ENVIRONMENT_NAME) == ERROR_SUCCESS;
+    return status && fType == FirmwareTypeUefi;
+}
+
+bool qefi_has_privilege()
+{
+    return ObtainPrivileges(SE_SYSTEM_ENVIRONMENT_NAME) == ERROR_SUCCESS;
 }
 
 DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, LPTSTR buffer, DWORD size)
@@ -165,6 +170,12 @@ extern "C" {
 bool qefi_is_available()
 {
     return efi_variables_supported();
+}
+
+bool qefi_has_privilege()
+{
+    if (getuid() != 0) return false;
+    return true;
 }
 
 quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
