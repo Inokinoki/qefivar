@@ -22,7 +22,9 @@ jobs:
     - uses: actions/checkout@v2
     
     - name: Install libefivar, libefiboot and their dev files
-      run: sudo apt install -y libefivar-dev libefiboot-dev qt5-default
+      run: |
+        sudo apt update -y
+        sudo apt install -y libefivar-dev libefiboot-dev qt5-default
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
