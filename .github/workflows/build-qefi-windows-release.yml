@@ -1,5 +1,5 @@
 # windows.yml
-name: Windows
+name: Build on Windows
 on: 
   push:
     branches: [ master ]
@@ -33,7 +33,7 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.9
 
       - name: Clone project
-      - uses: actions/checkout@v2
+        uses: actions/checkout@v2
 
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
