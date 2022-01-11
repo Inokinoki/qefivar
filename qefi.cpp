@@ -361,7 +361,7 @@ QString qefi_extract_path(QByteArray data)
             quint8 type = *list_pointer;
             quint8 subtype = *(list_pointer + 1);
             quint16 length = *((quint16 *)(list_pointer + 2));
-            if (type == 0x04 && subtype == 0x04) {
+            if (type == DP_Media && subtype == MEDIA_File) {
                 // Media File
                 c = (quint16 *)(list_pointer + 4);
                 for (int index = 0; index < length - EFI_BOOT_DEVICE_PATH_HEADER_LENGTH - 2;
@@ -370,7 +370,7 @@ QString qefi_extract_path(QByteArray data)
                     path.append(*c);
                 }
                 break;
-            } else if (type == 0x7F) {
+            } else if (type == DP_End) {
                 // End
                 break;
             }
