@@ -28,7 +28,7 @@ add_library(QEFI
 )
 add_library(QEFI::QEFI ALIAS QEFI)
 set_target_properties(QEFI PROPERTIES PUBLIC_HEADER qefi.h)
-target_link_libraries(QEFI PRIVATE Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(QEFI PUBLIC Qt${QT_VERSION_MAJOR}::Core)
 target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY)
 
 find_package(PkgConfig)
