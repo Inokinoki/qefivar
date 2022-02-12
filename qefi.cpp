@@ -163,8 +163,13 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 #else
 /* Implementation based on libefivar */
 extern "C" {
+#ifndef EFIVAR_OLD_API
 #include <efivar/efivar.h>
 #include <efivar/efiboot.h>
+#else
+#include <efivar.h>
+#endif
+#include <unistd.h>
 }
 
 bool qefi_is_available()
@@ -287,7 +292,11 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     uint8_t buffer[2];
     *((uint16_t *)buffer) = value;
     return_code = efi_set_variable(guid, c_name, buffer, 2,
-                                   default_write_attribute, 0644);
+                                   default_write_attribute
+#ifndef EFIVAR_OLD_API
+                                 , 0644
+#endif
+                                   );
 
     // TODO: Detect return code
 }
@@ -309,7 +318,11 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
     }
 
     return_code = efi_set_variable(guid, c_name, (uint8_t *)value.data(), value.size(),
-                                   default_write_attribute, 0644);
+                                   default_write_attribute
+#ifndef EFIVAR_OLD_API
+                                 , 0644
+#endif
+                                   );
 
     // TODO: Detect return code
 }
