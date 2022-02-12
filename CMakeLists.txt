@@ -45,6 +45,10 @@ else()
     message(FATAL_ERROR "No EFI utility found, please make sure you have libefivar installed")
 endif()
 
+if(USE_EFIVAR_OLD_API)
+    add_definitions(-DEFIVAR_OLD_API)
+endif()
+
 target_link_libraries(QEFI PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 
 target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY)
