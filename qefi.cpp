@@ -211,7 +211,11 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     return_code = efi_get_variable(guid, c_name, &data, &var_size, &attributes);
 
     quint16 value;
+#ifndef EFIVAR_OLD_API
     if (return_code != 0)
+#else
+    if (return_code == 0)
+#endif
     {
         value = 0;
     }
@@ -253,7 +257,11 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     return_code = efi_get_variable(guid, c_name, &data, &var_size, &attributes);
 
     QByteArray value;
+#ifndef EFIVAR_OLD_API
     if (return_code != 0)
+#else
+    if (return_code == 0)
+#endif
     {
         value.clear();
     }
@@ -284,7 +292,12 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 
     efi_guid_t guid;
     return_code = efi_str_to_guid(c_uuid, &guid);
+
+#ifndef EFIVAR_OLD_API
     if (return_code != 0)
+#else
+    if (return_code == 0)
+#endif
     {
         return;
     }
