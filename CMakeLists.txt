@@ -47,6 +47,10 @@ else()
     message(FATAL_ERROR "No EFI utility library found, please make sure you have libefivar installed")
 endif()
 
+if(USE_EFIVAR_OLD_API)
+    add_definitions(-DEFIVAR_OLD_API)
+endif()
+
 install(
     TARGETS QEFI
     EXPORT QEFITargets

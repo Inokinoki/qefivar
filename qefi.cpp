@@ -41,7 +41,7 @@ bool qefi_has_privilege()
     return ObtainPrivileges(SE_SYSTEM_ENVIRONMENT_NAME) == ERROR_SUCCESS;
 }
 
-DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, LPTSTR buffer, DWORD size)
+DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, PVOID buffer, DWORD size)
 {
     DWORD len = GetFirmwareEnvironmentVariable(name, uuid, buffer, size);
     if (len == 0)
@@ -52,7 +52,7 @@ DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, LPTSTR buffer, DWORD size)
     return len;
 }
 
-DWORD write_efivar_win(LPCTSTR name, LPCTSTR uuid, LPTSTR buffer, DWORD size)
+DWORD write_efivar_win(LPCTSTR name, LPCTSTR uuid, PVOID buffer, DWORD size)
 {
     DWORD len = SetFirmwareEnvironmentVariable(name, uuid, buffer, size);
     if (len == 0)
@@ -80,7 +80,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     // Create a buffer
     TCHAR buffer[EFIVAR_BUFFER_SIZE];
 
-    size_t length = read_efivar_win(c_name, c_uuid, buffer, EFIVAR_BUFFER_SIZE);
+    size_t length = read_efivar_win(c_name, c_uuid, (PVOID)buffer, EFIVAR_BUFFER_SIZE);
 
     if (length < 2)
     {
@@ -108,7 +108,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     // Create a buffer
     TCHAR buffer[EFIVAR_BUFFER_SIZE];
 
-    size_t length = read_efivar_win(c_name, c_uuid, buffer, EFIVAR_BUFFER_SIZE);
+    size_t length = read_efivar_win(c_name, c_uuid, (PVOID)buffer, EFIVAR_BUFFER_SIZE);
 
     QByteArray value;
     if (length == 0)
@@ -142,7 +142,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     quint16 *p = (quint16 *)buffer;
     *p = value;
 
-    write_efivar_win(c_name, c_uuid, buffer, sizeof(quint16) / sizeof(TCHAR));
+    write_efivar_win(c_name, c_uuid, (PVOID)buffer, 2);
 }
 
 void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
@@ -157,14 +157,19 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
     LPCTSTR c_name = std_name.c_str();
     LPCTSTR c_uuid = std_uuid.c_str();
 
-    write_efivar_win(c_name, c_uuid, value.data(), value.size());
+    write_efivar_win(c_name, c_uuid, (PVOID)value.data(), value.size());
 }
 
 #else
 /* Implementation based on libefivar */
 extern "C" {
+#ifndef EFIVAR_OLD_API
 #include <efivar/efivar.h>
 #include <efivar/efiboot.h>
+#else
+#include <efivar.h>
+#endif
+#include <unistd.h>
 }
 
 bool qefi_is_available()
@@ -206,7 +211,11 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     return_code = efi_get_variable(guid, c_name, &data, &var_size, &attributes);
 
     quint16 value;
+#ifndef EFIVAR_OLD_API
     if (return_code != 0)
+#else
+    if (return_code == 0)
+#endif
     {
         value = 0;
     }
@@ -248,7 +257,11 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     return_code = efi_get_variable(guid, c_name, &data, &var_size, &attributes);
 
     QByteArray value;
+#ifndef EFIVAR_OLD_API
     if (return_code != 0)
+#else
+    if (return_code == 0)
+#endif
     {
         value.clear();
     }
@@ -279,7 +292,12 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 
     efi_guid_t guid;
     return_code = efi_str_to_guid(c_uuid, &guid);
+
+#ifndef EFIVAR_OLD_API
     if (return_code != 0)
+#else
+    if (return_code == 0)
+#endif
     {
         return;
     }
@@ -287,7 +305,11 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     uint8_t buffer[2];
     *((uint16_t *)buffer) = value;
     return_code = efi_set_variable(guid, c_name, buffer, 2,
-                                   default_write_attribute, 0644);
+                                   default_write_attribute
+#ifndef EFIVAR_OLD_API
+                                 , 0644
+#endif
+                                   );
 
     // TODO: Detect return code
 }
@@ -309,7 +331,11 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
     }
 
     return_code = efi_set_variable(guid, c_name, (uint8_t *)value.data(), value.size(),
-                                   default_write_attribute, 0644);
+                                   default_write_attribute
+#ifndef EFIVAR_OLD_API
+                                 , 0644
+#endif
+                                   );
 
     // TODO: Detect return code
 }
