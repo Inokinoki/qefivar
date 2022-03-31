@@ -341,19 +341,19 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 }
 #endif
 
-#define EFI_BOOT_DESCRIPTION_OFFSET 6
-
 #include <QtEndian>
 
 /* General functions */
 QString qefi_extract_name(QByteArray data)
 {
     QString entry_name;
-    if (data.size() > EFI_BOOT_DESCRIPTION_OFFSET) {
+    if (data.size() > sizeof(struct qefi_load_option_header)) {
+        struct qefi_load_option_header *header =
+            (struct qefi_load_option_header *)data.data();
         quint16 *c = (quint16*)data.data();
-        quint16 dp_list_length = *(c + 2);
-        c = c + EFI_BOOT_DESCRIPTION_OFFSET / 2;
-        for (int index = EFI_BOOT_DESCRIPTION_OFFSET;
+        quint16 dp_list_length = qFromLittleEndian(header->path_list_length);
+        c = c + sizeof(struct qefi_load_option_header) / 2;
+        for (int index = sizeof(struct qefi_load_option_header);
             index < data.size() - dp_list_length - 2;   // Exclude the last 0
             index += 2, c++)
         {
@@ -367,12 +367,14 @@ QString qefi_extract_name(QByteArray data)
 QString qefi_extract_path(QByteArray data)
 {
     QString path;
-    if (data.size() > EFI_BOOT_DESCRIPTION_OFFSET) {
+    if (data.size() > sizeof(struct qefi_load_option_header)) {
+        struct qefi_load_option_header *header =
+            (struct qefi_load_option_header *)data.data();
         quint16 *c = (quint16*)data.data();
-        quint16 dp_list_length = *(c + 2);
+        quint16 dp_list_length = qFromLittleEndian(header->path_list_length);
 
-        c = c + EFI_BOOT_DESCRIPTION_OFFSET / 2;
-        for (int index = EFI_BOOT_DESCRIPTION_OFFSET;
+        c = c + sizeof(struct qefi_load_option_header) / 2;
+        for (int index = sizeof(struct qefi_load_option_header);
             index < data.size() - dp_list_length - 2;   // Exclude the last 0
             index += 2, c++)
         {
