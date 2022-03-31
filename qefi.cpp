@@ -351,7 +351,7 @@ QString qefi_extract_name(QByteArray data)
         struct qefi_load_option_header *header =
             (struct qefi_load_option_header *)data.data();
         quint16 *c = (quint16*)data.data();
-        quint16 dp_list_length = qFromLittleEndian(header->path_list_length);
+        quint16 dp_list_length = qFromLittleEndian<quint16>(header->path_list_length);
         c = c + sizeof(struct qefi_load_option_header) / 2;
         for (int index = sizeof(struct qefi_load_option_header);
             index < data.size() - dp_list_length - 2;   // Exclude the last 0
@@ -371,7 +371,7 @@ QString qefi_extract_path(QByteArray data)
         struct qefi_load_option_header *header =
             (struct qefi_load_option_header *)data.data();
         quint16 *c = (quint16*)data.data();
-        quint16 dp_list_length = qFromLittleEndian(header->path_list_length);
+        quint16 dp_list_length = qFromLittleEndian<quint16>(header->path_list_length);
 
         c = c + sizeof(struct qefi_load_option_header) / 2;
         for (int index = sizeof(struct qefi_load_option_header);
@@ -388,7 +388,7 @@ QString qefi_extract_path(QByteArray data)
         while (remainder_length > 0) {
             struct qefi_device_path_header *dp_header =
                 (struct qefi_device_path_header *)list_pointer;
-            quint16 length = qFromLittleEndian(dp_header->length);
+            quint16 length = qFromLittleEndian<quint16>(dp_header->length);
             if (dp_header->type == DP_Media && dp_header->subtype == MEDIA_File) {
                 // Media File
                 c = (quint16 *)(list_pointer + sizeof(struct qefi_device_path_header));
