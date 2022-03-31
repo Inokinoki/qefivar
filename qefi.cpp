@@ -1,5 +1,7 @@
 #include "qefi.h"
 
+#include <QtEndian>
+
 #ifdef Q_OS_WIN
 /* Implementation based on Windows API */
 #include <Windows.h>
@@ -90,7 +92,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     // Read as uint16, platform-independant
     quint16 value = *((quint16 *)buffer);
 
-    return value;
+    return qFromLittleEndian<quint16>(value);
 }
 
 QByteArray qefi_get_variable(QUuid uuid, QString name)
@@ -140,7 +142,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     // Create a buffer
     TCHAR buffer[sizeof(quint16) / sizeof(TCHAR)];
     quint16 *p = (quint16 *)buffer;
-    *p = value;
+    *p = qToLittleEndian<quint16>(value);
 
     write_efivar_win(c_name, c_uuid, (PVOID)buffer, 2);
 }
@@ -226,7 +228,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
         free(data);
     }
 
-    return value;
+    return qFromLittleEndian<quint16>(value);
 }
 
 QByteArray qefi_get_variable(QUuid uuid, QString name)
@@ -303,7 +305,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     }
 
     uint8_t buffer[2];
-    *((uint16_t *)buffer) = value;
+    *((uint16_t *)buffer) = qToLittleEndian<quint16>(value);
     return_code = efi_set_variable(guid, c_name, buffer, 2,
                                    default_write_attribute
 #ifndef EFIVAR_OLD_API
@@ -340,8 +342,6 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
     // TODO: Detect return code
 }
 #endif
-
-#include <QtEndian>
 
 /* General functions */
 QString qefi_extract_name(QByteArray data)
