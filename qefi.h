@@ -27,7 +27,7 @@ QEFI_EXPORT QString qefi_extract_path(QByteArray data);
 struct qefi_load_option_header {
 	quint32 attributes;
 	quint16 path_list_length;
-} __attribute__((__packed__));
+};
 #pragma pack(pop)
 
 enum QEFIDevicePathType
