@@ -112,4 +112,11 @@ enum QEFIDevicePathEndSubType
     END_End         = 0xFF
 };
 
+/* EFI device path header */
+struct qefi_device_path_header {
+	quint8 type;
+	quint8 subtype;
+	quint16 length;
+} __attribute__((__packed__));
+
 #endif // QEFI_H

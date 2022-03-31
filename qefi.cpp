@@ -384,24 +384,23 @@ QString qefi_extract_path(QByteArray data)
         qint32 remainder_length = dp_list_length;
         quint8 *list_pointer = ((quint8 *)(c + 1));
         while (remainder_length > 0) {
-            quint8 type = *list_pointer;
-            quint8 subtype = *(list_pointer + 1);
-            quint16 length = *((quint16 *)(list_pointer + 2));
-            if (type == DP_Media && subtype == MEDIA_File) {
+            struct qefi_device_path_header *dp_header =
+                (struct qefi_device_path_header *)list_pointer;
+            if (dp_header->type == DP_Media && dp_header->subtype == MEDIA_File) {
                 // Media File
                 c = (quint16 *)(list_pointer + 4);
-                for (int index = 0; index < length - EFI_BOOT_DEVICE_PATH_HEADER_LENGTH - 2;
-                    index += 2, c++)
+                for (int index = 0; index < dp_header->length -
+                    EFI_BOOT_DEVICE_PATH_HEADER_LENGTH - 2; index += 2, c++)
                 {
                     path.append(*c);
                 }
                 break;
-            } else if (type == DP_End) {
+            } else if (dp_header->type == DP_End) {
                 // End
                 break;
             }
-            list_pointer += length;
-            remainder_length -= length;
+            list_pointer += dp_header->length;
+            remainder_length -= dp_header->length;
         }
     }
     return path;
