@@ -23,10 +23,12 @@ QEFI_EXPORT void qefi_set_variable(QUuid uuid, QString name, QByteArray value);
 QEFI_EXPORT QString qefi_extract_name(QByteArray data);
 QEFI_EXPORT QString qefi_extract_path(QByteArray data);
 
+#pragma pack(push, 1)
 struct qefi_load_option_header {
 	quint32 attributes;
 	quint16 path_list_length;
 } __attribute__((__packed__));
+#pragma pack(pop)
 
 enum QEFIDevicePathType
 {
@@ -118,10 +120,12 @@ enum QEFIDevicePathEndSubType
 };
 
 /* EFI device path header */
+#pragma pack(push, 1)
 struct qefi_device_path_header {
 	quint8 type;
 	quint8 subtype;
 	quint16 length;
-} __attribute__((__packed__));
+};
+#pragma pack(pop)
 
 #endif // QEFI_H
