@@ -343,6 +343,8 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 
 #define EFI_BOOT_DESCRIPTION_OFFSET 6
 
+#include <QtEndian>
+
 /* General functions */
 QString qefi_extract_name(QByteArray data)
 {
@@ -361,8 +363,6 @@ QString qefi_extract_name(QByteArray data)
     }
     return entry_name;
 }
-
-#define EFI_BOOT_DEVICE_PATH_HEADER_LENGTH 4
 
 QString qefi_extract_path(QByteArray data)
 {
@@ -386,11 +386,12 @@ QString qefi_extract_path(QByteArray data)
         while (remainder_length > 0) {
             struct qefi_device_path_header *dp_header =
                 (struct qefi_device_path_header *)list_pointer;
+            quint16 length = qFromLittleEndian(dp_header->length);
             if (dp_header->type == DP_Media && dp_header->subtype == MEDIA_File) {
                 // Media File
-                c = (quint16 *)(list_pointer + 4);
-                for (int index = 0; index < dp_header->length -
-                    EFI_BOOT_DEVICE_PATH_HEADER_LENGTH - 2; index += 2, c++)
+                c = (quint16 *)(list_pointer + sizeof(struct qefi_device_path_header));
+                for (int index = 0; index < length -
+                    sizeof(struct qefi_device_path_header) - 2; index += 2, c++)
                 {
                     path.append(*c);
                 }
@@ -399,8 +400,8 @@ QString qefi_extract_path(QByteArray data)
                 // End
                 break;
             }
-            list_pointer += dp_header->length;
-            remainder_length -= dp_header->length;
+            list_pointer += length;
+            remainder_length -= length;
         }
     }
     return path;
