@@ -172,9 +172,17 @@ public:
 class QEFIDevicePathBIOSBoot : public QEFIDevicePath
 {
 protected:
-    QEFIDevicePathBIOSBoot(quint8 subType)
-        : QEFIDevicePath(QEFIDevicePathType::DP_BIOSBoot, subType) {}
+    quint16 m_deviceType;
+	quint16 m_status;
+	QByteArray m_description;
+
 public:
+    QEFIDevicePathBIOSBoot(quint16 deviceType,
+        quint16 status, QByteArray description)
+        : QEFIDevicePath(QEFIDevicePathType::DP_BIOSBoot,
+            QEFIDevicePathBIOSBootSubType::BIOS_BIOSBoot),
+        m_deviceType(deviceType), m_status(status),
+        m_description(description) {}
     virtual ~QEFIDevicePathBIOSBoot() {}
 };
 
@@ -352,7 +360,5 @@ public:
     QEFIDevicePathMediaRAMDisk(quint64 startAddress, quint64 endAddress,
         QUuid disktTypeGuid, quint16 instanceNumber);
 };
-
-// TODO: Subclasses for BIOSBoot
 
 #endif // QEFI_H
