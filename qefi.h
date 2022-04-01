@@ -203,15 +203,19 @@ protected:
 	quint64 m_size;
 	quint8 m_signature[16];
 	quint8 m_format;
-	quint8 m_signature_type;
+	quint8 m_signatureType;
 public:
-    QEFIDevicePathMediaHD();
+    QEFIDevicePathMediaHD(quint32 partitionNumber, quint64 start, quint64 size,
+        quint8 *signature, quint8 format, quint8 signatureType);
 };
 
 class QEFIDevicePathMediaCDROM : public QEFIDevicePathMedia {
-
+protected:
+    quint32 m_bootCatalogEntry;
+    quint64 m_partitionRba;
+	quint64 m_sectors;
 public:
-    QEFIDevicePathMediaCDROM();
+    QEFIDevicePathMediaCDROM(quint32 entry, quint64 partitionRba, quint64 sectors);
 };
 
 class QEFIDevicePathMediaVendor : public QEFIDevicePathMedia {
@@ -219,35 +223,35 @@ protected:
     QUuid m_vendorGuid;
     QByteArray m_vendorData;
 public:
-    QEFIDevicePathMediaVendor();
+    QEFIDevicePathMediaVendor(QUuid vendorGuid, QByteArray vendorData);
 };
 
 class QEFIDevicePathMediaFile : public QEFIDevicePathMedia {
 protected:
-    QString name;
+    QString m_name;
 public:
-    QEFIDevicePathMediaFile();
+    QEFIDevicePathMediaFile(QString name);
 };
 
 class QEFIDevicePathMediaProtocol : public QEFIDevicePathMedia {
 protected:
     QUuid m_protocolGuid;
 public:
-    QEFIDevicePathMediaProtocol();
+    QEFIDevicePathMediaProtocol(QUuid protocolGuid);
 };
 
 class QEFIDevicePathMediaFirmwareFile : public QEFIDevicePathMedia {
 protected:
     QByteArray m_piInfo;
 public:
-    QEFIDevicePathMediaFirmwareFile();
+    QEFIDevicePathMediaFirmwareFile(QByteArray piInfo);
 };
 
 class QEFIDevicePathMediaFirmwareVolume : public QEFIDevicePathMedia {
 protected:
     QByteArray m_piInfo;
 public:
-    QEFIDevicePathMediaFirmwareVolume();
+    QEFIDevicePathMediaFirmwareVolume(QByteArray piInfo);
 };
 
 class QEFIDevicePathMediaRelativeOffset : public QEFIDevicePathMedia {
@@ -256,7 +260,8 @@ protected:
     quint64 m_firstByte;
     quint64 m_lastByte;
 public:
-    QEFIDevicePathMediaRelativeOffset();
+    QEFIDevicePathMediaRelativeOffset(quint32 reserved,
+        quint64 firstByte, quint64 lastByte);
 };
 
 class QEFIDevicePathMediaRAMDisk : public QEFIDevicePathMedia {
@@ -266,7 +271,8 @@ protected:
     QUuid m_disktTypeGuid;
     quint16 m_instanceNumber;
 public:
-    QEFIDevicePathMediaRAMDisk();
+    QEFIDevicePathMediaRAMDisk(quint64 startAddress, quint64 endAddress,
+        QUuid disktTypeGuid, quint16 instanceNumber);
 };
 
 // TODO: Subclasses for BIOSBoot
