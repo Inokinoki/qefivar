@@ -445,6 +445,38 @@ QEFILoadOption::~QEFILoadOption()
     m_devicePathList.clear();
 }
 
+// Subclasses for hardware
+QEFIDevicePathHardwarePCI::QEFIDevicePathHardwarePCI(quint8 function,
+    quint8 device)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_PCI),
+    m_function(function), m_device(device) {}
+
+QEFIDevicePathHardwarePCCard::QEFIDevicePathHardwarePCCard(
+    quint8 function)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_PCCard),
+    m_function(function) {}
+
+QEFIDevicePathHardwareMMIO::QEFIDevicePathHardwareMMIO(quint32 memoryType,
+    quint64 startingAddress, quint64 endingAddress)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_MMIO),
+    m_memoryType(memoryType),
+    m_startingAddress(startingAddress), m_endingAddress(endingAddress) {}
+
+QEFIDevicePathHardwareVendor::QEFIDevicePathHardwareVendor(
+    QUuid vendorGuid, QByteArray vendorData)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_Vendor),
+    m_vendorGuid(vendorGuid), m_vendorData(vendorData) {}
+
+QEFIDevicePathHardwareController::QEFIDevicePathHardwareController(
+    quint32 controller)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_Controller),
+    m_controller(controller) {}
+
+QEFIDevicePathHardwareBMC::QEFIDevicePathHardwareBMC(quint8 interfaceType,
+    quint64 baseAddress)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_BMC),
+    m_interfaceType(interfaceType), m_baseAddress(baseAddress) {}
+
 // Subclasses for media
 QEFIDevicePathMediaHD::QEFIDevicePathMediaHD(quint32 partitionNumber,
     quint64 start, quint64 size, quint8 *signature,

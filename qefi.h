@@ -191,7 +191,55 @@ public:
     virtual ~QEFILoadOption();
 };
 
-// TODO: Subclasses for hardware
+// Subclasses for hardware
+class QEFIDevicePathHardwarePCI : public QEFIDevicePathHardware {
+protected:
+    quint8 m_function;
+    quint8 m_device;
+public:
+    QEFIDevicePathHardwarePCI(quint8 function, quint8 device);
+};
+
+class QEFIDevicePathHardwarePCCard : public QEFIDevicePathHardware {
+protected:
+    quint8 m_function;
+public:
+    QEFIDevicePathHardwarePCCard(quint8 function);
+};
+
+class QEFIDevicePathHardwareMMIO : public QEFIDevicePathHardware {
+protected:
+    quint32 m_memoryType;
+	quint64 m_startingAddress;
+	quint64 m_endingAddress;
+public:
+    QEFIDevicePathHardwareMMIO(quint32 memoryType,
+        quint64 startingAddress, quint64 endingAddress);
+};
+
+class QEFIDevicePathHardwareVendor : public QEFIDevicePathHardware {
+protected:
+    QUuid m_vendorGuid;
+    QByteArray m_vendorData;
+public:
+    QEFIDevicePathHardwareVendor(QUuid vendorGuid, QByteArray vendorData);
+};
+
+class QEFIDevicePathHardwareController : public QEFIDevicePathHardware {
+protected:
+    quint32 m_controller;
+public:
+    QEFIDevicePathHardwareController(quint32 controller);
+};
+
+class QEFIDevicePathHardwareBMC : public QEFIDevicePathHardware {
+protected:
+	quint8 m_interfaceType;
+	quint64 m_baseAddress;
+public:
+    QEFIDevicePathHardwareBMC(quint8 interfaceType, quint64 baseAddress);
+};
+
 // TODO: Subclasses for ACPI
 // TODO: Subclasses for message
 
