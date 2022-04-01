@@ -194,6 +194,7 @@ public:
 // Load option
 class QEFILoadOption
 {
+    bool m_isValidated;
     bool m_isVisible;
     QString m_name;
     QString m_shortPath;
@@ -202,6 +203,8 @@ class QEFILoadOption
 public:
     QEFILoadOption(QByteArray &bootData);
     virtual ~QEFILoadOption();
+
+    bool isValidated() const;
 
     QString name() const;
     bool isVisible() const;

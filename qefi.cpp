@@ -506,6 +506,11 @@ bool qefi_loadopt_is_valid(const QByteArray &data)
     return true;
 }
 
+bool QEFILoadOption::isValidated() const
+{
+    return m_isValidated;
+}
+
 QString QEFILoadOption::name() const
 {
     return m_name;
@@ -532,15 +537,17 @@ QList<QSharedPointer<QEFIDevicePath> > QEFILoadOption::devicePathList() const
 }
 
 QEFILoadOption::QEFILoadOption(QByteArray &bootData)
-    : m_bootData(bootData)
+    : m_bootData(bootData), m_isValidated(false)
 {
-    if (m_bootData.size() > sizeof(struct qefi_load_option_header)) {
+    if (qefi_loadopt_is_valid(bootData)) {
         struct qefi_load_option_header *header =
             (struct qefi_load_option_header *)m_bootData.data();
         m_isVisible = (qFromLittleEndian<quint32>(header->attributes)
             & QEFI_LOAD_OPTION_ACTIVE);
         m_name = qefi_extract_name(m_bootData);
         m_shortPath = qefi_extract_path(m_bootData);
+
+        m_isValidated = true;
 
         // TODO: Parse the device path if exists
     }
