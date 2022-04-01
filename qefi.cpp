@@ -425,6 +425,113 @@ QString qefi_extract_path(QByteArray data)
     return path;
 }
 
+int qefi_loadopt_description_length(const QByteArray &data)
+{
+    int size = data.size();
+    int tempLength;
+
+    // Check header
+    if (size < sizeof(struct qefi_load_option_header)) return -1;
+
+    tempLength = qefi_loadopt_dp_list_length(data);
+    if (tempLength < 0) return -1;
+    quint16 dpListLength = (quint16)(tempLength & 0xFFFF);
+
+    quint16 *c = (quint16*)(data.data() + sizeof(struct qefi_load_option_header));
+    bool isDescValid = false;
+    tempLength = 0;
+    while (size > 0) {
+        // Find the end of description
+        if (*c == 0) {
+            isDescValid = true;
+            break;
+        }
+        size -= 2, c++, tempLength += 2;
+    }
+    if (!isDescValid) return -1;
+
+    return tempLength;
+}
+
+int qefi_loadopt_dp_list_length(const QByteArray &data)
+{
+    int size = data.size();
+
+    // Check header
+    if (size < sizeof(struct qefi_load_option_header)) return -1;
+
+    struct qefi_load_option_header *header =
+        (struct qefi_load_option_header *)data.data();
+    return qFromLittleEndian<quint16>(header->path_list_length);
+}
+
+int qefi_loadopt_optional_data_length(const QByteArray &data)
+{
+    int size = data.size();
+    int tempLength;
+
+    // Check header
+    if (size < sizeof(struct qefi_load_option_header)) return -1;
+    size -= sizeof(struct qefi_load_option_header);
+
+    // Check device path list length
+    tempLength = qefi_loadopt_dp_list_length(data);
+    if (tempLength < 0) return -1;
+    quint16 dpListLength = (quint16)(tempLength & 0xFFFF);
+    if (size < dpListLength) return -1;
+
+    size -= dpListLength;
+
+    // Check description length
+    tempLength = qefi_loadopt_description_length(data);
+    if (tempLength < 0) return -1;
+    size -= tempLength;
+
+    // The remainder is the optional data size
+    return size;
+}
+
+bool qefi_loadopt_is_valid(const QByteArray &data)
+{
+    int size = data.size();
+
+    // Check optional data length, it will check:
+    //  - the header
+    //  - the device path list
+    //  - the description
+    int optionalSize = qefi_loadopt_optional_data_length(data);
+    if (optionalSize < 0) return false;
+
+    // TODO: Check device path
+
+    return true;
+}
+
+QString QEFILoadOption::name() const
+{
+    return m_name;
+}
+
+bool QEFILoadOption::isVisible() const
+{
+    return m_isVisible;
+}
+
+QString QEFILoadOption::path() const
+{
+    return m_shortPath;
+}
+
+QByteArray &QEFILoadOption::bootData() const
+{
+    return m_bootData;
+}
+
+QList<QSharedPointer<QEFIDevicePath> > QEFILoadOption::devicePathList() const
+{
+    return m_devicePathList;
+}
+
 QEFILoadOption::QEFILoadOption(QByteArray &bootData)
     : m_bootData(bootData)
 {

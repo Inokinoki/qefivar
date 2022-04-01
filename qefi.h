@@ -25,6 +25,11 @@ QEFI_EXPORT void qefi_set_variable(QUuid uuid, QString name, QByteArray value);
 QEFI_EXPORT QString qefi_extract_name(QByteArray data);
 QEFI_EXPORT QString qefi_extract_path(QByteArray data);
 
+QEFI_EXPORT int qefi_loadopt_description_length(const QByteArray &data);
+QEFI_EXPORT int qefi_loadopt_dp_list_length(const QByteArray &data);
+QEFI_EXPORT int qefi_loadopt_optional_data_length(const QByteArray &data);
+QEFI_EXPORT bool qefi_loadopt_is_valid(const QByteArray &data);
+
 #define QEFI_LOAD_OPTION_ACTIVE		        0x00000001
 #define QEFI_LOAD_OPTION_FORCE_RECONNECT	0x00000002
 #define QEFI_LOAD_OPTION_HIDDEN		        0x00000008
@@ -193,10 +198,16 @@ class QEFILoadOption
     QString m_name;
     QString m_shortPath;
     QByteArray &m_bootData;
-    QList<QSharedPointer<QEFIDevicePath>> m_devicePathList;
+    QList<QSharedPointer<QEFIDevicePath> > m_devicePathList;
 public:
     QEFILoadOption(QByteArray &bootData);
     virtual ~QEFILoadOption();
+
+    QString name() const;
+    bool isVisible() const;
+    QString path() const;
+    QByteArray &bootData() const;
+    QList<QSharedPointer<QEFIDevicePath> > devicePathList() const;
 };
 
 // Subclasses for hardware
