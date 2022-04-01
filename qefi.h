@@ -10,6 +10,8 @@
 #endif
 
 #include <QUuid>
+#include <QString>
+#include <QSharedPointer>
 
 QEFI_EXPORT bool qefi_is_available();
 QEFI_EXPORT bool qefi_has_privilege();
@@ -23,12 +25,37 @@ QEFI_EXPORT void qefi_set_variable(QUuid uuid, QString name, QByteArray value);
 QEFI_EXPORT QString qefi_extract_name(QByteArray data);
 QEFI_EXPORT QString qefi_extract_path(QByteArray data);
 
-#pragma pack(push, 1)
-struct qefi_load_option_header {
-	quint32 attributes;
-	quint16 path_list_length;
+#define QEFI_LOAD_OPTION_ACTIVE		        0x00000001
+#define QEFI_LOAD_OPTION_FORCE_RECONNECT	0x00000002
+#define QEFI_LOAD_OPTION_HIDDEN		        0x00000008
+#define QEFI_LOAD_OPTION_CATEGORY_MASK	    0x00001f00
+#define QEFI_LOAD_OPTION_CATEGORY_BOOT	    0x00000000
+#define QEFI_LOAD_OPTION_CATEGORY_APP	    0x00000100
+
+class QEFIDevicePath;
+
+class QEFIDevicePathHardware;
+// TODO: Subclasses for hardware
+class QEFIDevicePathACPI;
+// TODO: Subclasses for ACPI
+class QEFIDevicePathMessage;
+// TODO: Subclasses for message
+class QEFIDevicePathMedia;
+// TODO: Subclasses for media
+class QEFIDevicePathBIOSBoot;
+// TODO: Subclasses for BIOSBoot
+
+class QEFILoadOption
+{
+    bool m_isVisible;
+    QString m_name;
+    QString m_shortPath;
+    QByteArray &m_bootData;
+    QList<QSharedPointer<QEFIDevicePath>> m_devicePathList;
+public:
+    QEFILoadOption(QByteArray &bootData);
+    virtual ~QEFILoadOption();
 };
-#pragma pack(pop)
 
 enum QEFIDevicePathType
 {
@@ -118,14 +145,5 @@ enum QEFIDevicePathEndSubType
     END_EndInstance = 0x01,
     END_End         = 0xFF
 };
-
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-	quint8 type;
-	quint8 subtype;
-	quint16 length;
-};
-#pragma pack(pop)
 
 #endif // QEFI_H
