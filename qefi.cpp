@@ -425,62 +425,6 @@ QString qefi_extract_path(QByteArray data)
     return path;
 }
 
-/* Do not create this base class directly */
-class QEFIDevicePath {
-    enum QEFIDevicePathType m_type;
-    quint8 m_subType;
-protected:
-    QEFIDevicePath(enum QEFIDevicePathType type, quint8 subType)
-        : m_type(type), m_subType(subType) {}
-public:
-    virtual ~QEFIDevicePath() {}
-};
-
-class QEFIDevicePathHardware : public QEFIDevicePath
-{
-protected:
-    QEFIDevicePathHardware(quint8 subType)
-        : QEFIDevicePath(QEFIDevicePathType::DP_Hardware, subType) {}
-public:
-    virtual ~QEFIDevicePathHardware() {}
-};
-
-class QEFIDevicePathACPI : public QEFIDevicePath
-{
-protected:
-    QEFIDevicePathACPI(quint8 subType)
-        : QEFIDevicePath(QEFIDevicePathType::DP_ACPI, subType) {}
-public:
-    virtual ~QEFIDevicePathACPI() {}
-};
-
-class QEFIDevicePathMessage : public QEFIDevicePath
-{
-protected:
-    QEFIDevicePathMessage(quint8 subType)
-        : QEFIDevicePath(QEFIDevicePathType::DP_Message, subType) {}
-public:
-    virtual ~QEFIDevicePathMessage() {}
-};
-
-class QEFIDevicePathMedia : public QEFIDevicePath
-{
-protected:
-    QEFIDevicePathMedia(quint8 subType)
-        : QEFIDevicePath(QEFIDevicePathType::DP_Media, subType) {}
-public:
-    virtual ~QEFIDevicePathMedia() {}
-};
-
-class QEFIDevicePathBIOSBoot : public QEFIDevicePath
-{
-protected:
-    QEFIDevicePathBIOSBoot(quint8 subType)
-        : QEFIDevicePath(QEFIDevicePathType::DP_BIOSBoot, subType) {}
-public:
-    virtual ~QEFIDevicePathBIOSBoot() {}
-};
-
 QEFILoadOption::QEFILoadOption(QByteArray &bootData)
     : m_bootData(bootData)
 {

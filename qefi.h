@@ -32,31 +32,6 @@ QEFI_EXPORT QString qefi_extract_path(QByteArray data);
 #define QEFI_LOAD_OPTION_CATEGORY_BOOT	    0x00000000
 #define QEFI_LOAD_OPTION_CATEGORY_APP	    0x00000100
 
-class QEFIDevicePath;
-
-class QEFIDevicePathHardware;
-// TODO: Subclasses for hardware
-class QEFIDevicePathACPI;
-// TODO: Subclasses for ACPI
-class QEFIDevicePathMessage;
-// TODO: Subclasses for message
-class QEFIDevicePathMedia;
-// TODO: Subclasses for media
-class QEFIDevicePathBIOSBoot;
-// TODO: Subclasses for BIOSBoot
-
-class QEFILoadOption
-{
-    bool m_isVisible;
-    QString m_name;
-    QString m_shortPath;
-    QByteArray &m_bootData;
-    QList<QSharedPointer<QEFIDevicePath>> m_devicePathList;
-public:
-    QEFILoadOption(QByteArray &bootData);
-    virtual ~QEFILoadOption();
-};
-
 enum QEFIDevicePathType
 {
     DP_Hardware    = 0x01,
@@ -145,5 +120,155 @@ enum QEFIDevicePathEndSubType
     END_EndInstance = 0x01,
     END_End         = 0xFF
 };
+
+/* Do not create this base class directly */
+class QEFIDevicePath {
+protected:
+    enum QEFIDevicePathType m_type;
+    quint8 m_subType;
+
+    QEFIDevicePath(enum QEFIDevicePathType type, quint8 subType)
+        : m_type(type), m_subType(subType) {}
+public:
+    virtual ~QEFIDevicePath() {}
+};
+
+class QEFIDevicePathHardware : public QEFIDevicePath
+{
+protected:
+    QEFIDevicePathHardware(quint8 subType)
+        : QEFIDevicePath(QEFIDevicePathType::DP_Hardware, subType) {}
+public:
+    virtual ~QEFIDevicePathHardware() {}
+};
+
+class QEFIDevicePathACPI : public QEFIDevicePath
+{
+protected:
+    QEFIDevicePathACPI(quint8 subType)
+        : QEFIDevicePath(QEFIDevicePathType::DP_ACPI, subType) {}
+public:
+    virtual ~QEFIDevicePathACPI() {}
+};
+
+class QEFIDevicePathMessage : public QEFIDevicePath
+{
+protected:
+    QEFIDevicePathMessage(quint8 subType)
+        : QEFIDevicePath(QEFIDevicePathType::DP_Message, subType) {}
+public:
+    virtual ~QEFIDevicePathMessage() {}
+};
+
+class QEFIDevicePathMedia : public QEFIDevicePath
+{
+protected:
+    QEFIDevicePathMedia(quint8 subType)
+        : QEFIDevicePath(QEFIDevicePathType::DP_Media, subType) {}
+public:
+    virtual ~QEFIDevicePathMedia() {}
+};
+
+class QEFIDevicePathBIOSBoot : public QEFIDevicePath
+{
+protected:
+    QEFIDevicePathBIOSBoot(quint8 subType)
+        : QEFIDevicePath(QEFIDevicePathType::DP_BIOSBoot, subType) {}
+public:
+    virtual ~QEFIDevicePathBIOSBoot() {}
+};
+
+// Load option
+class QEFILoadOption
+{
+    bool m_isVisible;
+    QString m_name;
+    QString m_shortPath;
+    QByteArray &m_bootData;
+    QList<QSharedPointer<QEFIDevicePath>> m_devicePathList;
+public:
+    QEFILoadOption(QByteArray &bootData);
+    virtual ~QEFILoadOption();
+};
+
+// TODO: Subclasses for hardware
+// TODO: Subclasses for ACPI
+// TODO: Subclasses for message
+
+// Subclasses for media
+class QEFIDevicePathMediaHD : public QEFIDevicePathMedia {
+protected:
+    quint32 m_partitionNumber;
+    quint64 m_start;
+	quint64 m_size;
+	quint8 m_signature[16];
+	quint8 m_format;
+	quint8 m_signature_type;
+public:
+    QEFIDevicePathMediaHD();
+};
+
+class QEFIDevicePathMediaCDROM : public QEFIDevicePathMedia {
+
+public:
+    QEFIDevicePathMediaCDROM();
+};
+
+class QEFIDevicePathMediaVendor : public QEFIDevicePathMedia {
+protected:
+    QUuid m_vendorGuid;
+    QByteArray m_vendorData;
+public:
+    QEFIDevicePathMediaVendor();
+};
+
+class QEFIDevicePathMediaFile : public QEFIDevicePathMedia {
+protected:
+    QString name;
+public:
+    QEFIDevicePathMediaFile();
+};
+
+class QEFIDevicePathMediaProtocol : public QEFIDevicePathMedia {
+protected:
+    QUuid m_protocolGuid;
+public:
+    QEFIDevicePathMediaProtocol();
+};
+
+class QEFIDevicePathMediaFirmwareFile : public QEFIDevicePathMedia {
+protected:
+    QByteArray m_piInfo;
+public:
+    QEFIDevicePathMediaFirmwareFile();
+};
+
+class QEFIDevicePathMediaFirmwareVolume : public QEFIDevicePathMedia {
+protected:
+    QByteArray m_piInfo;
+public:
+    QEFIDevicePathMediaFirmwareVolume();
+};
+
+class QEFIDevicePathMediaRelativeOffset : public QEFIDevicePathMedia {
+protected:
+    quint32 m_reserved;
+    quint64 m_firstByte;
+    quint64 m_lastByte;
+public:
+    QEFIDevicePathMediaRelativeOffset();
+};
+
+class QEFIDevicePathMediaRAMDisk : public QEFIDevicePathMedia {
+protected:
+    quint64 m_startAddress;
+    quint64 m_endAddress;
+    QUuid m_disktTypeGuid;
+    quint16 m_instanceNumber;
+public:
+    QEFIDevicePathMediaRAMDisk();
+};
+
+// TODO: Subclasses for BIOSBoot
 
 #endif // QEFI_H
