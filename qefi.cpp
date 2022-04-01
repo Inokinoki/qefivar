@@ -18,6 +18,12 @@ struct qefi_device_path_header {
 };
 #pragma pack(pop)
 
+int qefi_dp_length(const struct qefi_device_path_header *dp_header)
+{
+    if (!dp_header) return -1;
+    return qFromLittleEndian<quint16>(dp_header->length);
+}
+
 #ifdef Q_OS_WIN
 /* Implementation based on Windows API */
 #include <Windows.h>
@@ -363,16 +369,12 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 QString qefi_extract_name(QByteArray data)
 {
     QString entry_name;
-    if (data.size() > sizeof(struct qefi_load_option_header)) {
-        struct qefi_load_option_header *header =
-            (struct qefi_load_option_header *)data.data();
-        quint16 *c = (quint16*)data.data();
-        quint16 dp_list_length = qFromLittleEndian<quint16>(header->path_list_length);
-        c = c + sizeof(struct qefi_load_option_header) / 2;
-        for (int index = sizeof(struct qefi_load_option_header);
-            index < data.size() - dp_list_length - 2;   // Exclude the last 0
-            index += 2, c++)
-        {
+    if (qefi_loadopt_is_valid(data)) {
+        int desc_length = qefi_loadopt_description_length(data);
+        if (desc_length < 0) return entry_name;
+
+        quint16 *c = (quint16*)(data.data() + sizeof(struct qefi_load_option_header));
+        for (int index = 0; index < desc_length; index += 2, c++) {
             if (*c == 0) break;
             entry_name.append(*c);
         }
@@ -383,34 +385,31 @@ QString qefi_extract_name(QByteArray data)
 QString qefi_extract_path(QByteArray data)
 {
     QString path;
-    if (data.size() > sizeof(struct qefi_load_option_header)) {
-        struct qefi_load_option_header *header =
-            (struct qefi_load_option_header *)data.data();
-        quint16 *c = (quint16*)data.data();
-        quint16 dp_list_length = qFromLittleEndian<quint16>(header->path_list_length);
+    if (qefi_loadopt_is_valid(data)) {
+        int desc_length = qefi_loadopt_description_length(data);
+        if (desc_length < 0) return path;
+        desc_length += 2;
 
-        c = c + sizeof(struct qefi_load_option_header) / 2;
-        for (int index = sizeof(struct qefi_load_option_header);
-            index < data.size() - dp_list_length - 2;   // Exclude the last 0
-            index += 2, c++)
-        {
-            // Find the end of description
-            if (*c == 0) break;
-        }
+        int dp_list_length = qefi_loadopt_dp_list_length(data);
+        if (dp_list_length < 0) return path;
+
+        quint16 *c = (quint16*)(data.data() +
+            sizeof(struct qefi_load_option_header) + desc_length);
 
         // Keep the remainder length
         qint32 remainder_length = dp_list_length;
-        quint8 *list_pointer = ((quint8 *)(c + 1));
+        quint8 *list_pointer = ((quint8 *)c);
         while (remainder_length > 0) {
             struct qefi_device_path_header *dp_header =
                 (struct qefi_device_path_header *)list_pointer;
-            quint16 length = qFromLittleEndian<quint16>(dp_header->length);
+            int length = qefi_dp_length(dp_header);
+            if (length < 0) return path;
+
             if (dp_header->type == DP_Media && dp_header->subtype == MEDIA_File) {
                 // Media File
                 c = (quint16 *)(list_pointer + sizeof(struct qefi_device_path_header));
                 for (int index = 0; index < length -
-                    sizeof(struct qefi_device_path_header) - 2; index += 2, c++)
-                {
+                    sizeof(struct qefi_device_path_header) - 2; index += 2, c++) {
                     path.append(*c);
                 }
                 break;
