@@ -582,3 +582,106 @@ QEFILoadOption::~QEFILoadOption()
 {
     m_devicePathList.clear();
 }
+
+// Subclasses for hardware
+QEFIDevicePathHardwarePCI::QEFIDevicePathHardwarePCI(quint8 function,
+    quint8 device)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_PCI),
+    m_function(function), m_device(device) {}
+
+QEFIDevicePathHardwarePCCard::QEFIDevicePathHardwarePCCard(
+    quint8 function)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_PCCard),
+    m_function(function) {}
+
+QEFIDevicePathHardwareMMIO::QEFIDevicePathHardwareMMIO(quint32 memoryType,
+    quint64 startingAddress, quint64 endingAddress)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_MMIO),
+    m_memoryType(memoryType),
+    m_startingAddress(startingAddress), m_endingAddress(endingAddress) {}
+
+QEFIDevicePathHardwareVendor::QEFIDevicePathHardwareVendor(
+    QUuid vendorGuid, QByteArray vendorData)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_Vendor),
+    m_vendorGuid(vendorGuid), m_vendorData(vendorData) {}
+
+QEFIDevicePathHardwareController::QEFIDevicePathHardwareController(
+    quint32 controller)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_Controller),
+    m_controller(controller) {}
+
+QEFIDevicePathHardwareBMC::QEFIDevicePathHardwareBMC(quint8 interfaceType,
+    quint64 baseAddress)
+    : QEFIDevicePathHardware((quint8)QEFIDevicePathHardwareSubType::HW_BMC),
+    m_interfaceType(interfaceType), m_baseAddress(baseAddress) {}
+
+// Subclasses for ACPI
+QEFIDevicePathACPIHID::QEFIDevicePathACPIHID(quint32 hid, quint32 uid)
+    : QEFIDevicePathACPI((quint8)
+        QEFIDevicePathACPISubType::ACPI_HID),
+    m_hid(hid), m_uid(uid) {}
+
+QEFIDevicePathACPIHIDEX::QEFIDevicePathACPIHIDEX(
+    quint32 hid, quint32 uid, quint32 cid,
+    QString hidString, QString uidString, QString cidString)
+    : QEFIDevicePathACPI((quint8)
+        QEFIDevicePathACPISubType::ACPI_HIDEX),
+    m_hid(hid), m_uid(uid), m_cid(cid),
+    m_hidString(hidString), m_uidString(uidString),
+    m_cidString(cidString) {}
+
+QEFIDevicePathACPIADR::QEFIDevicePathACPIADR(QList<quint32> addresses)
+    : QEFIDevicePathACPI((quint8)QEFIDevicePathACPISubType::ACPI_ADR),
+    m_addresses(addresses) {}
+
+// Subclasses for media
+QEFIDevicePathMediaHD::QEFIDevicePathMediaHD(quint32 partitionNumber,
+    quint64 start, quint64 size, quint8 *signature,
+    quint8 format, quint8 signatureType)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_HD),
+    m_partitionNumber(partitionNumber), m_start(start), m_size(size),
+    m_format(format), m_signatureType(signatureType)
+{
+    for (int i = 0; i < 16; i++) {
+        m_signature[i] = signature[i];
+    }
+}
+
+QEFIDevicePathMediaCDROM::QEFIDevicePathMediaCDROM(quint32 entry,
+    quint64 partitionRba, quint64 sectors)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_CDROM),
+    m_bootCatalogEntry(entry), m_partitionRba(partitionRba),
+    m_sectors(sectors) {}
+
+QEFIDevicePathMediaVendor::QEFIDevicePathMediaVendor(QUuid vendorGuid,
+    QByteArray vendorData)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_Vendor),
+    m_vendorGuid(vendorGuid), m_vendorData(vendorData) {}
+
+QEFIDevicePathMediaFile::QEFIDevicePathMediaFile(QString name)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_File),
+    m_name(name) {}
+
+QEFIDevicePathMediaProtocol::QEFIDevicePathMediaProtocol(QUuid protocolGuid)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_Protocol),
+    m_protocolGuid(protocolGuid) {}
+
+QEFIDevicePathMediaFirmwareFile::QEFIDevicePathMediaFirmwareFile(QByteArray piInfo)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_FirmwareFile),
+    m_piInfo(piInfo) {}
+
+QEFIDevicePathMediaFirmwareVolume::QEFIDevicePathMediaFirmwareVolume(QByteArray piInfo)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume),
+    m_piInfo(piInfo) {}
+
+QEFIDevicePathMediaRelativeOffset::QEFIDevicePathMediaRelativeOffset(quint32 reserved,
+    quint64 firstByte, quint64 lastByte)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_RelativeOffset),
+    m_reserved(reserved), m_firstByte(firstByte), m_lastByte(lastByte) {}
+
+QEFIDevicePathMediaRAMDisk::QEFIDevicePathMediaRAMDisk(
+    quint64 startAddress, quint64 endAddress,
+    QUuid disktTypeGuid, quint16 instanceNumber)
+    : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_RamDisk),
+    m_startAddress(startAddress), m_endAddress(endAddress),
+    m_disktTypeGuid(disktTypeGuid), m_instanceNumber(instanceNumber) {}
