@@ -444,6 +444,24 @@ QEFILoadOption::~QEFILoadOption()
 {
     m_devicePathList.clear();
 }
+// Subclasses for ACPI
+QEFIDevicePathACPIHID::QEFIDevicePathACPIHID(quint32 hid, quint32 uid)
+    : QEFIDevicePathACPI((quint8)
+        QEFIDevicePathACPISubType::ACPI_HID),
+    m_hid(hid), m_uid(uid) {}
+
+QEFIDevicePathACPIHIDEX::QEFIDevicePathACPIHIDEX(
+    quint32 hid, quint32 uid, quint32 cid,
+    QString hidString, QString uidString, QString cidString)
+    : QEFIDevicePathACPI((quint8)
+        QEFIDevicePathACPISubType::ACPI_HIDEX),
+    m_hid(hid), m_uid(uid), m_cid(cid),
+    m_hidString(hidString), m_uidString(uidString),
+    m_cidString(cidString) {}
+
+QEFIDevicePathACPIADR::QEFIDevicePathACPIADR(QList<quint32> addresses)
+    : QEFIDevicePathACPI((quint8)QEFIDevicePathACPISubType::ACPI_ADR),
+    m_addresses(addresses) {}
 
 // Subclasses for hardware
 QEFIDevicePathHardwarePCI::QEFIDevicePathHardwarePCI(quint8 function,

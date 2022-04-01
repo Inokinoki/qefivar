@@ -240,7 +240,37 @@ public:
     QEFIDevicePathHardwareBMC(quint8 interfaceType, quint64 baseAddress);
 };
 
-// TODO: Subclasses for ACPI
+// Subclasses for ACPI
+class QEFIDevicePathACPIHID : public QEFIDevicePathACPI {
+protected:
+	quint32 m_hid;
+	quint32 m_uid;
+public:
+    QEFIDevicePathACPIHID(quint32 hid, quint32 uid);
+};
+
+class QEFIDevicePathACPIHIDEX : public QEFIDevicePathACPI {
+protected:
+	quint32 m_hid;
+	quint32 m_uid;
+	quint32 m_cid;
+    QString m_hidString;
+    QString m_uidString;
+    QString m_cidString;
+public:
+    QEFIDevicePathACPIHIDEX(quint32 hid, quint32 uid,
+        quint32 cid, QString hidString,
+        QString uidString, QString cidString);
+};
+
+class QEFIDevicePathACPIADR : public QEFIDevicePathACPI {
+protected:
+	QList<quint32> m_addresses;
+public:
+    QEFIDevicePathACPIADR(QList<quint32> addresses);
+};
+// TODO: Decode Device Path ACPI Address
+
 // TODO: Subclasses for message
 
 // Subclasses for media
