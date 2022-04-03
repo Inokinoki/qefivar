@@ -198,7 +198,6 @@ class QEFILoadOption
     bool m_isVisible;
     QString m_name;
     QString m_shortPath;
-    QByteArray &m_bootData;
     QList<QSharedPointer<QEFIDevicePath> > m_devicePathList;
 public:
     QEFILoadOption(QByteArray &bootData);
@@ -209,7 +208,6 @@ public:
     QString name() const;
     bool isVisible() const;
     QString path() const;
-    QByteArray &bootData() const;
     QList<QSharedPointer<QEFIDevicePath> > devicePathList() const;
 };
 
