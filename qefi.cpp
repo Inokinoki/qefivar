@@ -1,6 +1,7 @@
 #include "qefi.h"
 
 #include <QtEndian>
+#include <QDebug>
 
 #pragma pack(push, 1)
 struct qefi_load_option_header {
@@ -22,6 +23,137 @@ int qefi_dp_length(const struct qefi_device_path_header *dp_header)
 {
     if (!dp_header) return -1;
     return qFromLittleEndian<quint16>(dp_header->length);
+}
+
+int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer, int max_dp_size)
+{
+    if (!dp_header_pointer) return -1;
+
+    int count = 0;
+    int size = 0;
+    while (size < max_dp_size) {
+        int tempLength = qefi_dp_length(dp_header_pointer);
+        if (tempLength < 0) return tempLength;
+
+        size += tempLength;
+        count++;
+
+        if (dp_header_pointer->type == QEFIDevicePathType::DP_End &&
+            dp_header_pointer->subtype == 0xFF)
+            break;
+
+        dp_header_pointer = (struct qefi_device_path_header *)
+            ((quint8 *)dp_header_pointer) + tempLength;
+    }
+    return count;
+}
+
+int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer, int max_dp_size)
+{
+    if (!dp_header_pointer) return -1;
+
+    if (dp_header_pointer->type == QEFIDevicePathType::DP_End &&
+        dp_header_pointer->subtype == 0xFF) return qefi_dp_length(dp_header_pointer);
+
+    int size = 0;
+    int count = qefi_dp_count(dp_header_pointer, max_dp_size);
+    if (count < 0) return -1;
+    for (int i = 0; i < count, size < max_dp_size; i++) {
+        int tempLength = qefi_dp_length(dp_header_pointer);
+        if (tempLength < 0) return tempLength;
+
+        size += tempLength;
+
+        if (dp_header_pointer->type == QEFIDevicePathType::DP_End &&
+            dp_header_pointer->subtype == 0xFF)
+            break;
+
+        dp_header_pointer = (struct qefi_device_path_header *)
+            ((quint8 *)dp_header_pointer) + tempLength;
+    }
+    return (size == max_dp_size ? size : -1);
+}
+
+QString qefi_parse_ucs2_string(quint8 *data, int max_size)
+{
+    QString str; str.reserve(max_size / 2);
+    quint16 *c = (quint16 *)data;
+    for (int index = 0; index < max_size; index += 2, c++) {
+        if (*c == 0) break;
+        str.append(QChar(qFromLittleEndian<quint16>(*c)));
+    }
+    return str;
+}
+
+QEFIDevicePath *qefi_parse_dp_hardware_file(struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_File)
+        return nullptr;
+	int length = qefi_dp_length(dp);
+    if (length != dp_size || length > 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    return new QEFIDevicePathMediaFile(qefi_parse_ucs2_string(dp_inner_pointer, 
+        length - sizeof(struct qefi_device_path_header)));
+}
+
+QEFIDevicePath *qefi_parse_dp_hardware_hdd(struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_HD)
+        return nullptr;
+	int length = qefi_dp_length(dp);
+    if (length != dp_size || length > 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
+    quint32 partitionNumber =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint64 start =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 size =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint8 *signature = dp_inner_pointer;
+    dp_inner_pointer += sizeof(quint8) * 16;
+    quint8 format = *dp_inner_pointer;
+    dp_inner_pointer += sizeof(quint8);
+    quint8 signatureType = *dp_inner_pointer;
+    dp_inner_pointer += sizeof(quint8);
+    return new QEFIDevicePathMediaHD(partitionNumber,
+        start, size, signature, format, signatureType);
+}
+
+QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
+{
+	quint8 type = dp->type, subtype = dp->subtype;
+	int length = qefi_dp_length(dp);
+    if (length != dp_size || length > 0) return nullptr;
+
+    if (type == QEFIDevicePathType::DP_Hardware) {
+        // TODO: Parse hardware
+    } else if (type == QEFIDevicePathType::DP_ACPI) {
+        // TODO: Parse DP_ACPI
+    } else if (type == QEFIDevicePathType::DP_Message) {
+        // TODO: Parse Message)
+    } else if (type == QEFIDevicePathType::DP_Media) {
+        // Parse Media
+        switch (subtype) {
+            case QEFIDevicePathMediaSubType::MEDIA_HD:
+                return qefi_parse_dp_hardware_hdd(dp, length);
+            case QEFIDevicePathMediaSubType::MEDIA_File:
+                return qefi_parse_dp_hardware_file(dp, length);
+        }
+    } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
+        // TODO: Parse BIOSBoot
+    }
+    return nullptr;
 }
 
 #ifdef Q_OS_WIN
@@ -549,7 +681,32 @@ QEFILoadOption::QEFILoadOption(QByteArray &bootData)
 
         m_isValidated = true;
 
-        // TODO: Parse the device path if exists
+        // Parse the device path if exists
+        int dp_list_length = qefi_loadopt_dp_list_length(m_bootData);
+        if (dp_list_length >= 0) {
+            int dp_infered_length = m_bootData.size() -     // Optional + DP
+                sizeof(struct qefi_load_option_header) -    // Header
+                (m_name.length() + 1) * 2;                  // Description
+
+            // Get the device list count
+            struct qefi_device_path_header *dp_header_pointer =
+                (struct qefi_device_path_header *)(((quint8 *)header) +
+                    sizeof(struct qefi_load_option_header) +
+                    (m_name.length() + 1) * 2);
+            int dp_list_count = qefi_dp_count(dp_header_pointer,
+                dp_list_length < dp_infered_length ?
+                dp_list_length : dp_infered_length);
+            for (int i = 0; i < dp_list_count; i++) {
+                int tempLength = qefi_dp_length(dp_header_pointer);
+                if (tempLength < 0) break;
+
+                // TODO: Parse DP
+                qDebug() << "Parsing a device path" << i + 1 << "length" << tempLength;
+
+                dp_header_pointer = (struct qefi_device_path_header *)
+                    (((quint8 *)dp_header_pointer) + tempLength);
+            }
+        }
     }
 }
 
