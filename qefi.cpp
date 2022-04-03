@@ -540,11 +540,13 @@ QString qefi_extract_path(QByteArray data)
 
             if (dp_header->type == DP_Media && dp_header->subtype == MEDIA_File) {
                 // Media File
-                c = (quint16 *)(list_pointer + sizeof(struct qefi_device_path_header));
-                for (int index = 0; index < length -
-                    sizeof(struct qefi_device_path_header) - 2; index += 2, c++) {
-                    path.append(*c);
-                }
+                QScopedPointer<QEFIDevicePath> dp(
+                    qefi_parse_dp_hardware_file(dp_header, length));
+                if (dp.isNull()) continue;
+                QEFIDevicePathMediaFile *media_file_dp =
+                    dynamic_cast<QEFIDevicePathMediaFile *>(dp.get());
+                if (media_file_dp == nullptr) continue;
+                path.append(media_file_dp->name());
                 break;
             } else if (dp_header->type == DP_End) {
                 // End
@@ -798,6 +800,8 @@ QEFIDevicePathMediaVendor::QEFIDevicePathMediaVendor(QUuid vendorGuid,
 QEFIDevicePathMediaFile::QEFIDevicePathMediaFile(QString name)
     : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_File),
     m_name(name) {}
+
+QString QEFIDevicePathMediaFile::name() const { return m_name; }
 
 QEFIDevicePathMediaProtocol::QEFIDevicePathMediaProtocol(QUuid protocolGuid)
     : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_Protocol),
