@@ -92,7 +92,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_file(struct qefi_device_path_header *dp, 
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_File)
         return nullptr;
 	int length = qefi_dp_length(dp);
-    if (length != dp_size || length > 0) return nullptr;
+    if (length != dp_size || length <= 0) return nullptr;
 
     // TODO: Check size
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -107,7 +107,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_hdd(struct qefi_device_path_header *dp, i
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_HD)
         return nullptr;
 	int length = qefi_dp_length(dp);
-    if (length != dp_size || length > 0) return nullptr;
+    if (length != dp_size || length <= 0) return nullptr;
 
     // TODO: Check size
     quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
@@ -134,7 +134,9 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
 {
 	quint8 type = dp->type, subtype = dp->subtype;
 	int length = qefi_dp_length(dp);
-    if (length != dp_size || length > 0) return nullptr;
+    qDebug() << "Parsing DP: length " << length << " " <<
+        "type" << type << "subtype" << subtype;
+    if (length != dp_size || length <= 0) return nullptr;
 
     if (type == QEFIDevicePathType::DP_Hardware) {
         // TODO: Parse hardware
@@ -146,8 +148,10 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
         // Parse Media
         switch (subtype) {
             case QEFIDevicePathMediaSubType::MEDIA_HD:
+                qDebug() << "Parsing DP media HD";
                 return qefi_parse_dp_hardware_hdd(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_File:
+                qDebug() << "Parsing DP media file";
                 return qefi_parse_dp_hardware_file(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
@@ -699,6 +703,10 @@ QEFILoadOption::QEFILoadOption(QByteArray &bootData)
 
                 // TODO: Parse DP
                 qDebug() << "Parsing a device path" << i + 1 << "length" << tempLength;
+                QEFIDevicePath *path = qefi_parse_dp(dp_header_pointer, tempLength);
+                if (path != nullptr) {
+                    m_devicePathList.append(QSharedPointer<QEFIDevicePath>(path));
+                }
 
                 dp_header_pointer = (struct qefi_device_path_header *)
                     (((quint8 *)dp_header_pointer) + tempLength);

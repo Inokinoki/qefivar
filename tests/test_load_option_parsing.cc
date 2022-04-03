@@ -18,6 +18,7 @@ void TestLoadOptionParsing::testParseTestBootData()
     QVERIFY(loadOption.isVisible() == true);
     QVERIFY(loadOption.name() == QString(test_boot_name));
     QVERIFY(loadOption.path() == QString(test_boot_path));
+    QVERIFY(loadOption.devicePathList().size() == 2);
 }
 
 void TestLoadOptionParsing::testParseEmptyData()
@@ -26,6 +27,7 @@ void TestLoadOptionParsing::testParseEmptyData()
     QEFILoadOption loadOption(data);
     QVERIFY(loadOption.name().size() == 0);
     QVERIFY(loadOption.path().size() == 0);
+    QVERIFY(loadOption.devicePathList().size() == 0);
 }
 
 QTEST_MAIN(TestLoadOptionParsing)
