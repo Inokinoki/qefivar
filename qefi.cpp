@@ -505,11 +505,8 @@ QString qefi_extract_name(QByteArray data)
         int desc_length = qefi_loadopt_description_length(data);
         if (desc_length < 0) return entry_name;
 
-        quint16 *c = (quint16*)(data.data() + sizeof(struct qefi_load_option_header));
-        for (int index = 0; index < desc_length; index += 2, c++) {
-            if (*c == 0) break;
-            entry_name.append(*c);
-        }
+        return qefi_parse_ucs2_string((quint8 *)(data.data() +
+            sizeof(struct qefi_load_option_header)), desc_length);
     }
     return entry_name;
 }
