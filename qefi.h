@@ -329,6 +329,7 @@ protected:
     QString m_name;
 public:
     QEFIDevicePathMediaFile(QString name);
+    QString name() const;
 };
 
 class QEFIDevicePathMediaProtocol : public QEFIDevicePathMedia {
