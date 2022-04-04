@@ -9,6 +9,7 @@
 #  define QEFI_EXPORT Q_DECL_IMPORT
 #endif
 
+#include <QUrl>
 #include <QUuid>
 #include <QString>
 #include <QSharedPointer>
@@ -70,7 +71,7 @@ enum QEFIDevicePathMessageSubType
     MSG_ATAPI       = 0x01,
     MSG_SCSI        = 0x02,
     MSG_FibreChan   = 0x03,
-    MSG_Fibre1394   = 0x04,
+    MSG_1394        = 0x04,
     MSG_USB         = 0x05,
 
     MSG_I2O         = 0x06,
@@ -87,7 +88,7 @@ enum QEFIDevicePathMessageSubType
 
     MSG_LUN         = 0x11,
     MSG_SATA        = 0x12,
-
+    MSG_ISCSI       = 0x13,
     MSG_VLAN        = 0x14,
 
     MSG_FibreChanEx = 0x15,
@@ -291,7 +292,275 @@ public:
 };
 // TODO: Decode Device Path ACPI Address
 
-// TODO: Subclasses for message
+// Subclasses for message
+class QEFIDevicePathMessageATAPI : public QEFIDevicePathMessage {
+protected:
+    quint8 m_primary;
+    quint8 m_slave;
+    quint16 m_lun;
+public:
+    QEFIDevicePathMessageATAPI(quint8 primary, quint8 slave, quint16 lun);
+};
+
+class QEFIDevicePathMessageSCSI : public QEFIDevicePathMessage {
+protected:
+    quint16 m_target;
+    quint16 m_lun;
+public:
+    QEFIDevicePathMessageSCSI(quint16 m_target, quint16 lun);
+};
+
+class QEFIDevicePathMessageFibreChan : public QEFIDevicePathMessage {
+protected:
+    quint32 m_reserved;
+    quint64 m_wwn;
+    quint64 m_lun;
+public:
+    QEFIDevicePathMessageFibreChan(quint32 reserved, quint64 wwn,
+        quint64 lun);
+};
+
+class QEFIDevicePathMessage1394 : public QEFIDevicePathMessage {
+protected:
+    quint32 m_reserved;
+    quint64 m_guid;
+public:
+    QEFIDevicePathMessage1394(quint32 reserved, quint64 guid);
+};
+
+class QEFIDevicePathMessageUSB : public QEFIDevicePathMessage {
+protected:
+    quint8 m_parentPort;
+    quint8 m_interface;
+public:
+    QEFIDevicePathMessageUSB(quint8 parentPort, quint8 interface);
+};
+
+class QEFIDevicePathMessageI2O : public QEFIDevicePathMessage {
+protected:
+    quint32 m_target;
+public:
+    QEFIDevicePathMessageI2O(quint32 target);
+};
+
+// TODO: Add MSG_InfiniBand  = 0x09
+
+class QEFIDevicePathMessageVendor : public QEFIDevicePathMessage {
+protected:
+    QUuid m_vendorGuid;
+    QByteArray m_vendorData;
+public:
+    QEFIDevicePathMessageVendor(QUuid vendorGuid, QByteArray vendorData);
+};
+
+class QEFIDevicePathMessageMACAddr : public QEFIDevicePathMessage {
+protected:
+    quint8 m_macAddress[32];
+    quint8 m_interfaceType;
+public:
+    QEFIDevicePathMessageMACAddr(quint8 *macAddress, quint8 interfaceType);
+};
+
+class QEFIDevicePathMessageIPv4Addr : public QEFIDevicePathMessage {
+protected:
+    // TODO: Replace IP address to the Qt ones
+    quint8 m_localIPv4Address[4];
+    quint8 m_remoteIPv4Address[4];
+    quint16 m_localPort;
+    quint16 m_remotePort;
+    quint16 m_protocol;
+    quint8 m_staticIPAddress;
+    quint8 m_gateway[4];
+    quint8 m_netmask[4];
+public:
+    QEFIDevicePathMessageIPv4Addr(quint8 *localIPv4Addr, quint8 *remoteIPv4Addr,
+        quint16 localPort, quint16 remotePort, quint16 protocol,
+        quint8 staticIPAddr, quint8 gateway[4], quint8 netmask[4]);
+};
+
+class QEFIDevicePathMessageIPv6Addr : public QEFIDevicePathMessage {
+protected:
+    // TODO: Replace IP address to the Qt ones
+    quint8 m_localIPv6Address[16];
+    quint8 m_remoteIPv6Address[16];
+    quint16 m_localPort;
+    quint16 m_remotePort;
+    quint16 m_protocol;
+    quint8 m_ipAddressOrigin;
+    quint8 m_prefixLength;
+    quint8 m_gatewayIPv6Address;
+public:
+    QEFIDevicePathMessageIPv6Addr(quint8 *localIPv6Addr, quint8 *remoteIPv6Addr,
+        quint16 localPort, quint16 remotePort, quint16 protocol,
+        quint8 ipAddrOrigin, quint8 prefixLength, quint8 gatewayIPv6Addr);
+};
+
+class QEFIDevicePathMessageUART : public QEFIDevicePathMessage {
+protected:
+    quint32 m_reserved;
+    quint64 m_baudRate;
+    quint8 m_dataBits;
+    quint8 m_parity;
+    quint8 m_stopBits;
+public:
+    QEFIDevicePathMessageUART(quint32 reserved, quint64 baudRate,
+        quint8 dataBits, quint8 parity, quint8 stopBits);
+};
+
+class QEFIDevicePathMessageUSBClass : public QEFIDevicePathMessage {
+protected:
+    quint16 m_vendorId;
+    quint16 m_productId;
+    quint8 m_deviceClass;
+    quint8 m_deviceSubclass;
+    quint8 m_deviceProtocol;
+public:
+    QEFIDevicePathMessageUSBClass(quint16 vendorId, quint16 productId,
+        quint8 deviceClass, quint8 deviceSubclass,
+        quint8 deviceProtocol);
+};
+
+class QEFIDevicePathMessageUSBWWID : public QEFIDevicePathMessage {
+protected:
+    quint16 m_vendorId;
+    quint16 m_productId;
+    QList<quint16> m_serialNumber;  // TODO: Clarify the SN length
+public:
+    QEFIDevicePathMessageUSBWWID(quint16 vendorId, quint16 productId,
+        quint16 *sn);
+};
+
+class QEFIDevicePathMessageLUN : public QEFIDevicePathMessage {
+protected:
+    quint8 m_lun;
+public:
+    QEFIDevicePathMessageLUN(quint8 lun);
+};
+
+class QEFIDevicePathMessageSATA : public QEFIDevicePathMessage {
+protected:
+    quint16 m_hbaPort;
+    quint16 m_portMultiplierPort;
+    quint16 m_lun;
+public:
+    QEFIDevicePathMessageSATA(quint16 hbaPort,
+        quint16 portMultiplierPor, quint8 lun);
+};
+
+class QEFIDevicePathMessageISCSI : public QEFIDevicePathMessage {
+protected:
+    quint16 m_protocol;
+    quint16 m_options;
+    quint8 m_lun[8];
+    quint16 m_tpgt;
+    QString m_targetName;
+public:
+    QEFIDevicePathMessageISCSI(quint16 protocol, quint16 options,
+        quint8 *lun, quint16 tpgt, QString targetName);
+};
+
+class QEFIDevicePathMessageVLAN : public QEFIDevicePathMessage {
+protected:
+    quint16 m_vlanID;
+public:
+    QEFIDevicePathMessageVLAN(quint16 vlanID);
+};
+
+class QEFIDevicePathMessageFibreChanEx : public QEFIDevicePathMessage {
+protected:
+    quint32 m_reserved;
+    quint8 m_wwn[8];
+    quint8 m_lun[8];
+public:
+    QEFIDevicePathMessageFibreChanEx(quint32 reserved,
+        quint8 *wwn, quint8 *lun);
+};
+
+class QEFIDevicePathMessageSASEx : public QEFIDevicePathMessage {
+protected:
+    quint8 m_sasAddress[8];
+    quint8 m_lun[8];
+    quint8 m_deviceTopologyInfo;
+    quint8 m_driveBayID; /* If EFIDP_SAS_TOPOLOGY_NEXTBYTE set */
+    quint16 m_rtp;
+public:
+    QEFIDevicePathMessageSASEx(quint8 *sasAddress, quint8 *lun,
+        quint8 deviceTopologyInfo, quint8 driveBayID, quint16 rtp);
+};
+
+class QEFIDevicePathMessageNVME : public QEFIDevicePathMessage {
+protected:
+    quint32 m_namespaceID;
+    quint8 m_ieeeEui64[8];
+public:
+    QEFIDevicePathMessageNVME(quint32 namespaceID,
+        quint8 *ieeeEui64);
+};
+
+class QEFIDevicePathMessageURI : public QEFIDevicePathMessage {
+protected:
+    QUrl m_uri;
+public:
+    QEFIDevicePathMessageURI(QUrl uri);
+};
+
+class QEFIDevicePathMessageUFS : public QEFIDevicePathMessage {
+protected:
+    quint8 m_targetID;
+    quint8 m_lun;
+public:
+    QEFIDevicePathMessageUFS(quint8 targetID, quint8 lun);
+};
+
+class QEFIDevicePathMessageSD : public QEFIDevicePathMessage {
+protected:
+    quint8 m_slotNumber;
+public:
+    QEFIDevicePathMessageSD(quint8 slotNumber);
+};
+
+class QEFIDevicePathMessageBT : public QEFIDevicePathMessage {
+protected:
+    quint8 m_address[6];
+public:
+    QEFIDevicePathMessageBT(quint8 *address);
+};
+
+class QEFIDevicePathMessageWiFi : public QEFIDevicePathMessage {
+protected:
+    QString m_ssid;
+public:
+    QEFIDevicePathMessageWiFi(QString ssid);
+};
+
+class QEFIDevicePathMessageEMMC : public QEFIDevicePathMessage {
+protected:
+    quint8 m_slotNumber;
+public:
+    QEFIDevicePathMessageEMMC(quint8 slot);
+};
+
+class QEFIDevicePathMessageBTLE : public QEFIDevicePathMessage {
+protected:
+    quint8 m_address[6];
+    quint8 m_addressType;
+public:
+    QEFIDevicePathMessageBTLE(quint8 *address, quint8 addressType);
+};
+
+class QEFIDevicePathMessageDNS : public QEFIDevicePathMessage {
+protected:
+    // TODO: Add or remove DNS
+public:
+    QEFIDevicePathMessageDNS();
+};
+
+class QEFIDevicePathMessageNVDIMM : public QEFIDevicePathMessage {
+protected:
+    QUuid m_uuid;
+public:
+    QEFIDevicePathMessageNVDIMM(QUuid uuid);
+};
 
 // Subclasses for media
 class QEFIDevicePathMediaHD : public QEFIDevicePathMedia {

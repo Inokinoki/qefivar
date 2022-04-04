@@ -821,3 +821,197 @@ QEFIDevicePathMediaRAMDisk::QEFIDevicePathMediaRAMDisk(
     : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_RamDisk),
     m_startAddress(startAddress), m_endAddress(endAddress),
     m_disktTypeGuid(disktTypeGuid), m_instanceNumber(instanceNumber) {}
+
+// Subclasses for message
+QEFIDevicePathMessageATAPI::QEFIDevicePathMessageATAPI(
+    quint8 primary, quint8 slave, quint16 lun)
+    : QEFIDevicePathMessage(MSG_ATAPI),
+    m_primary(primary), m_slave(slave), m_lun(lun) {}
+
+QEFIDevicePathMessageSCSI::QEFIDevicePathMessageSCSI(
+    quint16 target, quint16 lun)
+    : QEFIDevicePathMessage(MSG_SCSI),
+    m_target(target), m_lun(lun) {}
+
+QEFIDevicePathMessageFibreChan::QEFIDevicePathMessageFibreChan(
+    quint32 reserved, quint64 wwn, quint64 lun)
+    : QEFIDevicePathMessage(MSG_FibreChan),
+    m_reserved(reserved), m_wwn(wwn), m_lun(lun) {}
+
+QEFIDevicePathMessage1394::QEFIDevicePathMessage1394(
+    quint32 reserved, quint64 guid)
+    : QEFIDevicePathMessage(MSG_1394),
+    m_reserved(reserved), m_guid(guid) {}
+
+QEFIDevicePathMessageUSB::QEFIDevicePathMessageUSB(
+    quint8 parentPort, quint8 interface)
+    : QEFIDevicePathMessage(MSG_USB),
+    m_parentPort(parentPort), m_interface(interface) {}
+
+QEFIDevicePathMessageI2O::QEFIDevicePathMessageI2O(quint32 target)
+    : QEFIDevicePathMessage(MSG_I2O), m_target(target) {}
+
+// TODO: Add MSG_InfiniBand  = 0x09
+
+QEFIDevicePathMessageVendor::QEFIDevicePathMessageVendor(
+    QUuid vendorGuid, QByteArray vendorData)
+    : QEFIDevicePathMessage(MSG_Vendor),
+    m_vendorGuid(vendorGuid), m_vendorData(vendorData) {}
+
+QEFIDevicePathMessageMACAddr::QEFIDevicePathMessageMACAddr(
+    quint8 *macAddress, quint8 interfaceType)
+    : QEFIDevicePathMessage(MSG_MACAddr),
+    m_interfaceType(interfaceType)
+{
+    for (int i = 0; i < 32; i++) {
+        m_macAddress[i] = macAddress[i];
+    }
+}
+
+QEFIDevicePathMessageIPv4Addr::QEFIDevicePathMessageIPv4Addr(
+    quint8 *localIPv4Addr, quint8 *remoteIPv4Addr,
+    quint16 localPort, quint16 remotePort, quint16 protocol,
+    quint8 staticIPAddr, quint8 *gateway, quint8 *netmask)
+    : QEFIDevicePathMessage(MSG_IPv4),
+    m_localPort(localPort), m_remotePort(remotePort),
+    m_protocol(protocol), m_staticIPAddress(staticIPAddr)
+{
+    for (int i = 0; i < 4; i++) {
+        m_localIPv4Address[i] = localIPv4Addr[i];
+        m_remoteIPv4Address[i] = remoteIPv4Addr[i];
+        m_gateway[i] = gateway[i];
+        m_netmask[i] = netmask[i];
+    }
+}
+
+QEFIDevicePathMessageIPv6Addr::QEFIDevicePathMessageIPv6Addr(
+    quint8 *localIPv6Addr, quint8 *remoteIPv6Addr,
+    quint16 localPort, quint16 remotePort, quint16 protocol,
+    quint8 ipAddrOrigin, quint8 prefixLength, quint8 gatewayIPv6Addr)
+    : QEFIDevicePathMessage(MSG_IPv6),
+    m_localPort(localPort), m_remotePort(remotePort),
+    m_protocol(protocol), m_ipAddressOrigin(ipAddrOrigin),
+    m_prefixLength(prefixLength),
+    m_gatewayIPv6Address(gatewayIPv6Addr)
+{
+    for (int i = 0; i < 16; i++) {
+        m_localIPv6Address[i] = localIPv6Addr[i];
+        m_remoteIPv6Address[i] = remoteIPv6Addr[i];
+    }
+}
+
+QEFIDevicePathMessageUART::QEFIDevicePathMessageUART(
+    quint32 reserved, quint64 baudRate, quint8 dataBits,
+    quint8 parity, quint8 stopBits)
+    : QEFIDevicePathMessage(MSG_UART),
+    m_reserved(reserved), m_baudRate(baudRate),
+    m_dataBits(dataBits), m_parity(parity),
+    m_stopBits(stopBits) {}
+
+QEFIDevicePathMessageUSBClass::QEFIDevicePathMessageUSBClass(
+    quint16 vendorId, quint16 productId, quint8 deviceClass,
+    quint8 deviceSubclass, quint8 deviceProtocol)
+    : QEFIDevicePathMessage(MSG_USBClass),
+    m_vendorId(vendorId), m_productId(productId),
+    m_deviceClass(deviceClass), m_deviceSubclass(deviceSubclass),
+    m_deviceProtocol(deviceProtocol) {}
+
+QEFIDevicePathMessageUSBWWID::QEFIDevicePathMessageUSBWWID(
+    quint16 vendorId, quint16 productId, quint16 *sn)
+    : QEFIDevicePathMessage(MSG_USBWWID),
+    m_vendorId(vendorId), m_productId(productId)
+{
+    // TODO: Clarify the SN length
+}
+
+QEFIDevicePathMessageLUN::QEFIDevicePathMessageLUN(quint8 lun)
+    : QEFIDevicePathMessage(MSG_LUN), m_lun(lun) {}
+
+QEFIDevicePathMessageSATA::QEFIDevicePathMessageSATA(
+    quint16 hbaPort, quint16 portMultiplierPort, quint8 lun)
+    : QEFIDevicePathMessage(MSG_SATA), m_hbaPort(hbaPort),
+    m_portMultiplierPort(portMultiplierPort), m_lun(lun) {}
+
+QEFIDevicePathMessageISCSI::QEFIDevicePathMessageISCSI(
+    quint16 protocol, quint16 options, quint8 *lun,
+    quint16 tpgt, QString targetName)
+    : QEFIDevicePathMessage(MSG_ISCSI),
+    m_protocol(protocol), m_options(options),
+    m_tpgt(tpgt), m_targetName(targetName)
+{
+    for (int i = 0; i < 8; i++) {
+        m_lun[i] = lun[i];
+    }
+};
+
+QEFIDevicePathMessageVLAN::QEFIDevicePathMessageVLAN(quint16 vlanID)
+    : QEFIDevicePathMessage(MSG_VLAN), m_vlanID(vlanID) {}
+
+QEFIDevicePathMessageFibreChanEx::QEFIDevicePathMessageFibreChanEx(
+    quint32 reserved, quint8 *wwn, quint8 *lun)
+    : QEFIDevicePathMessage(MSG_FibreChanEx), m_reserved(reserved)
+{
+    for (int i = 0; i < 8; i++) {
+        m_wwn[i] = wwn[i];
+        m_lun[i] = lun[i];
+    }
+}
+
+QEFIDevicePathMessageSASEx::QEFIDevicePathMessageSASEx(
+    quint8 *sasAddress, quint8 *lun, quint8 deviceTopologyInfo,
+    quint8 driveBayID, quint16 rtp)
+    : QEFIDevicePathMessage(MSG_SASEX),
+    m_deviceTopologyInfo(deviceTopologyInfo),
+    m_driveBayID(driveBayID), m_rtp(rtp)
+{
+    for (int i = 0; i < 8; i++) {
+        m_sasAddress[i] = sasAddress[i];
+        m_lun[i] = lun[i];
+    }
+}
+
+QEFIDevicePathMessageNVME::QEFIDevicePathMessageNVME(
+    quint32 nid, quint8 *ieeeEui64)
+    : QEFIDevicePathMessage(MSG_NVME), m_namespaceID(nid)
+{
+    memcpy(m_ieeeEui64, ieeeEui64, sizeof(quint8) * 64);
+}
+
+QEFIDevicePathMessageURI::QEFIDevicePathMessageURI(QUrl uri)
+    : QEFIDevicePathMessage(MSG_URI), m_uri(uri) {}
+
+QEFIDevicePathMessageUFS::QEFIDevicePathMessageUFS(
+    quint8 targetID, quint8 lun)
+    : QEFIDevicePathMessage(MSG_UFS),
+    m_targetID(targetID), m_lun(lun) {}
+
+QEFIDevicePathMessageSD::QEFIDevicePathMessageSD(quint8 slot)
+    : QEFIDevicePathMessage(MSG_SD), m_slotNumber(slot) {}
+
+QEFIDevicePathMessageBT::QEFIDevicePathMessageBT(quint8 *address)
+    : QEFIDevicePathMessage(MSG_BT)
+{
+    for (int i = 0; i < 6; i++)
+        m_address[i] = address[i];
+}
+
+QEFIDevicePathMessageWiFi::QEFIDevicePathMessageWiFi(QString ssid)
+    : QEFIDevicePathMessage(MSG_WiFi), m_ssid(ssid) {}
+
+QEFIDevicePathMessageEMMC::QEFIDevicePathMessageEMMC(quint8 slot)
+    : QEFIDevicePathMessage(MSG_EMMC), m_slotNumber(slot) {}
+
+QEFIDevicePathMessageBTLE::QEFIDevicePathMessageBTLE(
+    quint8 *address, quint8 addressType)
+    : QEFIDevicePathMessage(MSG_BTLE),
+    m_addressType(addressType)
+{
+    for (int i = 0; i < 6; i++)
+        m_address[i] = address[i];
+}
+
+QEFIDevicePathMessageDNS::QEFIDevicePathMessageDNS()
+    : QEFIDevicePathMessage(MSG_DNS) {}
+
+QEFIDevicePathMessageNVDIMM::QEFIDevicePathMessageNVDIMM(QUuid uuid)
+    : QEFIDevicePathMessage(MSG_NVDIMM), m_uuid(uuid) {}
