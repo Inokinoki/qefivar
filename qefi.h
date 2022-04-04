@@ -136,6 +136,8 @@ protected:
         : m_type(type), m_subType(subType) {}
 public:
     virtual ~QEFIDevicePath() {}
+    QEFIDevicePathType type() const { return m_type; }
+    quint8 subType() const { return m_subType; }
 };
 
 class QEFIDevicePathHardware : public QEFIDevicePath
@@ -189,6 +191,9 @@ public:
         m_deviceType(deviceType), m_status(status),
         m_description(description) {}
     virtual ~QEFIDevicePathBIOSBoot() {}
+    quint16 deviceType() const { return m_deviceType; }
+    quint16 status() const { return m_status; }
+    QByteArray description() const { return m_description; }
 };
 
 // Load option
@@ -218,6 +223,8 @@ protected:
     quint8 m_device;
 public:
     QEFIDevicePathHardwarePCI(quint8 function, quint8 device);
+    quint8 function() const { return m_function; }
+    quint8 device() const { return m_device; }
 };
 
 class QEFIDevicePathHardwarePCCard : public QEFIDevicePathHardware {
@@ -225,6 +232,7 @@ protected:
     quint8 m_function;
 public:
     QEFIDevicePathHardwarePCCard(quint8 function);
+    quint8 function() const { return m_function; }
 };
 
 class QEFIDevicePathHardwareMMIO : public QEFIDevicePathHardware {
@@ -235,6 +243,9 @@ protected:
 public:
     QEFIDevicePathHardwareMMIO(quint32 memoryType,
         quint64 startingAddress, quint64 endingAddress);
+    quint32 memoryType() const { return m_memoryType; }
+    quint64 startingAddress() const { return m_startingAddress; }
+    quint64 endingAddress() const { return m_endingAddress; }
 };
 
 class QEFIDevicePathHardwareVendor : public QEFIDevicePathHardware {
@@ -243,6 +254,8 @@ protected:
     QByteArray m_vendorData;
 public:
     QEFIDevicePathHardwareVendor(QUuid vendorGuid, QByteArray vendorData);
+    QUuid vendorGuid() const { return m_vendorGuid; }
+    QByteArray vendorData() const { return m_vendorData; }
 };
 
 class QEFIDevicePathHardwareController : public QEFIDevicePathHardware {
@@ -250,6 +263,7 @@ protected:
     quint32 m_controller;
 public:
     QEFIDevicePathHardwareController(quint32 controller);
+    quint32 controller() const { return m_controller; }
 };
 
 class QEFIDevicePathHardwareBMC : public QEFIDevicePathHardware {
@@ -258,6 +272,8 @@ protected:
 	quint64 m_baseAddress;
 public:
     QEFIDevicePathHardwareBMC(quint8 interfaceType, quint64 baseAddress);
+    quint8 interfaceType() const { return m_interfaceType; }
+    quint64 baseAddress() const { return m_baseAddress; }
 };
 
 // Subclasses for ACPI
@@ -267,6 +283,8 @@ protected:
 	quint32 m_uid;
 public:
     QEFIDevicePathACPIHID(quint32 hid, quint32 uid);
+    quint32 hid() const { return m_hid; }
+    quint32 uid() const { return m_uid; }
 };
 
 class QEFIDevicePathACPIHIDEX : public QEFIDevicePathACPI {
@@ -281,6 +299,12 @@ public:
     QEFIDevicePathACPIHIDEX(quint32 hid, quint32 uid,
         quint32 cid, QString hidString,
         QString uidString, QString cidString);
+    quint32 hid() const { return m_hid; }
+    quint32 uid() const { return m_uid; }
+    quint32 cid() const { return m_cid; }
+    QString hidString() const { return m_hidString; }
+    QString uidString() const { return m_uidString; }
+    QString cidString() const { return m_cidString; }
 };
 
 class QEFIDevicePathACPIADR : public QEFIDevicePathACPI {
@@ -305,6 +329,12 @@ protected:
 public:
     QEFIDevicePathMediaHD(quint32 partitionNumber, quint64 start, quint64 size,
         quint8 *signature, quint8 format, quint8 signatureType);
+    quint32 partitionNumber() const { return m_partitionNumber; }
+    quint64 start() const { return m_start; }
+    quint64 size() const { return m_size; }
+    // TODO: Get signature according to signature type
+    quint8 format() const { return m_format; }
+    quint8 signatureType() const { return m_signatureType; }
 };
 
 class QEFIDevicePathMediaCDROM : public QEFIDevicePathMedia {
@@ -314,6 +344,9 @@ protected:
 	quint64 m_sectors;
 public:
     QEFIDevicePathMediaCDROM(quint32 entry, quint64 partitionRba, quint64 sectors);
+    quint32 bootCatalogEntry() const { return m_bootCatalogEntry; }
+    quint64 partitionRba() const { return m_partitionRba; }
+    quint64 sectors() const { return m_sectors; }
 };
 
 class QEFIDevicePathMediaVendor : public QEFIDevicePathMedia {
@@ -322,6 +355,8 @@ protected:
     QByteArray m_vendorData;
 public:
     QEFIDevicePathMediaVendor(QUuid vendorGuid, QByteArray vendorData);
+    QUuid vendorGuid() const { return m_vendorGuid; }
+    QByteArray vendorData() const { return m_vendorData; }
 };
 
 class QEFIDevicePathMediaFile : public QEFIDevicePathMedia {
@@ -337,6 +372,7 @@ protected:
     QUuid m_protocolGuid;
 public:
     QEFIDevicePathMediaProtocol(QUuid protocolGuid);
+    QUuid protocolGuid() const { return m_protocolGuid; }
 };
 
 class QEFIDevicePathMediaFirmwareFile : public QEFIDevicePathMedia {
@@ -344,6 +380,7 @@ protected:
     QByteArray m_piInfo;
 public:
     QEFIDevicePathMediaFirmwareFile(QByteArray piInfo);
+    QByteArray piInfo() const { return m_piInfo; }
 };
 
 class QEFIDevicePathMediaFirmwareVolume : public QEFIDevicePathMedia {
@@ -351,6 +388,7 @@ protected:
     QByteArray m_piInfo;
 public:
     QEFIDevicePathMediaFirmwareVolume(QByteArray piInfo);
+    QByteArray piInfo() const { return m_piInfo; }
 };
 
 class QEFIDevicePathMediaRelativeOffset : public QEFIDevicePathMedia {
@@ -361,6 +399,9 @@ protected:
 public:
     QEFIDevicePathMediaRelativeOffset(quint32 reserved,
         quint64 firstByte, quint64 lastByte);
+    quint32 reserved() const { return m_reserved; }
+    quint64 firstByte() const { return m_firstByte; }
+    quint64 lastByte() const { return m_lastByte; }
 };
 
 class QEFIDevicePathMediaRAMDisk : public QEFIDevicePathMedia {
@@ -372,6 +413,10 @@ protected:
 public:
     QEFIDevicePathMediaRAMDisk(quint64 startAddress, quint64 endAddress,
         QUuid disktTypeGuid, quint16 instanceNumber);
+    quint64 startAddress() const { return m_startAddress; }
+    quint64 endAddress() const { return m_endAddress; }
+    QUuid disktTypeGuid() const { return m_disktTypeGuid; }
+    quint16 instanceNumber() const { return m_instanceNumber; }
 };
 
 #endif // QEFI_H
