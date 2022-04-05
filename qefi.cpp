@@ -921,15 +921,15 @@ quint8 QEFIDevicePathMessageUSB::parentPort() const
     return m_parentPort;
 }
 
-quint8 QEFIDevicePathMessageUSB::interface() const
+quint8 QEFIDevicePathMessageUSB::usbInterface() const
 {
     return m_interface;
 }
 
 QEFIDevicePathMessageUSB::QEFIDevicePathMessageUSB(
-        quint8 parentPort, quint8 interface)
+        quint8 parentPort, quint8 inter)
     : QEFIDevicePathMessage(MSG_USB),
-    m_parentPort(parentPort), m_interface(interface) {}
+    m_parentPort(parentPort), m_interface(inter) {}
 
 quint32 QEFIDevicePathMessageI2O::target() const
 {
