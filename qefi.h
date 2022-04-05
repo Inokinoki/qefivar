@@ -324,6 +324,9 @@ protected:
     quint16 m_lun;
 public:
     QEFIDevicePathMessageATAPI(quint8 primary, quint8 slave, quint16 lun);
+    quint8 primary() const;
+    quint8 slave() const;
+    quint16 lun() const;
 };
 
 class QEFIDevicePathMessageSCSI : public QEFIDevicePathMessage {
@@ -332,6 +335,8 @@ protected:
     quint16 m_lun;
 public:
     QEFIDevicePathMessageSCSI(quint16 m_target, quint16 lun);
+    quint16 target() const;
+    quint16 lun() const;
 };
 
 class QEFIDevicePathMessageFibreChan : public QEFIDevicePathMessage {
@@ -342,6 +347,9 @@ protected:
 public:
     QEFIDevicePathMessageFibreChan(quint32 reserved, quint64 wwn,
         quint64 lun);
+    quint32 reserved() const;
+    quint64 wwn() const;
+    quint64 lun() const;
 };
 
 class QEFIDevicePathMessage1394 : public QEFIDevicePathMessage {
@@ -350,6 +358,8 @@ protected:
     quint64 m_guid;
 public:
     QEFIDevicePathMessage1394(quint32 reserved, quint64 guid);
+    quint32 reserved() const;
+    quint64 guid() const;
 };
 
 class QEFIDevicePathMessageUSB : public QEFIDevicePathMessage {
@@ -358,6 +368,8 @@ protected:
     quint8 m_interface;
 public:
     QEFIDevicePathMessageUSB(quint8 parentPort, quint8 interface);
+    quint8 parentPort() const;
+    quint8 interface() const;
 };
 
 class QEFIDevicePathMessageI2O : public QEFIDevicePathMessage {
@@ -365,6 +377,7 @@ protected:
     quint32 m_target;
 public:
     QEFIDevicePathMessageI2O(quint32 target);
+    quint32 target() const;
 };
 
 // TODO: Add MSG_InfiniBand  = 0x09
@@ -375,6 +388,8 @@ protected:
     QByteArray m_vendorData;
 public:
     QEFIDevicePathMessageVendor(QUuid vendorGuid, QByteArray vendorData);
+    QUuid vendorGuid() const;
+    QByteArray vendorData() const;
 };
 
 class QEFIDevicePathMessageMACAddr : public QEFIDevicePathMessage {
@@ -383,6 +398,7 @@ protected:
     quint8 m_interfaceType;
 public:
     QEFIDevicePathMessageMACAddr(quint8 *macAddress, quint8 interfaceType);
+    quint8 interfaceType() const;
 };
 
 class QEFIDevicePathMessageIPv4Addr : public QEFIDevicePathMessage {
@@ -400,6 +416,10 @@ public:
     QEFIDevicePathMessageIPv4Addr(quint8 *localIPv4Addr, quint8 *remoteIPv4Addr,
         quint16 localPort, quint16 remotePort, quint16 protocol,
         quint8 staticIPAddr, quint8 gateway[4], quint8 netmask[4]);
+    quint16 localPort() const;
+    quint16 remotePort() const;
+    quint16 protocol() const;
+    quint8 staticIPAddress() const;
 };
 
 class QEFIDevicePathMessageIPv6Addr : public QEFIDevicePathMessage {
@@ -417,6 +437,12 @@ public:
     QEFIDevicePathMessageIPv6Addr(quint8 *localIPv6Addr, quint8 *remoteIPv6Addr,
         quint16 localPort, quint16 remotePort, quint16 protocol,
         quint8 ipAddrOrigin, quint8 prefixLength, quint8 gatewayIPv6Addr);
+    quint16 localPort() const;
+    quint16 remotePort() const;
+    quint16 protocol() const;
+    quint8 ipAddressOrigin() const;
+    quint8 prefixLength() const;
+    quint8 gatewayIPv6Address() const;
 };
 
 class QEFIDevicePathMessageUART : public QEFIDevicePathMessage {
@@ -429,6 +455,11 @@ protected:
 public:
     QEFIDevicePathMessageUART(quint32 reserved, quint64 baudRate,
         quint8 dataBits, quint8 parity, quint8 stopBits);
+    quint32 reserved() const;
+    quint64 baudRate() const;
+    quint8 dataBits() const;
+    quint8 parity() const;
+    quint8 stopBits() const;
 };
 
 class QEFIDevicePathMessageUSBClass : public QEFIDevicePathMessage {
@@ -442,6 +473,11 @@ public:
     QEFIDevicePathMessageUSBClass(quint16 vendorId, quint16 productId,
         quint8 deviceClass, quint8 deviceSubclass,
         quint8 deviceProtocol);
+    quint16 vendorId() const;
+    quint16 productId() const;
+    quint8 deviceClass() const;
+    quint8 deviceSubclass() const;
+    quint8 deviceProtocol() const;
 };
 
 class QEFIDevicePathMessageUSBWWID : public QEFIDevicePathMessage {
@@ -452,6 +488,8 @@ protected:
 public:
     QEFIDevicePathMessageUSBWWID(quint16 vendorId, quint16 productId,
         quint16 *sn);
+    quint16 vendorId() const;
+    quint16 productId() const;
 };
 
 class QEFIDevicePathMessageLUN : public QEFIDevicePathMessage {
@@ -459,6 +497,7 @@ protected:
     quint8 m_lun;
 public:
     QEFIDevicePathMessageLUN(quint8 lun);
+    quint8 lun() const;
 };
 
 class QEFIDevicePathMessageSATA : public QEFIDevicePathMessage {
@@ -469,6 +508,9 @@ protected:
 public:
     QEFIDevicePathMessageSATA(quint16 hbaPort,
         quint16 portMultiplierPor, quint8 lun);
+    quint16 hbaPort() const;
+    quint16 portMultiplierPort() const;
+    quint16 lun() const;
 };
 
 class QEFIDevicePathMessageISCSI : public QEFIDevicePathMessage {
@@ -481,6 +523,10 @@ protected:
 public:
     QEFIDevicePathMessageISCSI(quint16 protocol, quint16 options,
         quint8 *lun, quint16 tpgt, QString targetName);
+    quint16 protocol() const;
+    quint16 options() const;
+    quint16 tpgt() const;
+    QString targetName() const;
 };
 
 class QEFIDevicePathMessageVLAN : public QEFIDevicePathMessage {
@@ -488,6 +534,7 @@ protected:
     quint16 m_vlanID;
 public:
     QEFIDevicePathMessageVLAN(quint16 vlanID);
+    quint16 vlanID() const;
 };
 
 class QEFIDevicePathMessageFibreChanEx : public QEFIDevicePathMessage {
@@ -510,6 +557,9 @@ protected:
 public:
     QEFIDevicePathMessageSASEx(quint8 *sasAddress, quint8 *lun,
         quint8 deviceTopologyInfo, quint8 driveBayID, quint16 rtp);
+    quint8 deviceTopologyInfo() const;
+    quint8 driveBayID() const;
+    quint16 rtp() const;
 };
 
 class QEFIDevicePathMessageNVME : public QEFIDevicePathMessage {
@@ -519,6 +569,7 @@ protected:
 public:
     QEFIDevicePathMessageNVME(quint32 namespaceID,
         quint8 *ieeeEui64);
+    quint32 namespaceID() const;
 };
 
 class QEFIDevicePathMessageURI : public QEFIDevicePathMessage {
@@ -526,6 +577,7 @@ protected:
     QUrl m_uri;
 public:
     QEFIDevicePathMessageURI(QUrl uri);
+    QUrl uri() const;
 };
 
 class QEFIDevicePathMessageUFS : public QEFIDevicePathMessage {
@@ -534,6 +586,8 @@ protected:
     quint8 m_lun;
 public:
     QEFIDevicePathMessageUFS(quint8 targetID, quint8 lun);
+    quint8 targetID() const;
+    quint8 lun() const;
 };
 
 class QEFIDevicePathMessageSD : public QEFIDevicePathMessage {
@@ -541,6 +595,7 @@ protected:
     quint8 m_slotNumber;
 public:
     QEFIDevicePathMessageSD(quint8 slotNumber);
+    quint8 slotNumber() const;
 };
 
 class QEFIDevicePathMessageBT : public QEFIDevicePathMessage {
@@ -555,6 +610,7 @@ protected:
     QString m_ssid;
 public:
     QEFIDevicePathMessageWiFi(QString ssid);
+    QString ssid() const;
 };
 
 class QEFIDevicePathMessageEMMC : public QEFIDevicePathMessage {
@@ -562,6 +618,7 @@ protected:
     quint8 m_slotNumber;
 public:
     QEFIDevicePathMessageEMMC(quint8 slot);
+    quint8 slotNumber() const;
 };
 
 class QEFIDevicePathMessageBTLE : public QEFIDevicePathMessage {
@@ -570,6 +627,7 @@ protected:
     quint8 m_addressType;
 public:
     QEFIDevicePathMessageBTLE(quint8 *address, quint8 addressType);
+    quint8 addressType() const;
 };
 
 class QEFIDevicePathMessageDNS : public QEFIDevicePathMessage {
@@ -584,6 +642,7 @@ protected:
     QUuid m_uuid;
 public:
     QEFIDevicePathMessageNVDIMM(QUuid uuid);
+    QUuid uuid() const;
 };
 
 // Subclasses for media
