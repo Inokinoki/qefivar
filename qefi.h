@@ -367,9 +367,9 @@ protected:
     quint8 m_parentPort;
     quint8 m_interface;
 public:
-    QEFIDevicePathMessageUSB(quint8 parentPort, quint8 interface);
+    QEFIDevicePathMessageUSB(quint8 parentPort, quint8 inter);
     quint8 parentPort() const;
-    quint8 interface() const;
+    quint8 usbInterface() const;
 };
 
 class QEFIDevicePathMessageI2O : public QEFIDevicePathMessage {
