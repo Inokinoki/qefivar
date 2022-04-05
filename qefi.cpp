@@ -774,10 +774,33 @@ QEFIDevicePathMediaHD::QEFIDevicePathMediaHD(quint32 partitionNumber,
     quint8 format, quint8 signatureType)
     : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_HD),
     m_partitionNumber(partitionNumber), m_start(start), m_size(size),
-    m_format(format), m_signatureType(signatureType)
+    m_format(format), m_signatureType(signatureType), m_gptGuid()
 {
     for (int i = 0; i < 16; i++) {
         m_signature[i] = signature[i];
+    }
+
+    m_mbrSignature = 0;
+    switch (m_signatureType) {
+        case QEFIDevicePathMediaHDSignatureType::GUID:
+            // TODO: Create a standalone function to create UUID
+            m_gptGuid = QUuid((uint)((uint)m_signature[0] |
+                    (uint)m_signature[1] << 8 |
+                    (uint)m_signature[2] << 16 |
+                    (uint)m_signature[3] << 24),    // LE
+                (ushort)m_signature[4] | (ushort)m_signature[5] << 8, // LE
+                (ushort)m_signature[6] | (ushort)m_signature[7] << 8, // LE
+                (uchar)m_signature[8], (uchar)m_signature[9],   // BE
+                (uchar)m_signature[10], (uchar)m_signature[11],
+                (uchar)m_signature[12], (uchar)m_signature[13],
+                (uchar)m_signature[14], (uchar)m_signature[15]);
+        break;
+        case QEFIDevicePathMediaHDSignatureType::MBR:
+            m_mbrSignature = (quint32)m_signature[0] |
+                (quint32)m_signature[1] << 8 |
+                (quint32)m_signature[2] << 16 |
+                (quint32)m_signature[3] << 24;
+        break;
     }
 }
 
