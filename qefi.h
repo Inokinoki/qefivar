@@ -398,8 +398,8 @@ protected:
     quint8 m_netmask[4];
 public:
     QEFIDevicePathMessageIPv4Addr(quint8 *localIPv4Addr, quint8 *remoteIPv4Addr,
-        quint16 m_localPort, quint16 m_remotePort, quint16 m_protocol,
-        quint8 m_staticIPAddr, quint8 m_gateway[4], quint8 m_netmask[4]);
+        quint16 localPort, quint16 remotePort, quint16 protocol,
+        quint8 staticIPAddr, quint8 gateway[4], quint8 netmask[4]);
 };
 
 class QEFIDevicePathMessageIPv6Addr : public QEFIDevicePathMessage {
@@ -415,7 +415,7 @@ protected:
     quint8 m_gatewayIPv6Address;
 public:
     QEFIDevicePathMessageIPv6Addr(quint8 *localIPv6Addr, quint8 *remoteIPv6Addr,
-        quint16 m_localPort, quint16 m_remotePort, quint16 m_protocol,
+        quint16 localPort, quint16 remotePort, quint16 protocol,
         quint8 ipAddrOrigin, quint8 prefixLength, quint8 gatewayIPv6Addr);
 };
 
@@ -463,11 +463,12 @@ public:
 
 class QEFIDevicePathMessageSATA : public QEFIDevicePathMessage {
 protected:
-    uint16_t m_hbaPort;
-    uint16_t m_portMultiplierPort;
+    quint16 m_hbaPort;
+    quint16 m_portMultiplierPort;
     quint16 m_lun;
 public:
-    QEFIDevicePathMessageSATA(quint8 lun);
+    QEFIDevicePathMessageSATA(quint16 hbaPort,
+        quint16 portMultiplierPor, quint8 lun);
 };
 
 class QEFIDevicePathMessageISCSI : public QEFIDevicePathMessage {
@@ -551,16 +552,16 @@ public:
 
 class QEFIDevicePathMessageWiFi : public QEFIDevicePathMessage {
 protected:
-    quint8 m_ssid[32];
+    QString m_ssid;
 public:
-    QEFIDevicePathMessageWiFi(quint8 *ssid);
+    QEFIDevicePathMessageWiFi(QString ssid);
 };
 
 class QEFIDevicePathMessageEMMC : public QEFIDevicePathMessage {
 protected:
     quint8 m_slotNumber;
 public:
-    QEFIDevicePathMessageEMMC(quint8 slotNumber);
+    QEFIDevicePathMessageEMMC(quint8 slot);
 };
 
 class QEFIDevicePathMessageBTLE : public QEFIDevicePathMessage {
@@ -580,7 +581,7 @@ public:
 
 class QEFIDevicePathMessageNVDIMM : public QEFIDevicePathMessage {
 protected:
-    QUuid uuid;
+    QUuid m_uuid;
 public:
     QEFIDevicePathMessageNVDIMM(QUuid uuid);
 };
