@@ -654,15 +654,31 @@ protected:
 	quint8 m_signature[16];
 	quint8 m_format;
 	quint8 m_signatureType;
+    QUuid m_gptGuid;
+    quint32 m_mbrSignature;
 public:
     QEFIDevicePathMediaHD(quint32 partitionNumber, quint64 start, quint64 size,
         quint8 *signature, quint8 format, quint8 signatureType);
     quint32 partitionNumber() const { return m_partitionNumber; }
     quint64 start() const { return m_start; }
     quint64 size() const { return m_size; }
-    // TODO: Get signature according to signature type
+
+    // Get signature according to signature type
+    QUuid gptGuid() const { return m_gptGuid; }
+    quint32 mbrSignature() const { return m_mbrSignature; }
+
     quint8 format() const { return m_format; }
     quint8 signatureType() const { return m_signatureType; }
+
+    enum QEFIDevicePathMediaHDFormat {
+        PCAT = 0x01,
+        GPT = 0x02
+    };
+    enum QEFIDevicePathMediaHDSignatureType {
+        NONE = 0x00,
+        MBR = 0x01,
+        GUID = 0x02
+    };
 };
 
 class QEFIDevicePathMediaCDROM : public QEFIDevicePathMedia {
