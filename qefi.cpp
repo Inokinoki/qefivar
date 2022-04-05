@@ -783,7 +783,7 @@ QEFIDevicePathMediaHD::QEFIDevicePathMediaHD(quint32 partitionNumber,
     m_mbrSignature = 0;
     switch (m_signatureType) {
         case QEFIDevicePathMediaHDSignatureType::GUID:
-            // TODO: Test the Guid format
+            // TODO: Create a standalone function to create UUID
             m_gptGuid = QUuid((uint)((uint)m_signature[0] |
                     (uint)m_signature[1] << 8 |
                     (uint)m_signature[2] << 16 |
