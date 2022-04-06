@@ -502,7 +502,7 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 #endif
 
 /* General functions */
-QString qefi_extract_name(QByteArray data)
+QString qefi_extract_name(const QByteArray &data)
 {
     QString entry_name;
     if (qefi_loadopt_is_valid(data)) {
@@ -515,7 +515,7 @@ QString qefi_extract_name(QByteArray data)
     return entry_name;
 }
 
-QString qefi_extract_path(QByteArray data)
+QString qefi_extract_path(const QByteArray &data)
 {
     QString path;
     if (qefi_loadopt_is_valid(data)) {
@@ -557,6 +557,17 @@ QString qefi_extract_path(QByteArray data)
         }
     }
     return path;
+}
+
+QByteArray qefi_extract_optional_data(const QByteArray &data)
+{
+    int optional_data_len = qefi_loadopt_optional_data_length(data);
+    if (optional_data_len > 0 && optional_data_len < data.size()) {
+        // The optional data lays on the tail of load option
+        return QByteArray(data.constData() +
+            (data.size() - optional_data_len), optional_data_len);
+    }
+    return QByteArray();
 }
 
 int qefi_loadopt_description_length(const QByteArray &data)
@@ -620,6 +631,7 @@ int qefi_loadopt_optional_data_length(const QByteArray &data)
     tempLength = qefi_loadopt_description_length(data);
     if (tempLength < 0) return -1;
     size -= tempLength;
+    size -= 2;  // Assume 0x00 0x00 after
 
     // The remainder is the optional data size
     return size;

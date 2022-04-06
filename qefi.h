@@ -23,8 +23,9 @@ QEFI_EXPORT QByteArray qefi_get_variable(QUuid uuid, QString name);
 QEFI_EXPORT void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value);
 QEFI_EXPORT void qefi_set_variable(QUuid uuid, QString name, QByteArray value);
 
-QEFI_EXPORT QString qefi_extract_name(QByteArray data);
-QEFI_EXPORT QString qefi_extract_path(QByteArray data);
+QEFI_EXPORT QString qefi_extract_name(const QByteArray &data);
+QEFI_EXPORT QString qefi_extract_path(const QByteArray &data);
+QEFI_EXPORT QByteArray qefi_extract_optional_data(const QByteArray &data);
 
 QEFI_EXPORT int qefi_loadopt_description_length(const QByteArray &data);
 QEFI_EXPORT int qefi_loadopt_dp_list_length(const QByteArray &data);
