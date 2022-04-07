@@ -85,7 +85,128 @@ QString qefi_parse_ucs2_string(quint8 *data, int max_size)
     return str;
 }
 
-QEFIDevicePath *qefi_parse_dp_hardware_file(struct qefi_device_path_header *dp, int dp_size)
+// Hardware parsing
+QEFIDevicePath *qefi_parse_dp_hardware_pci(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Hardware ||
+        dp->subtype != QEFIDevicePathHardwareSubType::HW_PCI)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    quint8 function = *dp_inner_pointer;
+    dp_inner_pointer += sizeof(quint8);
+    quint8 device = *dp_inner_pointer;
+    return new QEFIDevicePathHardwarePCI(function, device);
+}
+
+QEFIDevicePath *qefi_parse_dp_hardware_pccard(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Hardware ||
+        dp->subtype != QEFIDevicePathHardwareSubType::HW_PCCard)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    quint8 function = *dp_inner_pointer;
+    return new QEFIDevicePathHardwarePCCard(function);
+}
+
+QEFIDevicePath *qefi_parse_dp_hardware_mmio(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Hardware ||
+        dp->subtype != QEFIDevicePathHardwareSubType::HW_MMIO)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
+    quint32 memoryType = 
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint64 startingAddress =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 endingAddress =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    return new QEFIDevicePathHardwareMMIO(memoryType,
+        startingAddress, endingAddress);
+}
+
+QEFIDevicePath *qefi_parse_dp_hardware_vendor(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Hardware ||
+        dp->subtype != QEFIDevicePathHardwareSubType::HW_Vendor)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
+    dp_inner_pointer += 16;
+    QByteArray vendorData((char *)dp_inner_pointer, length - (dp_inner_pointer - (quint8 *)dp));
+    return new QEFIDevicePathHardwareVendor(vendorGuid, vendorData);
+}
+
+QEFIDevicePath *qefi_parse_dp_hardware_controller(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Hardware ||
+        dp->subtype != QEFIDevicePathHardwareSubType::HW_Controller)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    quint32 controller =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    return new QEFIDevicePathHardwareController(controller);
+}
+
+QEFIDevicePath *qefi_parse_dp_hardware_bmc(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Hardware ||
+        dp->subtype != QEFIDevicePathHardwareSubType::HW_BMC)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    quint8 interfaceType = *dp_inner_pointer;
+    dp_inner_pointer += sizeof(quint8);
+    quint64 baseAddress =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    return new QEFIDevicePathHardwareBMC(interfaceType, baseAddress);
+}
+
+// Media parsing
+QEFIDevicePath *qefi_parse_dp_media_file(struct qefi_device_path_header *dp, int dp_size)
 {
     if (dp_size < 4) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
@@ -100,7 +221,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_file(struct qefi_device_path_header *dp, 
         length - sizeof(struct qefi_device_path_header)));
 }
 
-QEFIDevicePath *qefi_parse_dp_hardware_hdd(struct qefi_device_path_header *dp, int dp_size)
+QEFIDevicePath *qefi_parse_dp_media_hdd(struct qefi_device_path_header *dp, int dp_size)
 {
     if (dp_size < 4) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
@@ -139,7 +260,27 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
     if (length != dp_size || length <= 0) return nullptr;
 
     if (type == QEFIDevicePathType::DP_Hardware) {
-        // TODO: Parse hardware
+        // Parse hardware
+        switch (subtype) {
+            case QEFIDevicePathHardwareSubType::HW_PCI:
+                qDebug() << "Parsing DP hardware PCI";
+                return qefi_parse_dp_hardware_pci(dp, length);
+            case QEFIDevicePathHardwareSubType::HW_PCCard:
+                qDebug() << "Parsing DP hardware PCCard";
+                return qefi_parse_dp_hardware_pccard(dp, length);
+            case QEFIDevicePathHardwareSubType::HW_MMIO:
+                qDebug() << "Parsing DP hardware MMIO";
+                return qefi_parse_dp_hardware_mmio(dp, length);
+            case QEFIDevicePathHardwareSubType::HW_Vendor:
+                qDebug() << "Parsing DP hardware Vendor";
+                return qefi_parse_dp_hardware_vendor(dp, length);
+            case QEFIDevicePathHardwareSubType::HW_Controller:
+                qDebug() << "Parsing DP hardware Controller";
+                return qefi_parse_dp_hardware_controller(dp, length);
+            case QEFIDevicePathHardwareSubType::HW_BMC:
+                qDebug() << "Parsing DP hardware BMC";
+                return qefi_parse_dp_hardware_bmc(dp, length);
+        }
     } else if (type == QEFIDevicePathType::DP_ACPI) {
         // TODO: Parse DP_ACPI
     } else if (type == QEFIDevicePathType::DP_Message) {
@@ -149,10 +290,10 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
         switch (subtype) {
             case QEFIDevicePathMediaSubType::MEDIA_HD:
                 qDebug() << "Parsing DP media HD";
-                return qefi_parse_dp_hardware_hdd(dp, length);
+                return qefi_parse_dp_media_hdd(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_File:
                 qDebug() << "Parsing DP media file";
-                return qefi_parse_dp_hardware_file(dp, length);
+                return qefi_parse_dp_media_file(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
         // Parse BIOSBoot
@@ -578,7 +719,7 @@ QString qefi_extract_path(const QByteArray &data)
             if (dp_header->type == DP_Media && dp_header->subtype == MEDIA_File) {
                 // Media File
                 QScopedPointer<QEFIDevicePath> dp(
-                    qefi_parse_dp_hardware_file(dp_header, length));
+                    qefi_parse_dp_media_file(dp_header, length));
                 if (dp.isNull()) continue;
                 QEFIDevicePathMediaFile *media_file_dp =
                     dynamic_cast<QEFIDevicePathMediaFile *>(dp.get());
