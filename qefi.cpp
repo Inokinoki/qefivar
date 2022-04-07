@@ -205,6 +205,77 @@ QEFIDevicePath *qefi_parse_dp_hardware_bmc(
     return new QEFIDevicePathHardwareBMC(interfaceType, baseAddress);
 }
 
+// ACPI parsing
+QEFIDevicePath *qefi_parse_dp_acpi_hid(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_ACPI ||
+        dp->subtype != QEFIDevicePathACPISubType::ACPI_HID)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    quint32 hid =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint32 uid =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    return new QEFIDevicePathACPIHID(hid, uid);
+}
+
+QEFIDevicePath *qefi_parse_dp_acpi_hidex(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_ACPI ||
+        dp->subtype != QEFIDevicePathACPISubType::ACPI_HID)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    quint32 hid =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint32 uid =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint32 cid =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    // TODO: Parse strings, the string format is not clear
+    return new QEFIDevicePathACPIHIDEX(hid, uid, cid,
+        QString(), QString(), QString());
+}
+
+QEFIDevicePath *qefi_parse_dp_acpi_adr(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_ACPI ||
+        dp->subtype != QEFIDevicePathACPISubType::ACPI_ADR)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) +
+        sizeof(struct qefi_device_path_header);
+    QList<quint32> addresses;
+    for (int i = sizeof(struct qefi_device_path_header); i < length;
+        i += sizeof(quint32)) {
+        addresses << 
+            qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    }
+    return new QEFIDevicePathACPIADR(addresses);
+}
+
 // Media parsing
 QEFIDevicePath *qefi_parse_dp_media_file(struct qefi_device_path_header *dp, int dp_size)
 {
@@ -282,7 +353,18 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
                 return qefi_parse_dp_hardware_bmc(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_ACPI) {
-        // TODO: Parse DP_ACPI
+        // Parse DP_ACPI
+        switch (subtype) {
+            case QEFIDevicePathACPISubType::ACPI_HID:
+                qDebug() << "Parsing DP ACPI HID";
+                return qefi_parse_dp_acpi_hid(dp, length);
+            case QEFIDevicePathACPISubType::ACPI_HIDEX:
+                qDebug() << "Parsing DP ACPI HIDEX";
+                return qefi_parse_dp_acpi_hidex(dp, length);
+            case QEFIDevicePathACPISubType::ACPI_ADR:
+                qDebug() << "Parsing DP ACPI ADR";
+                return qefi_parse_dp_acpi_adr(dp, length);
+        }
     } else if (type == QEFIDevicePathType::DP_Message) {
         // TODO: Parse Message)
     } else if (type == QEFIDevicePathType::DP_Media) {
