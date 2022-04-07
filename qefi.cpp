@@ -33,7 +33,7 @@ int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer, int max_dp_
     int size = 0;
     while (size < max_dp_size) {
         int tempLength = qefi_dp_length(dp_header_pointer);
-        if (tempLength < 0) return tempLength;
+        if (tempLength <= 0) return tempLength;
 
         size += tempLength;
         count++;
@@ -43,7 +43,7 @@ int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer, int max_dp_
             break;
 
         dp_header_pointer = (struct qefi_device_path_header *)
-            ((quint8 *)dp_header_pointer) + tempLength;
+            ((quint8 *)dp_header_pointer + tempLength);
     }
     return count;
 }
@@ -60,7 +60,7 @@ int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer, int ma
     if (count < 0) return -1;
     for (int i = 0; i < count, size < max_dp_size; i++) {
         int tempLength = qefi_dp_length(dp_header_pointer);
-        if (tempLength < 0) return tempLength;
+        if (tempLength <= 0) return tempLength;
 
         size += tempLength;
 
@@ -69,7 +69,7 @@ int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer, int ma
             break;
 
         dp_header_pointer = (struct qefi_device_path_header *)
-            ((quint8 *)dp_header_pointer) + tempLength;
+            ((quint8 *)dp_header_pointer + tempLength);
     }
     return (size == max_dp_size ? size : -1);
 }
