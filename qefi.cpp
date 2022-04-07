@@ -795,17 +795,7 @@ QEFIDevicePathMediaHD::QEFIDevicePathMediaHD(quint32 partitionNumber,
     m_mbrSignature = 0;
     switch (m_signatureType) {
         case QEFIDevicePathMediaHDSignatureType::GUID:
-            // TODO: Create a standalone function to create UUID
-            m_gptGuid = QUuid((uint)((uint)m_signature[0] |
-                    (uint)m_signature[1] << 8 |
-                    (uint)m_signature[2] << 16 |
-                    (uint)m_signature[3] << 24),    // LE
-                (ushort)m_signature[4] | (ushort)m_signature[5] << 8, // LE
-                (ushort)m_signature[6] | (ushort)m_signature[7] << 8, // LE
-                (uchar)m_signature[8], (uchar)m_signature[9],   // BE
-                (uchar)m_signature[10], (uchar)m_signature[11],
-                (uchar)m_signature[12], (uchar)m_signature[13],
-                (uchar)m_signature[14], (uchar)m_signature[15]);
+            m_gptGuid = qefi_format_guid(m_signature);
         break;
         case QEFIDevicePathMediaHDSignatureType::MBR:
             m_mbrSignature = (quint32)m_signature[0] |
@@ -1345,3 +1335,16 @@ QUuid QEFIDevicePathMessageNVDIMM::uuid() const
 
 QEFIDevicePathMessageNVDIMM::QEFIDevicePathMessageNVDIMM(QUuid uuid)
     : QEFIDevicePathMessage(MSG_NVDIMM), m_uuid(uuid) {}
+
+QUuid qefi_format_guid(const quint8 *data)
+{
+    return QUuid(
+        (uint)((uint)data[0] | (uint)data[1] << 8 |
+            (uint)data[2] << 16 | (uint)data[3] << 24), // LE
+        (ushort)data[4] | (ushort)data[5] << 8, // LE
+        (ushort)data[6] | (ushort)data[7] << 8, // LE
+        (uchar)data[8], (uchar)data[9],         // BE
+        (uchar)data[10], (uchar)data[11],
+        (uchar)data[12], (uchar)data[13],
+        (uchar)data[14], (uchar)data[15]);
+}

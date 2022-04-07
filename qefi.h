@@ -32,6 +32,8 @@ QEFI_EXPORT int qefi_loadopt_dp_list_length(const QByteArray &data);
 QEFI_EXPORT int qefi_loadopt_optional_data_length(const QByteArray &data);
 QEFI_EXPORT bool qefi_loadopt_is_valid(const QByteArray &data);
 
+QEFI_EXPORT QUuid qefi_format_guid(const quint8 *data);
+
 #define QEFI_LOAD_OPTION_ACTIVE		        0x00000001
 #define QEFI_LOAD_OPTION_FORCE_RECONNECT	0x00000002
 #define QEFI_LOAD_OPTION_HIDDEN		        0x00000008
