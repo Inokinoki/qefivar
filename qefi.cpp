@@ -681,6 +681,12 @@ QList<QSharedPointer<QEFIDevicePath> > QEFILoadOption::devicePathList() const
 QEFILoadOption::QEFILoadOption(QByteArray &bootData)
     : m_isValidated(false)
 {
+    parse(bootData);
+}
+
+bool QEFILoadOption::parse(QByteArray &bootData)
+{
+    m_isValidated = false;
     if (qefi_loadopt_is_valid(bootData)) {
         struct qefi_load_option_header *header =
             (struct qefi_load_option_header *)bootData.data();
@@ -722,6 +728,7 @@ QEFILoadOption::QEFILoadOption(QByteArray &bootData)
             }
         }
     }
+    return m_isValidated;
 }
 
 QEFILoadOption::~QEFILoadOption()
