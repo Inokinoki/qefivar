@@ -160,6 +160,34 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
     return nullptr;
 }
 
+QByteArray qefi_format_dp(QEFIDevicePath *dp)
+{
+	QEFIDevicePathType type = dp->type();
+    quint8 subtype = dp->subType();
+    qDebug() << "Formating DP: type" << type << "subtype" << subtype;
+
+    if (type == QEFIDevicePathType::DP_Hardware) {
+        // TODO: Format hardware
+    } else if (type == QEFIDevicePathType::DP_ACPI) {
+        // TODO: Format DP_ACPI
+    } else if (type == QEFIDevicePathType::DP_Message) {
+        // TODO: Format Message)
+    } else if (type == QEFIDevicePathType::DP_Media) {
+        // Format Media
+        switch (subtype) {
+            case QEFIDevicePathMediaSubType::MEDIA_HD:
+                qDebug() << "Formating DP media HD";
+                // TODO
+            case QEFIDevicePathMediaSubType::MEDIA_File:
+                qDebug() << "Formating DP media file";
+                // TODO
+        }
+    } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
+        // TODO: Format BIOSBoot
+    }
+    return QByteArray();
+}
+
 #ifdef Q_OS_WIN
 /* Implementation based on Windows API */
 #include <Windows.h>
