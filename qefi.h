@@ -212,6 +212,9 @@ public:
     QEFILoadOption(QByteArray &bootData);
     virtual ~QEFILoadOption();
 
+    bool parse(QByteArray &bootData);
+    // TODO: Add a format method
+
     bool isValidated() const;
 
     QString name() const;
