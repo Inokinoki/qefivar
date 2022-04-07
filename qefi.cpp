@@ -155,7 +155,16 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
                 return qefi_parse_dp_hardware_file(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
-        // TODO: Parse BIOSBoot
+        // Parse BIOSBoot
+        quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
+        quint16 deviceType =
+            qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        dp_inner_pointer += sizeof(quint16);
+        quint16 status =
+            qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        dp_inner_pointer += sizeof(quint16);
+        QByteArray description; // TODO: Parse it
+        return new QEFIDevicePathBIOSBoot(deviceType, status, description);
     }
     return nullptr;
 }
