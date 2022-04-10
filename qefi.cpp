@@ -5,17 +5,17 @@
 
 #pragma pack(push, 1)
 struct qefi_load_option_header {
-	quint32 attributes;
-	quint16 path_list_length;
+    quint32 attributes;
+    quint16 path_list_length;
 };
 #pragma pack(pop)
 
 /* EFI device path header */
 #pragma pack(push, 1)
 struct qefi_device_path_header {
-	quint8 type;
-	quint8 subtype;
-	quint16 length;
+    quint8 type;
+    quint8 subtype;
+    quint16 length;
 };
 #pragma pack(pop)
 
@@ -913,7 +913,7 @@ QEFIDevicePath *qefi_parse_dp_media_hdd(
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_HD)
         return nullptr;
-	int length = qefi_dp_length(dp);
+    int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
     // TODO: Check size
@@ -1077,7 +1077,7 @@ QEFIDevicePath *qefi_parse_dp_media_ramdisk(
 
 QEFIDevicePath *qefi_private_parse_message_subtype(struct qefi_device_path_header *dp, int dp_size)
 {
-	quint8 type = dp->type, subtype = dp->subtype;
+    quint8 type = dp->type, subtype = dp->subtype;
     if (type != QEFIDevicePathType::DP_Message) return nullptr;
     int length = dp_size;
     if (length <= 0) return nullptr;
@@ -1182,8 +1182,8 @@ QEFIDevicePath *qefi_private_parse_message_subtype(struct qefi_device_path_heade
 
 QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
 {
-	quint8 type = dp->type, subtype = dp->subtype;
-	int length = qefi_dp_length(dp);
+    quint8 type = dp->type, subtype = dp->subtype;
+    int length = qefi_dp_length(dp);
     qDebug() << "Parsing DP: length " << length << " " <<
         "type" << type << "subtype" << subtype;
     if (length != dp_size || length <= 0) return nullptr;
@@ -1274,7 +1274,7 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
 
 QByteArray qefi_format_dp(QEFIDevicePath *dp)
 {
-	QEFIDevicePathType type = dp->type();
+    QEFIDevicePathType type = dp->type();
     quint8 subtype = dp->subType();
     qDebug() << "Formating DP: type" << type << "subtype" << subtype;
 

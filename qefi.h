@@ -184,8 +184,8 @@ class QEFIDevicePathBIOSBoot : public QEFIDevicePath
 {
 protected:
     quint16 m_deviceType;
-	quint16 m_status;
-	QByteArray m_description;
+    quint16 m_status;
+    QByteArray m_description;
 
 public:
     QEFIDevicePathBIOSBoot(quint16 deviceType,
@@ -245,8 +245,8 @@ public:
 class QEFIDevicePathHardwareMMIO : public QEFIDevicePathHardware {
 protected:
     quint32 m_memoryType;
-	quint64 m_startingAddress;
-	quint64 m_endingAddress;
+    quint64 m_startingAddress;
+    quint64 m_endingAddress;
 public:
     QEFIDevicePathHardwareMMIO(quint32 memoryType,
         quint64 startingAddress, quint64 endingAddress);
@@ -275,8 +275,8 @@ public:
 
 class QEFIDevicePathHardwareBMC : public QEFIDevicePathHardware {
 protected:
-	quint8 m_interfaceType;
-	quint64 m_baseAddress;
+    quint8 m_interfaceType;
+    quint64 m_baseAddress;
 public:
     QEFIDevicePathHardwareBMC(quint8 interfaceType, quint64 baseAddress);
     quint8 interfaceType() const { return m_interfaceType; }
@@ -286,8 +286,8 @@ public:
 // Subclasses for ACPI
 class QEFIDevicePathACPIHID : public QEFIDevicePathACPI {
 protected:
-	quint32 m_hid;
-	quint32 m_uid;
+    quint32 m_hid;
+    quint32 m_uid;
 public:
     QEFIDevicePathACPIHID(quint32 hid, quint32 uid);
     quint32 hid() const { return m_hid; }
@@ -296,9 +296,9 @@ public:
 
 class QEFIDevicePathACPIHIDEX : public QEFIDevicePathACPI {
 protected:
-	quint32 m_hid;
-	quint32 m_uid;
-	quint32 m_cid;
+    quint32 m_hid;
+    quint32 m_uid;
+    quint32 m_cid;
     QString m_hidString;
     QString m_uidString;
     QString m_cidString;
@@ -316,7 +316,7 @@ public:
 
 class QEFIDevicePathACPIADR : public QEFIDevicePathACPI {
 protected:
-	QList<quint32> m_addresses;
+    QList<quint32> m_addresses;
 public:
     QEFIDevicePathACPIADR(QList<quint32> addresses);
 };
@@ -656,10 +656,10 @@ class QEFIDevicePathMediaHD : public QEFIDevicePathMedia {
 protected:
     quint32 m_partitionNumber;
     quint64 m_start;
-	quint64 m_size;
-	quint8 m_signature[16];
-	quint8 m_format;
-	quint8 m_signatureType;
+    quint64 m_size;
+    quint8 m_signature[16];
+    quint8 m_format;
+    quint8 m_signatureType;
     QUuid m_gptGuid;
     quint32 m_mbrSignature;
 public:
@@ -691,7 +691,7 @@ class QEFIDevicePathMediaCDROM : public QEFIDevicePathMedia {
 protected:
     quint32 m_bootCatalogEntry;
     quint64 m_partitionRba;
-	quint64 m_sectors;
+    quint64 m_sectors;
 public:
     QEFIDevicePathMediaCDROM(quint32 entry, quint64 partitionRba, quint64 sectors);
     quint32 bootCatalogEntry() const { return m_bootCatalogEntry; }
