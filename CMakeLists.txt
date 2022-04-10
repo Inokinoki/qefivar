@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 
 set(QEFI_VERSION_MAJOR 0)
-set(QEFI_VERSION_MINOR 1)
-set(QEFI_VERSION_PATCH 2)
+set(QEFI_VERSION_MINOR 2)
+set(QEFI_VERSION_PATCH 0)
 set(QEFI_VERSION ${QEFI_VERSION_MAJOR}.${QEFI_VERSION_MINOR}.${QEFI_VERSION_PATCH})
 
 project(QEFI LANGUAGES CXX VERSION ${QEFI_VERSION})
@@ -24,7 +24,10 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core REQUIRED)
 
 add_library(QEFI
     qefi.cpp
-    qefi.h
+    qefidpacpi.cpp
+    qefidphw.cpp
+    qefidpmedia.cpp
+    qefidpmessage.cpp
 )
 add_library(QEFI::QEFI ALIAS QEFI)
 set_target_properties(QEFI PROPERTIES PUBLIC_HEADER qefi.h)
