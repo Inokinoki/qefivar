@@ -133,7 +133,8 @@ QEFIDevicePath *qefi_parse_dp_message_usb(
 QEFIDevicePath *qefi_parse_dp_message_i2o(
     struct qefi_device_path_header *dp, int dp_size);
 
-// TODO: Add inifiband class
+QEFIDevicePath *qefi_parse_dp_message_infiniband(
+    struct qefi_device_path_header *dp, int dp_size);
 
 QEFIDevicePath *qefi_parse_dp_message_vendor(
     struct qefi_device_path_header *dp, int dp_size);

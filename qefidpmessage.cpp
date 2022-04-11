@@ -334,7 +334,39 @@ QEFIDevicePath *qefi_parse_dp_message_i2o(
     return new QEFIDevicePathMessageI2O(target);
 }
 
-// TODO: Add inifiband class
+QEFIDevicePath *qefi_parse_dp_message_infiniband(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Message ||
+        dp->subtype != QEFIDevicePathMessageSubType::MSG_InfiniBand)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    quint32 resourceFlags =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint64 portGID1 =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 portGID2 =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 sharedField =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 targetPortID =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 deviceID =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    return new QEFIDevicePathMessageInfiniBand(resourceFlags,
+        portGID1, portGID2, sharedField,
+        targetPortID, deviceID);
+}
 
 QEFIDevicePath *qefi_parse_dp_message_vendor(
     struct qefi_device_path_header *dp, int dp_size)
@@ -854,7 +886,8 @@ QEFIDevicePath *qefi_private_parse_message_subtype(struct qefi_device_path_heade
             qDebug() << "Parsing DP message I2O";
             return qefi_parse_dp_message_i2o(dp, length);
         case QEFIDevicePathMessageSubType::MSG_InfiniBand:
-            // TODO: Add inifiband class
+            qDebug() << "Parsing DP message InfiniBand";
+            return qefi_parse_dp_message_infiniband(dp, length);
         case QEFIDevicePathMessageSubType::MSG_Vendor:
             qDebug() << "Parsing DP message Vendor";
             return qefi_parse_dp_message_vendor(dp, length);
@@ -1027,7 +1060,51 @@ quint32 QEFIDevicePathMessageI2O::target() const
 QEFIDevicePathMessageI2O::QEFIDevicePathMessageI2O(quint32 target)
     : QEFIDevicePathMessage(MSG_I2O), m_target(target) {}
 
-// TODO: Add MSG_InfiniBand  = 0x09
+
+quint64 QEFIDevicePathMessageInfiniBand::targetPortID() const
+{
+    return m_targetPortID;
+}
+
+quint64 QEFIDevicePathMessageInfiniBand::deviceID() const
+{
+    return m_deviceID;
+}
+
+quint64 QEFIDevicePathMessageInfiniBand::portGID1() const
+{
+    return m_portGID1;
+}
+
+quint64 QEFIDevicePathMessageInfiniBand::portGID2() const
+{
+    return m_portGID2;
+}
+
+quint32 QEFIDevicePathMessageInfiniBand::resourceFlags() const
+{
+    return m_resourceFlags;
+}
+
+quint64 QEFIDevicePathMessageInfiniBand::iocGuid() const
+{
+    return m_sharedField;
+}
+
+quint64 QEFIDevicePathMessageInfiniBand::serviceID() const
+{
+    return m_sharedField;
+}
+
+QEFIDevicePathMessageInfiniBand::QEFIDevicePathMessageInfiniBand(
+    quint32 resourceFlags, quint64 portGID1, quint64 portGID2,
+    quint64 sharedField, quint64 targetPortID,
+    quint64 deviceID)
+    : QEFIDevicePathMessage(MSG_InfiniBand),
+    m_resourceFlags(resourceFlags),
+    m_portGID1(portGID1), m_portGID2(portGID2),
+    m_sharedField(sharedField), m_targetPortID(targetPortID),
+    m_deviceID(deviceID) {}
 
 QUuid QEFIDevicePathMessageVendor::vendorGuid() const
 {

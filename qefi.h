@@ -386,7 +386,27 @@ public:
     quint32 target() const;
 };
 
-// TODO: Add MSG_InfiniBand  = 0x09
+class QEFIDevicePathMessageInfiniBand : public QEFIDevicePathMessage {
+protected:
+    quint32 m_resourceFlags;
+    quint64 m_portGID1;
+    quint64 m_portGID2;
+    quint64 m_sharedField;  // IOC GUID or service ID
+    quint64 m_targetPortID;
+    quint64 m_deviceID;
+public:
+    QEFIDevicePathMessageInfiniBand(quint32 resourceFlags,
+        quint64 portGID1, quint64 portGID2,
+        quint64 sharedField, quint64 targetPortID,
+        quint64 deviceID);
+    quint32 resourceFlags() const;
+    quint64 portGID1() const;
+    quint64 portGID2() const;
+    quint64 iocGuid() const;
+    quint64 serviceID() const;
+    quint64 targetPortID() const;
+    quint64 deviceID() const;
+};
 
 class QEFIDevicePathMessageVendor : public QEFIDevicePathMessage {
 protected:
