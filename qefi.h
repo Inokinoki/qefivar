@@ -213,7 +213,7 @@ public:
     virtual ~QEFILoadOption();
 
     bool parse(QByteArray &bootData);
-    // TODO: Add a format method
+    QByteArray format();
 
     bool isValidated() const;
 

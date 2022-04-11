@@ -85,6 +85,43 @@ QString qefi_parse_ucs2_string(quint8 *data, int max_size)
     return str;
 }
 
+// TODO: Test it
+QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd)
+{
+    QByteArray utf8 = str.toUtf8();
+    QByteArray ucs2;
+
+    for (int i = 0, j = 0; i < utf8.size() && utf8[i] != '\0'; j++) {
+        quint16 val16;
+        quint32 val = 0;
+
+        if ((utf8[i] & 0xe0) == 0xe0 && !(utf8[i] & 0x10)) {
+            val = ((utf8[i+0] & 0x0f) << 10)
+                | ((utf8[i+1] & 0x3f) << 6)
+                | ((utf8[i+2] & 0x3f) << 0);
+            i += 3;
+        } else if ((utf8[i] & 0xc0) == 0xc0 && !(utf8[i] & 0x20)) {
+            val = ((utf8[i+0] & 0x1f) << 6) | ((utf8[i+1] & 0x3f) << 0);
+            i += 2;
+        } else {
+            val = utf8[i] & 0x7f;
+            i += 1;
+        }
+        val16 = (val & 0xFFFF);
+
+        // Append L8
+        ucs2.append((char)(val16 & 0xFF));
+        // Append H8
+        ucs2.append((char)((val16 >> 8) & 0xFF));
+    }
+    if (isEnd) {
+        // Append \0 terminator
+        ucs2.append((char)0x00);
+        ucs2.append((char)0x00);
+    }
+    return ucs2;
+}
+
 // Hardware parsing
 QEFIDevicePath *qefi_parse_dp_hardware_pci(
     struct qefi_device_path_header *dp, int dp_size);
@@ -925,6 +962,34 @@ bool QEFILoadOption::parse(QByteArray &bootData)
         }
     }
     return m_isValidated;
+}
+
+// TODO: Add a test for this
+QByteArray QEFILoadOption::format()
+{
+    QByteArray loadOptionData;
+
+    struct qefi_load_option_header header;
+    header.attributes = qToLittleEndian<quint32>(
+        m_isVisible ? QEFI_LOAD_OPTION_ACTIVE : 0);
+    // TODO: Parse and format DP
+    header.path_list_length = 0;
+
+    // Encode name
+    QByteArray name = qefi_format_string_to_ucs2(m_name, true);
+    if (!name.size()) name.append(2, '\0');
+
+    // Append header
+    loadOptionData.append((const char *)&header,
+        sizeof(struct qefi_load_option_header));
+    // Append name
+    loadOptionData.append(name);
+    // TODO: Append DP
+    // TODO: Append Optional data
+
+    // Never return invalidated data
+    if (!qefi_loadopt_is_valid(loadOptionData)) return QByteArray();
+    return loadOptionData;
 }
 
 QEFILoadOption::~QEFILoadOption()
