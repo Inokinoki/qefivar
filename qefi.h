@@ -694,6 +694,7 @@ public:
     // Get signature according to signature type
     QUuid gptGuid() const { return m_gptGuid; }
     quint32 mbrSignature() const { return m_mbrSignature; }
+    const quint8 *rawSignature() const { return m_signature; }
 
     quint8 format() const { return m_format; }
     quint8 signatureType() const { return m_signatureType; }
@@ -780,14 +781,14 @@ class QEFIDevicePathMediaRAMDisk : public QEFIDevicePathMedia {
 protected:
     quint64 m_startAddress;
     quint64 m_endAddress;
-    QUuid m_disktTypeGuid;
+    QUuid m_diskTypeGuid;
     quint16 m_instanceNumber;
 public:
     QEFIDevicePathMediaRAMDisk(quint64 startAddress, quint64 endAddress,
-        QUuid disktTypeGuid, quint16 instanceNumber);
+        QUuid diskTypeGuid, quint16 instanceNumber);
     quint64 startAddress() const { return m_startAddress; }
     quint64 endAddress() const { return m_endAddress; }
-    QUuid disktTypeGuid() const { return m_disktTypeGuid; }
+    QUuid diskTypeGuid() const { return m_diskTypeGuid; }
     quint16 instanceNumber() const { return m_instanceNumber; }
 };
 
