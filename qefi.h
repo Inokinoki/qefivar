@@ -208,6 +208,7 @@ class QEFILoadOption
     QString m_name;
     QString m_shortPath;
     QList<QSharedPointer<QEFIDevicePath> > m_devicePathList;
+    QByteArray m_optionalData;
 public:
     QEFILoadOption(QByteArray &bootData);
     virtual ~QEFILoadOption();
@@ -220,6 +221,7 @@ public:
     QString name() const;
     bool isVisible() const;
     QString path() const;
+    QByteArray optionalData() const;
     QList<QSharedPointer<QEFIDevicePath> > devicePathList() const;
 };
 
