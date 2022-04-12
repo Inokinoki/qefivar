@@ -27,6 +27,193 @@ int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer,
     int max_dp_size);
 QString qefi_parse_ucs2_string(quint8 *data, int max_size);
 
+// Media parsing
+QEFIDevicePath *qefi_parse_dp_media_file(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_File)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    return new QEFIDevicePathMediaFile(qefi_parse_ucs2_string(dp_inner_pointer, 
+        length - sizeof(struct qefi_device_path_header)));
+}
+
+QEFIDevicePath *qefi_parse_dp_media_hdd(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_HD)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
+    quint32 partitionNumber =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint64 start =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 size =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint8 *signature = dp_inner_pointer;
+    dp_inner_pointer += sizeof(quint8) * 16;
+    quint8 format = *dp_inner_pointer;
+    dp_inner_pointer += sizeof(quint8);
+    quint8 signatureType = *dp_inner_pointer;
+    dp_inner_pointer += sizeof(quint8);
+    return new QEFIDevicePathMediaHD(partitionNumber,
+        start, size, signature, format, signatureType);
+}
+
+QEFIDevicePath *qefi_parse_dp_media_cdrom(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_CDROM)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    quint32 entry =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint64 partitionRba =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 sectors =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    return new QEFIDevicePathMediaCDROM(entry, partitionRba, sectors);
+}
+
+QEFIDevicePath *qefi_parse_dp_media_vendor(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_Vendor)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
+    dp_inner_pointer += 16 * sizeof(quint8);
+    QByteArray vendorData((char *)dp_inner_pointer, length - (dp_inner_pointer - (quint8 *)dp));
+    return new QEFIDevicePathMediaVendor(vendorGuid, vendorData);
+}
+
+QEFIDevicePath *qefi_parse_dp_media_protocol(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_Protocol)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    QUuid protocolGuid = qefi_format_guid(dp_inner_pointer);
+    return new QEFIDevicePathMediaProtocol(protocolGuid);
+}
+
+QEFIDevicePath *qefi_parse_dp_media_firmware_file(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_FirmwareFile)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    QByteArray piInfo((char *)dp_inner_pointer, length);
+    return new QEFIDevicePathMediaFirmwareFile(piInfo);
+}
+
+QEFIDevicePath *qefi_parse_dp_media_fv(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    QByteArray piInfo((char *)dp_inner_pointer, length);
+    return new QEFIDevicePathMediaFirmwareFile(piInfo);
+}
+
+QEFIDevicePath *qefi_parse_dp_media_relative_offset(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_RelativeOffset)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    quint32 reserved =
+        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint32);
+    quint64 firstByte =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 lastByte =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    return new QEFIDevicePathMediaRelativeOffset(reserved, firstByte, lastByte);
+}
+
+QEFIDevicePath *qefi_parse_dp_media_ramdisk(
+    struct qefi_device_path_header *dp, int dp_size)
+{
+    if (dp_size < 4) return nullptr;
+    if (dp->type != QEFIDevicePathType::DP_Media ||
+        dp->subtype != QEFIDevicePathMediaSubType::MEDIA_RamDisk)
+        return nullptr;
+    int length = qefi_dp_length(dp);
+    if (length != dp_size || length <= 0) return nullptr;
+
+    // TODO: Check size
+    quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
+    quint64 startAddress =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    quint64 endAddress =
+        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+    dp_inner_pointer += sizeof(quint64);
+    QUuid diskTypeGuid = qefi_format_guid(dp_inner_pointer);
+    dp_inner_pointer += sizeof(quint8) * 16;
+    quint16 instanceNumber =
+        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+    return new QEFIDevicePathMediaRAMDisk(startAddress,
+        endAddress, diskTypeGuid, instanceNumber);
+}
+
+
 // Subclasses for media
 QEFIDevicePathMediaHD::QEFIDevicePathMediaHD(quint32 partitionNumber,
     quint64 start, quint64 size, quint8 *signature,
