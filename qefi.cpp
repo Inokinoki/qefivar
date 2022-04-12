@@ -365,6 +365,49 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
     return nullptr;
 }
 
+// Format Hardware
+QByteArray qefi_format_dp_hardware_pci(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_hardware_pccard(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_hardware_mmio(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_hardware_vendor(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_hardware_controller(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_hardware_bmc(QEFIDevicePath *dp);
+
+// Format ACPI
+QByteArray qefi_format_dp_acpi_hid(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_acpi_hidex(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_acpi_adr(QEFIDevicePath *dp);
+
+// Format Message
+QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp);
+
+// Format Media
+QByteArray qefi_format_dp_media_hdd(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_media_file(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_media_cdrom(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_media_vendor(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_media_protocol(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_media_firmware_file(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_media_fv(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_media_relative_offset(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp_media_ramdisk(QEFIDevicePath *dp);
+
+
 QByteArray qefi_format_dp(QEFIDevicePath *dp)
 {
     QEFIDevicePathType type = dp->type();
@@ -372,20 +415,73 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
     qDebug() << "Formating DP: type" << type << "subtype" << subtype;
 
     if (type == QEFIDevicePathType::DP_Hardware) {
-        // TODO: Format hardware
+        // Format hardware
+        switch (subtype) {
+            case QEFIDevicePathHardwareSubType::HW_PCI:
+                qDebug() << "Formating DP hardware PCI";
+                return qefi_format_dp_hardware_pci(dp);
+            case QEFIDevicePathHardwareSubType::HW_PCCard:
+                qDebug() << "Formating DP hardware PCCard";
+                return qefi_format_dp_hardware_pccard(dp);
+            case QEFIDevicePathHardwareSubType::HW_MMIO:
+                qDebug() << "Formating DP hardware MMIO";
+                return qefi_format_dp_hardware_mmio(dp);
+            case QEFIDevicePathHardwareSubType::HW_Vendor:
+                qDebug() << "Formating DP hardware Vendor";
+                return qefi_format_dp_hardware_vendor(dp);
+            case QEFIDevicePathHardwareSubType::HW_Controller:
+                qDebug() << "Formating DP hardware Controller";
+                return qefi_format_dp_hardware_controller(dp);
+            case QEFIDevicePathHardwareSubType::HW_BMC:
+                qDebug() << "Formating DP hardware BMC";
+                return qefi_format_dp_hardware_bmc(dp);
+        }
     } else if (type == QEFIDevicePathType::DP_ACPI) {
-        // TODO: Format DP_ACPI
+        // Format DP_ACPI
+        switch (subtype) {
+            case QEFIDevicePathACPISubType::ACPI_HID:
+                qDebug() << "Formating DP ACPI HID";
+                return qefi_format_dp_acpi_hid(dp);
+            case QEFIDevicePathACPISubType::ACPI_HIDEX:
+                qDebug() << "Formating DP ACPI HIDEX";
+                return qefi_format_dp_acpi_hidex(dp);
+            case QEFIDevicePathACPISubType::ACPI_ADR:
+                qDebug() << "Formating DP ACPI ADR";
+                return qefi_format_dp_acpi_adr(dp);
+        }
     } else if (type == QEFIDevicePathType::DP_Message) {
-        // TODO: Format Message)
+        // Format Message
+        return qefi_private_format_message_subtype(dp);
     } else if (type == QEFIDevicePathType::DP_Media) {
         // Format Media
         switch (subtype) {
             case QEFIDevicePathMediaSubType::MEDIA_HD:
                 qDebug() << "Formating DP media HD";
-                // TODO
+                return qefi_format_dp_media_hdd(dp);
             case QEFIDevicePathMediaSubType::MEDIA_File:
                 qDebug() << "Formating DP media file";
-                // TODO
+                return qefi_format_dp_media_file(dp);
+            case QEFIDevicePathMediaSubType::MEDIA_CDROM:
+                qDebug() << "Formating DP media CDROM";
+                return qefi_format_dp_media_cdrom(dp);
+            case QEFIDevicePathMediaSubType::MEDIA_Vendor:
+                qDebug() << "Formating DP media vendor";
+                return qefi_format_dp_media_vendor(dp);
+            case QEFIDevicePathMediaSubType::MEDIA_Protocol:
+                qDebug() << "Formating DP media protocol";
+                return qefi_format_dp_media_protocol(dp);
+            case QEFIDevicePathMediaSubType::MEDIA_FirmwareFile:
+                qDebug() << "Formating DP media firmware file";
+                return qefi_format_dp_media_firmware_file(dp);
+            case QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume:
+                qDebug() << "Formating DP media FV";
+                return qefi_format_dp_media_fv(dp);
+            case QEFIDevicePathMediaSubType::MEDIA_RelativeOffset:
+                qDebug() << "Formating DP media relative offset";
+                return qefi_format_dp_media_relative_offset(dp);
+            case QEFIDevicePathMediaSubType::MEDIA_RamDisk:
+                qDebug() << "Formating DP media ramdisk";
+                return qefi_format_dp_media_ramdisk(dp);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
         // TODO: Format BIOSBoot

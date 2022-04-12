@@ -779,6 +779,263 @@ QEFIDevicePath *qefi_private_parse_message_subtype(struct qefi_device_path_heade
 }
 
 
+// Message formating
+QByteArray qefi_format_dp_message_atapi(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_scsi(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_fibre_chan(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_1394(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_usb(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_i2o(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_infiniband(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_vendor(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_mac_addr(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_ipv4(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_ipv6(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_uart(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_usb_class(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_usb_wwid(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_lun(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_sata(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_iscsi(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_vlan(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_fibre_chan_ex(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_sas_ex(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_nvme(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_uri(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_ufs(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_sd(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_bt(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_wifi(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_emmc(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_btle(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_dns(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_message_nvdimm(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp)
+{
+    // Format message
+    quint8 type = dp->type(), subtype = dp->subType();
+    if (type != QEFIDevicePathType::DP_Message) return QByteArray();
+
+    switch (subtype) {
+        case QEFIDevicePathMessageSubType::MSG_ATAPI:
+            qDebug() << "Formating DP message ATAPI";
+            return qefi_format_dp_message_atapi(dp);
+        case QEFIDevicePathMessageSubType::MSG_SCSI:
+            qDebug() << "Formating DP message SCSI";
+            return qefi_format_dp_message_scsi(dp);
+        case QEFIDevicePathMessageSubType::MSG_FibreChan:
+            qDebug() << "Formating DP message FibreChan";
+            return qefi_format_dp_message_fibre_chan(dp);
+        case QEFIDevicePathMessageSubType::MSG_1394:
+            qDebug() << "Formating DP message 1394";
+            return qefi_format_dp_message_1394(dp);
+        case QEFIDevicePathMessageSubType::MSG_USB:
+            qDebug() << "Formating DP message USB";
+            return qefi_format_dp_message_usb(dp);
+        case QEFIDevicePathMessageSubType::MSG_I2O:
+            qDebug() << "Formating DP message I2O";
+            return qefi_format_dp_message_i2o(dp);
+        case QEFIDevicePathMessageSubType::MSG_InfiniBand:
+            qDebug() << "Formating DP message InfiniBand";
+            return qefi_format_dp_message_infiniband(dp);
+        case QEFIDevicePathMessageSubType::MSG_Vendor:
+            qDebug() << "Formating DP message Vendor";
+            return qefi_format_dp_message_vendor(dp);
+        case QEFIDevicePathMessageSubType::MSG_MACAddr:
+            qDebug() << "Formating DP message Mac Address";
+            return qefi_format_dp_message_mac_addr(dp);
+        case QEFIDevicePathMessageSubType::MSG_IPv4:
+            qDebug() << "Formating DP message IPv4";
+            return qefi_format_dp_message_ipv4(dp);
+        case QEFIDevicePathMessageSubType::MSG_IPv6:
+            qDebug() << "Formating DP message IPv6";
+            return qefi_format_dp_message_ipv6(dp);
+        case QEFIDevicePathMessageSubType::MSG_UART:
+            qDebug() << "Formating DP message UART";
+            return qefi_format_dp_message_uart(dp);
+        case QEFIDevicePathMessageSubType::MSG_USBClass:
+            qDebug() << "Formating DP message USB Class";
+            return qefi_format_dp_message_usb_class(dp);
+
+        case QEFIDevicePathMessageSubType::MSG_USBWWID:
+            qDebug() << "Formating DP message USBWWID";
+            return qefi_format_dp_message_usb_wwid(dp);
+
+        case QEFIDevicePathMessageSubType::MSG_LUN:
+            qDebug() << "Formating DP message LUN";
+            return qefi_format_dp_message_lun(dp);
+        case QEFIDevicePathMessageSubType::MSG_SATA:
+            qDebug() << "Formating DP message SATA";
+            return qefi_format_dp_message_sata(dp);
+        case QEFIDevicePathMessageSubType::MSG_ISCSI:
+            qDebug() << "Formating DP message ISCSI";
+            return qefi_format_dp_message_iscsi(dp);
+        case QEFIDevicePathMessageSubType::MSG_VLAN:
+            qDebug() << "Formating DP message VLAN";
+            return qefi_format_dp_message_vlan(dp);
+
+        case QEFIDevicePathMessageSubType::MSG_FibreChanEx:
+            qDebug() << "Formating DP message FibreChanEx";
+            return qefi_format_dp_message_fibre_chan_ex(dp);
+        case QEFIDevicePathMessageSubType::MSG_SASEX:
+            qDebug() << "Formating DP message SASEX";
+            return qefi_format_dp_message_sas_ex(dp);
+
+        case QEFIDevicePathMessageSubType::MSG_NVME:
+            qDebug() << "Formating DP message NVME";
+            return qefi_format_dp_message_nvme(dp);
+        case QEFIDevicePathMessageSubType::MSG_URI:
+            qDebug() << "Formating DP message URI";
+            return qefi_format_dp_message_uri(dp);
+        case QEFIDevicePathMessageSubType::MSG_UFS:
+            qDebug() << "Formating DP message UFS";
+            return qefi_format_dp_message_ufs(dp);
+        case QEFIDevicePathMessageSubType::MSG_SD:
+            qDebug() << "Formating DP message SD";
+            return qefi_format_dp_message_sd(dp);
+        case QEFIDevicePathMessageSubType::MSG_BT:
+            qDebug() << "Formating DP message Bluetooth";
+            return qefi_format_dp_message_bt(dp);
+        case QEFIDevicePathMessageSubType::MSG_WiFi:
+            qDebug() << "Formating DP message WiFi";
+            return qefi_format_dp_message_wifi(dp);
+        case QEFIDevicePathMessageSubType::MSG_EMMC:
+            qDebug() << "Formating DP message EMMC";
+            return qefi_format_dp_message_emmc(dp);
+        case QEFIDevicePathMessageSubType::MSG_BTLE:
+            qDebug() << "Formating DP message BTLE";
+            return qefi_format_dp_message_btle(dp);
+        case QEFIDevicePathMessageSubType::MSG_DNS:
+            qDebug() << "Formating DP message DNS";
+            return qefi_format_dp_message_dns(dp);
+        case QEFIDevicePathMessageSubType::MSG_NVDIMM:
+            qDebug() << "Formating DP message NVDIMM";
+            return qefi_format_dp_message_nvdimm(dp);
+    }
+    return QByteArray();
+}
+
+
 // Subclasses for message
 quint8 QEFIDevicePathMessageATAPI::primary() const
 {
