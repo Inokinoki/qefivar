@@ -26,6 +26,7 @@ int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer,
 int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer,
     int max_dp_size);
 QString qefi_parse_ucs2_string(quint8 *data, int max_size);
+QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd);
 
 // Media parsing
 QEFIDevicePath *qefi_parse_dp_media_file(
@@ -217,47 +218,283 @@ QEFIDevicePath *qefi_parse_dp_media_ramdisk(
 // Media formating
 QByteArray qefi_format_dp_media_hdd(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_HD)
+        return QByteArray();
+    QEFIDevicePathMediaHD *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaHD *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 partitionNumber =
+        qToLittleEndian<quint32>(dp_instance->partitionNumber());
+    buffer.append((const char *)&partitionNumber, sizeof(quint32));
+    quint64 start =
+        qToLittleEndian<quint64>(dp_instance->partitionNumber());
+    buffer.append((const char *)&start, sizeof(quint64));
+    quint64 size =
+        qToLittleEndian<quint64>(dp_instance->partitionNumber());
+    buffer.append((const char *)&size, sizeof(quint64));
+    const quint8 *signature = dp_instance->rawSignature();
+    buffer.append((const char *)signature, sizeof(quint8) * 16);
+    buffer.append((const char)(dp_instance->format()));
+    buffer.append((const char)(dp_instance->signatureType()));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_media_file(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_File)
+        return QByteArray();
+    QEFIDevicePathMediaFile *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaFile *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(qefi_format_string_to_ucs2(dp_instance->name(), true));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_media_cdrom(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_CDROM)
+        return QByteArray();
+    QEFIDevicePathMediaCDROM *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaCDROM *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 bootCatalogEntry =
+        qToLittleEndian<quint32>(dp_instance->bootCatalogEntry());
+    buffer.append((const char *)&bootCatalogEntry, sizeof(quint32));
+    quint64 partitionRba =
+        qToLittleEndian<quint64>(dp_instance->partitionRba());
+    buffer.append((const char *)&partitionRba, sizeof(quint64));
+    quint64 sectors =
+        qToLittleEndian<quint64>(dp_instance->sectors());
+    buffer.append((const char *)&sectors, sizeof(quint64));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_media_vendor(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_Vendor)
+        return QByteArray();
+    QEFIDevicePathMediaVendor *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaVendor *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->vendorGuid().toRfc4122());
+    buffer.append(dp_instance->vendorData());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_media_protocol(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_Protocol)
+        return QByteArray();
+    QEFIDevicePathMediaProtocol *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaProtocol *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->protocolGuid().toRfc4122());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_media_firmware_file(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_FirmwareFile)
+        return QByteArray();
+    QEFIDevicePathMediaFirmwareFile *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaFirmwareFile *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->piInfo());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_media_fv(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume)
+        return QByteArray();
+    QEFIDevicePathMediaFirmwareVolume *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaFirmwareVolume *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->piInfo());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_media_relative_offset(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_RelativeOffset)
+        return QByteArray();
+    QEFIDevicePathMediaRelativeOffset *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaRelativeOffset *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 reserved =
+        qToLittleEndian<quint32>(dp_instance->reserved());
+    buffer.append((const char *)&reserved, sizeof(quint32));
+    quint64 firstByte =
+        qToLittleEndian<quint64>(dp_instance->firstByte());
+    buffer.append((const char *)&firstByte, sizeof(quint64));
+    quint64 lastByte =
+        qToLittleEndian<quint64>(dp_instance->lastByte());
+    buffer.append((const char *)&lastByte, sizeof(quint64));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_media_ramdisk(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Media ||
+        dp->subType() != QEFIDevicePathMediaSubType::MEDIA_RamDisk)
+        return QByteArray();
+    QEFIDevicePathMediaRAMDisk *dp_instance =
+        dynamic_cast<QEFIDevicePathMediaRAMDisk *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint64 startAddress =
+        qToLittleEndian<quint64>(dp_instance->startAddress());
+    buffer.append((const char *)&startAddress, sizeof(quint64));
+    quint64 endAddress =
+        qToLittleEndian<quint64>(dp_instance->endAddress());
+    buffer.append((const char *)&endAddress, sizeof(quint64));
+    buffer.append(dp_instance->diskTypeGuid().toRfc4122());
+    quint16 instanceNumber =
+        qToLittleEndian<quint16>(dp_instance->instanceNumber());
+    buffer.append((const char *)&instanceNumber, sizeof(quint16));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 
@@ -323,7 +560,7 @@ QEFIDevicePathMediaRelativeOffset::QEFIDevicePathMediaRelativeOffset(quint32 res
 
 QEFIDevicePathMediaRAMDisk::QEFIDevicePathMediaRAMDisk(
     quint64 startAddress, quint64 endAddress,
-    QUuid disktTypeGuid, quint16 instanceNumber)
+    QUuid diskTypeGuid, quint16 instanceNumber)
     : QEFIDevicePathMedia((quint8)QEFIDevicePathMediaSubType::MEDIA_RamDisk),
     m_startAddress(startAddress), m_endAddress(endAddress),
-    m_disktTypeGuid(disktTypeGuid), m_instanceNumber(instanceNumber) {}
+    m_diskTypeGuid(diskTypeGuid), m_instanceNumber(instanceNumber) {}
