@@ -102,17 +102,106 @@ QEFIDevicePath *qefi_parse_dp_acpi_adr(
 // ACPI formating
 QByteArray qefi_format_dp_acpi_hid(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_ACPI ||
+        dp->subType() != QEFIDevicePathACPISubType::ACPI_HID)
+        return QByteArray();
+    QEFIDevicePathACPIHID *dp_instance =
+        dynamic_cast<QEFIDevicePathACPIHID *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 hid =
+        qToLittleEndian<quint32>(dp_instance->hid());
+    buffer.append((const char *)&hid, sizeof(quint32));
+    quint32 uid =
+        qToLittleEndian<quint32>(dp_instance->uid());
+    buffer.append((const char *)&uid, sizeof(quint32));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_acpi_hidex(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_ACPI ||
+        dp->subType() != QEFIDevicePathACPISubType::ACPI_HIDEX)
+        return QByteArray();
+    QEFIDevicePathACPIHIDEX *dp_instance =
+        dynamic_cast<QEFIDevicePathACPIHIDEX *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 hid =
+        qToLittleEndian<quint32>(dp_instance->hid());
+    buffer.append((const char *)&hid, sizeof(quint32));
+    quint32 uid =
+        qToLittleEndian<quint32>(dp_instance->uid());
+    buffer.append((const char *)&uid, sizeof(quint32));
+    quint32 cid =
+        qToLittleEndian<quint32>(dp_instance->cid());
+    buffer.append((const char *)&cid, sizeof(quint32));
+    // TODO: Clarify the string encoding
+    buffer.append(dp_instance->hidString().toUtf8());
+    buffer.append(dp_instance->uidString().toUtf8());
+    buffer.append(dp_instance->cidString().toUtf8());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_acpi_adr(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_ACPI ||
+        dp->subType() != QEFIDevicePathACPISubType::ACPI_ADR)
+        return QByteArray();
+    QEFIDevicePathACPIADR *dp_instance =
+        dynamic_cast<QEFIDevicePathACPIADR *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    // TODO: clarify the addresses
+    // QList<quint32> &addresses = dp_instance->addresses();
+    // for (int i = 0; i < addresses.size(); i++) {}
+    //     quint32 adr =
+    //         qToLittleEndian<quint32>(addresses[i]);
+    //     buffer.append((const char *)&adr, sizeof(quint32));
+    // }
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 
