@@ -148,6 +148,38 @@ QEFIDevicePath *qefi_parse_dp_hardware_bmc(
 }
 
 
+// Hardware formating
+QByteArray qefi_format_dp_hardware_pci(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_hardware_pccard(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_hardware_mmio(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_hardware_vendor(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_hardware_controller(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_hardware_bmc(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+
 // Subclasses for hardware
 QEFIDevicePathHardwarePCI::QEFIDevicePathHardwarePCI(quint8 function,
     quint8 device)

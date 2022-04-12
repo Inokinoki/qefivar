@@ -99,6 +99,23 @@ QEFIDevicePath *qefi_parse_dp_acpi_adr(
 }
 
 
+// ACPI formating
+QByteArray qefi_format_dp_acpi_hid(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_acpi_hidex(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_acpi_adr(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+
 // Subclasses for ACPI
 QEFIDevicePathACPIHID::QEFIDevicePathACPIHID(quint32 hid, quint32 uid)
     : QEFIDevicePathACPI((quint8)

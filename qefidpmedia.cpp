@@ -214,6 +214,53 @@ QEFIDevicePath *qefi_parse_dp_media_ramdisk(
 }
 
 
+// Media formating
+QByteArray qefi_format_dp_media_hdd(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_media_file(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_media_cdrom(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_media_vendor(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_media_protocol(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_media_firmware_file(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_media_fv(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_media_relative_offset(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+QByteArray qefi_format_dp_media_ramdisk(QEFIDevicePath *dp)
+{
+    return QByteArray();
+}
+
+
 // Subclasses for media
 QEFIDevicePathMediaHD::QEFIDevicePathMediaHD(quint32 partitionNumber,
     quint64 start, quint64 size, quint8 *signature,
