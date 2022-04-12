@@ -906,6 +906,11 @@ QString QEFILoadOption::path() const
     return m_shortPath;
 }
 
+QByteArray QEFILoadOption::optionalData() const
+{
+    return m_optionalData;
+}
+
 QList<QSharedPointer<QEFIDevicePath> > QEFILoadOption::devicePathList() const
 {
     return m_devicePathList;
@@ -960,6 +965,16 @@ bool QEFILoadOption::parse(QByteArray &bootData)
                     (((quint8 *)dp_header_pointer) + tempLength);
             }
         }
+
+        // Optional data
+        int optionalDataBegin = sizeof(struct qefi_load_option_header) +
+            (m_name.length() + 1) * 2 + dp_list_length;
+        if (optionalDataBegin < bootData.size()) {
+            m_optionalData = QByteArray(((const char *)header) +
+                sizeof(struct qefi_load_option_header) +
+                (m_name.length() + 1) * 2 + dp_list_length,
+                bootData.size() - optionalDataBegin);
+        }
     }
     return m_isValidated;
 }
@@ -985,7 +1000,8 @@ QByteArray QEFILoadOption::format()
     // Append name
     loadOptionData.append(name);
     // TODO: Append DP
-    // TODO: Append Optional data
+    // Append Optional data
+    loadOptionData.append(m_optionalData);
 
     // Never return invalidated data
     if (!qefi_loadopt_is_valid(loadOptionData)) return QByteArray();
