@@ -782,152 +782,974 @@ QEFIDevicePath *qefi_private_parse_message_subtype(struct qefi_device_path_heade
 // Message formating
 QByteArray qefi_format_dp_message_atapi(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_ATAPI)
+        return QByteArray();
+    QEFIDevicePathMessageATAPI *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageATAPI *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->primary());
+    buffer.append(dp_instance->slave());
+    quint16 lun =
+        qToLittleEndian<quint16>(dp_instance->lun());
+    buffer.append((const char *)&lun, sizeof(quint16));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_scsi(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_SCSI)
+        return QByteArray();
+    QEFIDevicePathMessageSCSI *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageSCSI *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint16 target =
+        qToLittleEndian<quint16>(dp_instance->target());
+    buffer.append((const char *)&target, sizeof(quint16));
+    quint16 lun =
+        qToLittleEndian<quint16>(dp_instance->lun());
+    buffer.append((const char *)&lun, sizeof(quint16));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_fibre_chan(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_FibreChan)
+        return QByteArray();
+    QEFIDevicePathMessageFibreChan *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageFibreChan *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 reserved =
+        qToLittleEndian<quint32>(dp_instance->reserved());
+    buffer.append((const char *)&reserved, sizeof(quint32));
+    quint64 wwn =
+        qToLittleEndian<quint64>(dp_instance->wwn());
+    buffer.append((const char *)&wwn, sizeof(quint64));
+    quint64 lun =
+        qToLittleEndian<quint64>(dp_instance->lun());
+    buffer.append((const char *)&lun, sizeof(quint64));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_1394(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_1394)
+        return QByteArray();
+    QEFIDevicePathMessage1394 *dp_instance =
+        dynamic_cast<QEFIDevicePathMessage1394 *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 reserved =
+        qToLittleEndian<quint32>(dp_instance->reserved());
+    buffer.append((const char *)&reserved, sizeof(quint32));
+    quint64 guid =
+        qToLittleEndian<quint64>(dp_instance->guid());
+    buffer.append((const char *)&guid, sizeof(quint64));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_usb(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_USB)
+        return QByteArray();
+    QEFIDevicePathMessageUSB *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageUSB *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->parentPort());
+    buffer.append(dp_instance->usbInterface());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_i2o(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_I2O)
+        return QByteArray();
+    QEFIDevicePathMessageI2O *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageI2O *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 target =
+        qToLittleEndian<quint32>(dp_instance->target());
+    buffer.append((const char *)&target, sizeof(quint32));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_infiniband(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_InfiniBand)
+        return QByteArray();
+    QEFIDevicePathMessageInfiniBand *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageInfiniBand *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 resourceFlags =
+        qToLittleEndian<quint32>(dp_instance->resourceFlags());
+    buffer.append((const char *)&resourceFlags, sizeof(quint32));
+    quint64 portGID1 =
+        qToLittleEndian<quint64>(dp_instance->portGID1());
+    buffer.append((const char *)&portGID1, sizeof(quint64));
+    quint64 portGID2 =
+        qToLittleEndian<quint64>(dp_instance->portGID2());
+    buffer.append((const char *)&portGID2, sizeof(quint64));
+    quint64 sharedField =
+        qToLittleEndian<quint64>(dp_instance->serviceID());
+    buffer.append((const char *)&sharedField, sizeof(quint64));
+    quint64 targetPortID =
+        qToLittleEndian<quint64>(dp_instance->targetPortID());
+    buffer.append((const char *)&targetPortID, sizeof(quint64));
+    quint64 deviceID =
+        qToLittleEndian<quint64>(dp_instance->deviceID());
+    buffer.append((const char *)&deviceID, sizeof(quint64));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_vendor(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_Vendor)
+        return QByteArray();
+    QEFIDevicePathMessageVendor *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageVendor *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->vendorGuid().toRfc4122());
+    buffer.append(dp_instance->vendorData());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_mac_addr(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_MACAddr)
+        return QByteArray();
+    QEFIDevicePathMessageMACAddr *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageMACAddr *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    for (int i = 0; i < 32; i++) {
+        // TODO: Append Mac Addr
+        buffer.append((const char)0x00);
+    }
+    buffer.append(dp_instance->interfaceType());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_ipv4(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_IPv4)
+        return QByteArray();
+    QEFIDevicePathMessageIPv4Addr *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageIPv4Addr *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    for (int i = 0; i < 4; i++) {
+        // TODO: Append localIPv4Address
+        buffer.append((const char)0x00);
+    }
+    for (int i = 0; i < 4; i++) {
+        // TODO: Append remoteIPv4Address
+        buffer.append((const char)0x00);
+    }
+    quint16 localPort =
+        qToLittleEndian<quint16>(dp_instance->localPort());
+    buffer.append((const char *)&localPort, sizeof(quint16));
+    quint16 remotePort =
+        qToLittleEndian<quint16>(dp_instance->remotePort());
+    buffer.append((const char *)&remotePort, sizeof(quint16));
+    quint16 protocol =
+        qToLittleEndian<quint16>(dp_instance->protocol());
+    buffer.append((const char *)&protocol, sizeof(quint16));
+    buffer.append(dp_instance->staticIPAddress());
+    for (int i = 0; i < 4; i++) {
+        // TODO: Append gateway
+        buffer.append((const char)0x00);
+    }
+    for (int i = 0; i < 4; i++) {
+        // TODO: Append netmask
+        buffer.append((const char)0x00);
+    }
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_ipv6(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_IPv6)
+        return QByteArray();
+    QEFIDevicePathMessageIPv6Addr *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageIPv6Addr *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    for (int i = 0; i < 16; i++) {
+        // TODO: Append localIPv6Address
+        buffer.append((const char)0x00);
+    }
+    for (int i = 0; i < 16; i++) {
+        // TODO: Append remoteIPv6Address
+        buffer.append((const char)0x00);
+    }
+    quint16 localPort =
+        qToLittleEndian<quint16>(dp_instance->localPort());
+    buffer.append((const char *)&localPort, sizeof(quint16));
+    quint16 remotePort =
+        qToLittleEndian<quint16>(dp_instance->remotePort());
+    buffer.append((const char *)&remotePort, sizeof(quint16));
+    quint16 protocol =
+        qToLittleEndian<quint16>(dp_instance->protocol());
+    buffer.append((const char *)&protocol, sizeof(quint16));
+    buffer.append(dp_instance->ipAddressOrigin());
+    buffer.append(dp_instance->prefixLength());
+    buffer.append(dp_instance->gatewayIPv6Address());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_uart(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_UART)
+        return QByteArray();
+    QEFIDevicePathMessageUART *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageUART *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 reserved =
+        qToLittleEndian<quint32>(dp_instance->reserved());
+    buffer.append((const char *)&reserved, sizeof(quint32));
+    quint64 baudRate =
+        qToLittleEndian<quint64>(dp_instance->baudRate());
+    buffer.append((const char *)&baudRate, sizeof(quint64));
+    buffer.append(dp_instance->dataBits());
+    buffer.append(dp_instance->parity());
+    buffer.append(dp_instance->stopBits());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_usb_class(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_USBClass)
+        return QByteArray();
+    QEFIDevicePathMessageUSBClass *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageUSBClass *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint16 vendorId =
+        qToLittleEndian<quint16>(dp_instance->vendorId());
+    buffer.append((const char *)&vendorId, sizeof(quint16));
+    quint16 productId =
+        qToLittleEndian<quint16>(dp_instance->productId());
+    buffer.append((const char *)&productId, sizeof(quint16));
+    buffer.append(dp_instance->deviceClass());
+    buffer.append(dp_instance->deviceSubclass());
+    buffer.append(dp_instance->deviceProtocol());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_usb_wwid(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_USBWWID)
+        return QByteArray();
+    QEFIDevicePathMessageUSBWWID *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageUSBWWID *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint16 vendorId =
+        qToLittleEndian<quint16>(dp_instance->vendorId());
+    buffer.append((const char *)&vendorId, sizeof(quint16));
+    quint16 productId =
+        qToLittleEndian<quint16>(dp_instance->productId());
+    buffer.append((const char *)&productId, sizeof(quint16));
+    // TODO: Append SN
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_lun(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_LUN)
+        return QByteArray();
+    QEFIDevicePathMessageLUN *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageLUN *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->lun());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_sata(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_SATA)
+        return QByteArray();
+    QEFIDevicePathMessageSATA *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageSATA *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint16 hbaPort =
+        qToLittleEndian<quint16>(dp_instance->hbaPort());
+    buffer.append((const char *)&hbaPort, sizeof(quint16));
+    quint16 portMultiplierPort =
+        qToLittleEndian<quint16>(dp_instance->portMultiplierPort());
+    buffer.append((const char *)&portMultiplierPort, sizeof(quint16));
+    quint16 lun =
+        qToLittleEndian<quint16>(dp_instance->lun());
+    buffer.append((const char *)&lun, sizeof(quint16));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_iscsi(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_ISCSI)
+        return QByteArray();
+    QEFIDevicePathMessageISCSI *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageISCSI *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint16 protocol =
+        qToLittleEndian<quint16>(dp_instance->protocol());
+    buffer.append((const char *)&protocol, sizeof(quint16));
+    quint16 options =
+        qToLittleEndian<quint16>(dp_instance->options());
+    buffer.append((const char *)&options, sizeof(quint16));
+    for (int i = 0; i < 8; i++) {
+        // TODO: Append lun
+        buffer.append((const char)0x00);
+    }
+    quint16 tpgt =
+        qToLittleEndian<quint16>(dp_instance->tpgt());
+    buffer.append((const char *)&tpgt, sizeof(quint16));
+    // TODO: Clarify the encoding
+    buffer.append(dp_instance->targetName().toUtf8());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_vlan(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_VLAN)
+        return QByteArray();
+    QEFIDevicePathMessageVLAN *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageVLAN *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint16 vlanID =
+        qToLittleEndian<quint16>(dp_instance->vlanID());
+    buffer.append((const char *)&vlanID, sizeof(quint16));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_fibre_chan_ex(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_FibreChanEx)
+        return QByteArray();
+    QEFIDevicePathMessageFibreChanEx *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageFibreChanEx *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // TODO: Append the fields
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_sas_ex(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_SASEX)
+        return QByteArray();
+    QEFIDevicePathMessageSASEx *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageSASEx *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    for (int i = 0; i < 8; i++) {
+        // TODO: Append sasAddress
+        buffer.append((const char)0x00);
+    }
+    for (int i = 0; i < 8; i++) {
+        // TODO: Append lun
+        buffer.append((const char)0x00);
+    }
+    buffer.append(dp_instance->deviceTopologyInfo());
+    buffer.append(dp_instance->driveBayID());
+    quint16 rtp =
+        qToLittleEndian<quint16>(dp_instance->rtp());
+    buffer.append((const char *)&rtp, sizeof(quint16));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_nvme(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_NVME)
+        return QByteArray();
+    QEFIDevicePathMessageNVME *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageNVME *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 namespaceID =
+        qToLittleEndian<quint32>(dp_instance->namespaceID());
+    buffer.append((const char *)&namespaceID, sizeof(quint32));
+    for (int i = 0; i < 8; i++) {
+        // TODO: Append ieeeEui64
+        buffer.append((const char)0x00);
+    }
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_uri(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_URI)
+        return QByteArray();
+    QEFIDevicePathMessageURI *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageURI *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->uri().url().toUtf8());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_ufs(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_UFS)
+        return QByteArray();
+    QEFIDevicePathMessageUFS *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageUFS *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->targetID());
+    buffer.append(dp_instance->lun());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_sd(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_SD)
+        return QByteArray();
+    QEFIDevicePathMessageSD *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageSD *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->slotNumber());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_bt(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_BT)
+        return QByteArray();
+    QEFIDevicePathMessageBT *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageBT *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    for (int i = 0; i < 6; i++) {
+        // TODO: Get the BT addr
+        buffer.append((const char)0x00);
+    }
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_wifi(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_WiFi)
+        return QByteArray();
+    QEFIDevicePathMessageWiFi *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageWiFi *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->ssid().toUtf8());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_emmc(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_EMMC)
+        return QByteArray();
+    QEFIDevicePathMessageEMMC *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageEMMC *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->slotNumber());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_btle(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_BTLE)
+        return QByteArray();
+    QEFIDevicePathMessageBTLE *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageBTLE *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    // TODO: Append the address
+    for (int i = 0; i < 8; i++) {
+        buffer.append((const char)0x00);
+    }
+    buffer.append(dp_instance->addressType());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_dns(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_DNS)
+        return QByteArray();
+    QEFIDevicePathMessageDNS *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageDNS *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    // TODO: Append the DNS information
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_message_nvdimm(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Message ||
+        dp->subType() != QEFIDevicePathMessageSubType::MSG_NVDIMM)
+        return QByteArray();
+    QEFIDevicePathMessageNVDIMM *dp_instance =
+        dynamic_cast<QEFIDevicePathMessageNVDIMM *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->uuid().toRfc4122());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp)
