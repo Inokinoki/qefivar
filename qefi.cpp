@@ -1095,7 +1095,16 @@ QByteArray QEFILoadOption::format()
         sizeof(struct qefi_load_option_header));
     // Append name
     loadOptionData.append(name);
-    // TODO: Append DP
+    // Append DP
+    for (QList<QSharedPointer<QEFIDevicePath> >::iterator i = m_devicePathList.begin();
+         i != m_devicePathList.end(); i++) {
+        loadOptionData.append(qefi_format_dp((*i).get()));
+    }
+    // Append the end of DP
+    loadOptionData.append((char)QEFIDevicePathType::DP_End);
+    loadOptionData.append((char)0xff);
+    loadOptionData.append((char)0x04);
+    loadOptionData.append((char)0x00);
     // Append Optional data
     loadOptionData.append(m_optionalData);
 
