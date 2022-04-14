@@ -151,32 +151,179 @@ QEFIDevicePath *qefi_parse_dp_hardware_bmc(
 // Hardware formating
 QByteArray qefi_format_dp_hardware_pci(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Hardware ||
+        dp->subType() != QEFIDevicePathHardwareSubType::HW_PCI)
+        return QByteArray();
+    QEFIDevicePathHardwarePCI *dp_instance =
+        dynamic_cast<QEFIDevicePathHardwarePCI *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->function());
+    buffer.append(dp_instance->device());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_hardware_pccard(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Hardware ||
+        dp->subType() != QEFIDevicePathHardwareSubType::HW_PCCard)
+        return QByteArray();
+    QEFIDevicePathHardwarePCCard *dp_instance =
+        dynamic_cast<QEFIDevicePathHardwarePCCard *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->function());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_hardware_mmio(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Hardware ||
+        dp->subType() != QEFIDevicePathHardwareSubType::HW_MMIO)
+        return QByteArray();
+    QEFIDevicePathHardwareMMIO *dp_instance =
+        dynamic_cast<QEFIDevicePathHardwareMMIO *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 memoryType =
+        qToLittleEndian<quint32>(dp_instance->memoryType());
+    buffer.append((const char *)&memoryType, sizeof(quint32));
+    quint64 startingAddress =
+        qToLittleEndian<quint64>(dp_instance->startingAddress());
+    buffer.append((const char *)&startingAddress, sizeof(quint64));
+    quint64 endingAddress =
+        qToLittleEndian<quint64>(dp_instance->endingAddress());
+    buffer.append((const char *)&endingAddress, sizeof(quint64));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_hardware_vendor(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Hardware ||
+        dp->subType() != QEFIDevicePathHardwareSubType::HW_Vendor)
+        return QByteArray();
+    QEFIDevicePathHardwareVendor *dp_instance =
+        dynamic_cast<QEFIDevicePathHardwareVendor *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->vendorGuid().toRfc4122());
+    buffer.append(dp_instance->vendorData());
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_hardware_controller(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Hardware ||
+        dp->subType() != QEFIDevicePathHardwareSubType::HW_Controller)
+        return QByteArray();
+    QEFIDevicePathHardwareController *dp_instance =
+        dynamic_cast<QEFIDevicePathHardwareController *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    quint32 controller =
+        qToLittleEndian<quint32>(dp_instance->controller());
+    buffer.append((const char *)&controller, sizeof(quint32));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 QByteArray qefi_format_dp_hardware_bmc(QEFIDevicePath *dp)
 {
-    return QByteArray();
+    if (dp->type() != QEFIDevicePathType::DP_Hardware ||
+        dp->subType() != QEFIDevicePathHardwareSubType::HW_BMC)
+        return QByteArray();
+    QEFIDevicePathHardwareBMC *dp_instance =
+        dynamic_cast<QEFIDevicePathHardwareBMC *>(dp);
+    if (dp_instance == nullptr) return QByteArray();
+
+    QByteArray buffer;
+    // Append the types
+    buffer.append(dp->type());
+    buffer.append(dp->subType());
+    // Append the basic length
+    buffer.append((char)4);
+    buffer.append((char)0);
+    // Append the fields
+    buffer.append(dp_instance->interfaceType());
+    quint64 baseAddress =
+        qToLittleEndian<quint64>(dp_instance->baseAddress());
+    buffer.append((const char *)&baseAddress, sizeof(quint64));
+
+    // Fix the length
+    quint16 len = (buffer.size() & 0xFFFF);
+    buffer[2] = (len & 0xFF);
+    buffer[3] = (len >> 8);
+
+    return buffer;
 }
 
 
