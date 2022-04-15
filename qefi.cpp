@@ -1083,7 +1083,7 @@ QByteArray QEFILoadOption::format()
     struct qefi_load_option_header header;
     header.attributes = qToLittleEndian<quint32>(
         m_isVisible ? QEFI_LOAD_OPTION_ACTIVE : 0);
-    // TODO: Parse and format DP
+    // Parse and format DP
     header.path_list_length = 0;
 
     // Encode name
@@ -1105,6 +1105,12 @@ QByteArray QEFILoadOption::format()
     loadOptionData.append((char)0xff);
     loadOptionData.append((char)0x04);
     loadOptionData.append((char)0x00);
+    // Fixup DP length
+    int path_list_length = (loadOptionData.size() -
+        (sizeof(struct qefi_load_option_header) + name.size()));
+    header.path_list_length = (quint16)(path_list_length < 0 ? 0 : path_list_length);
+    loadOptionData[4] = (char)(header.path_list_length & 0xFF);
+    loadOptionData[5] = (char)(header.path_list_length >> 8);
     // Append Optional data
     loadOptionData.append(m_optionalData);
 
