@@ -484,7 +484,33 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
                 return qefi_format_dp_media_ramdisk(dp);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
-        // TODO: Format BIOSBoot
+        // Format BIOSBoot
+        QEFIDevicePathBIOSBoot *dp_instance =
+            dynamic_cast<QEFIDevicePathBIOSBoot *>(dp);
+        if (dp_instance == nullptr) return QByteArray();
+
+        QByteArray buffer;
+        // Append the types
+        buffer.append(dp->type());
+        buffer.append(dp->subType());
+        // Append the basic length
+        buffer.append((char)4);
+        buffer.append((char)0);
+        // Append the fields
+        quint16 deviceType =
+            qToLittleEndian<quint16>(dp_instance->deviceType());
+        buffer.append((const char *)&deviceType, sizeof(quint16));
+        quint16 status =
+            qToLittleEndian<quint16>(dp_instance->status());
+        buffer.append((const char *)&status, sizeof(quint16));
+        buffer.append(dp_instance->description());
+
+        // Fix the length
+        quint16 len = (buffer.size() & 0xFFFF);
+        buffer[2] = (len & 0xFF);
+        buffer[3] = (len >> 8);
+
+        return buffer;
     }
     return QByteArray();
 }
@@ -1050,7 +1076,7 @@ bool QEFILoadOption::parse(QByteArray &bootData)
                 int tempLength = qefi_dp_length(dp_header_pointer);
                 if (tempLength < 0) break;
 
-                // TODO: Parse DP
+                // Parse DP
                 qDebug() << "Parsing a device path" << i + 1 << "length" << tempLength;
                 QEFIDevicePath *path = qefi_parse_dp(dp_header_pointer, tempLength);
                 if (path != nullptr) {
@@ -1075,7 +1101,7 @@ bool QEFILoadOption::parse(QByteArray &bootData)
     return m_isValidated;
 }
 
-// TODO: Add a test for this
+// TODO: Add more tests for this
 QByteArray QEFILoadOption::format()
 {
     QByteArray loadOptionData;
