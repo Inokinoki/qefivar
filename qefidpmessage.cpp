@@ -1056,9 +1056,11 @@ QByteArray qefi_format_dp_message_mac_addr(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
+    QEFIDevicePathMessageMACAddress address =
+        dp_instance->macAddress();
     for (int i = 0; i < 32; i++) {
-        // TODO: Append Mac Addr
-        buffer.append((const char)0x00);
+        // Append Mac Addr
+        buffer.append((const char)address.address[i]);
     }
     buffer.append(dp_instance->interfaceType());
 
@@ -1087,13 +1089,15 @@ QByteArray qefi_format_dp_message_ipv4(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
+    QEFIIPv4Address address = dp_instance->localIPv4Address();
     for (int i = 0; i < 4; i++) {
-        // TODO: Append localIPv4Address
-        buffer.append((const char)0x00);
+        // Append localIPv4Address
+        buffer.append((const char)address.address[i]);
     }
+    address = dp_instance->remoteIPv4Address();
     for (int i = 0; i < 4; i++) {
-        // TODO: Append remoteIPv4Address
-        buffer.append((const char)0x00);
+        // Append remoteIPv4Address
+        buffer.append((const char)address.address[i]);
     }
     quint16 localPort =
         qToLittleEndian<quint16>(dp_instance->localPort());
@@ -1105,13 +1109,15 @@ QByteArray qefi_format_dp_message_ipv4(QEFIDevicePath *dp)
         qToLittleEndian<quint16>(dp_instance->protocol());
     buffer.append((const char *)&protocol, sizeof(quint16));
     buffer.append(dp_instance->staticIPAddress());
+    address = dp_instance->gateway();
     for (int i = 0; i < 4; i++) {
-        // TODO: Append gateway
-        buffer.append((const char)0x00);
+        // Append gateway
+        buffer.append((const char)address.address[i]);
     }
+    address = dp_instance->netmask();
     for (int i = 0; i < 4; i++) {
-        // TODO: Append netmask
-        buffer.append((const char)0x00);
+        // Append netmask
+        buffer.append((const char)address.address[i]);
     }
 
     // Fix the length
@@ -1139,13 +1145,15 @@ QByteArray qefi_format_dp_message_ipv6(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
+    QEFIIPv6Address address = dp_instance->localIPv6Address();
     for (int i = 0; i < 16; i++) {
-        // TODO: Append localIPv6Address
-        buffer.append((const char)0x00);
+        // Append localIPv6Address
+        buffer.append((const char)address.address[i]);
     }
+    address = dp_instance->remoteIPv6Address();
     for (int i = 0; i < 16; i++) {
-        // TODO: Append remoteIPv6Address
-        buffer.append((const char)0x00);
+        // Append remoteIPv6Address
+        buffer.append((const char)address.address[i]);
     }
     quint16 localPort =
         qToLittleEndian<quint16>(dp_instance->localPort());
@@ -1356,9 +1364,10 @@ QByteArray qefi_format_dp_message_iscsi(QEFIDevicePath *dp)
     quint16 options =
         qToLittleEndian<quint16>(dp_instance->options());
     buffer.append((const char *)&options, sizeof(quint16));
+    QEFIDevicePathMessageLun lun = dp_instance->lun();
     for (int i = 0; i < 8; i++) {
-        // TODO: Append lun
-        buffer.append((const char)0x00);
+        // Append lun
+        buffer.append((const char)lun.data[i]);
     }
     quint16 tpgt =
         qToLittleEndian<quint16>(dp_instance->tpgt());
@@ -1419,7 +1428,17 @@ QByteArray qefi_format_dp_message_fibre_chan_ex(QEFIDevicePath *dp)
     // Append the basic length
     buffer.append((char)4);
     buffer.append((char)0);
-    // TODO: Append the fields
+    // Append the fields
+    quint32 reserved = 0;
+    buffer.append((const char *)&reserved, sizeof(quint32));
+    QEFIDevicePathMessageLun wwn = dp_instance->wwn();
+    for (int i = 0; i < 8; i++) {
+        buffer.append((const char)wwn.data[i]);
+    }
+    QEFIDevicePathMessageLun lun = dp_instance->lun();
+    for (int i = 0; i < 8; i++) {
+        buffer.append((const char)lun.data[i]);
+    }
 
     // Fix the length
     quint16 len = (buffer.size() & 0xFFFF);
@@ -1446,13 +1465,16 @@ QByteArray qefi_format_dp_message_sas_ex(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
+    QEFIDevicePathMessageSASAddress address =
+        dp_instance->sasAddress();
     for (int i = 0; i < 8; i++) {
-        // TODO: Append sasAddress
-        buffer.append((const char)0x00);
+        // Append sasAddress
+        buffer.append((const char)address.address[i]);
     }
+    QEFIDevicePathMessageLun lun = dp_instance->lun();
     for (int i = 0; i < 8; i++) {
-        // TODO: Append lun
-        buffer.append((const char)0x00);
+        // Append lun
+        buffer.append((const char)lun.data[i]);
     }
     buffer.append(dp_instance->deviceTopologyInfo());
     buffer.append(dp_instance->driveBayID());
@@ -1488,9 +1510,11 @@ QByteArray qefi_format_dp_message_nvme(QEFIDevicePath *dp)
     quint32 namespaceID =
         qToLittleEndian<quint32>(dp_instance->namespaceID());
     buffer.append((const char *)&namespaceID, sizeof(quint32));
+
+    QEFIDevicePathMessageEUI64 eui = dp_instance->ieeeEui64();
     for (int i = 0; i < 8; i++) {
-        // TODO: Append ieeeEui64
-        buffer.append((const char)0x00);
+        // Append ieeeEui64
+        buffer.append((const char)eui.eui[i]);
     }
 
     // Fix the length
@@ -1600,9 +1624,11 @@ QByteArray qefi_format_dp_message_bt(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
+    QEFIDevicePathMessageBTAddress addr =
+        dp_instance->address();
     for (int i = 0; i < 6; i++) {
-        // TODO: Get the BT addr
-        buffer.append((const char)0x00);
+        // Get the BT addr
+        buffer.append((const char)addr.address[i]);
     }
 
     // Fix the length
@@ -1684,9 +1710,11 @@ QByteArray qefi_format_dp_message_btle(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
-    // TODO: Append the address
+    // Append the address
+    QEFIDevicePathMessageBTAddress addr =
+        dp_instance->address();
     for (int i = 0; i < 8; i++) {
-        buffer.append((const char)0x00);
+        buffer.append((const char)addr.address[i]);
     }
     buffer.append(dp_instance->addressType());
 
