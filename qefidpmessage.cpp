@@ -2024,7 +2024,7 @@ QEFIDevicePathMessageMACAddr::QEFIDevicePathMessageMACAddr(
     m_interfaceType(interfaceType)
 {
     for (int i = 0; i < 32; i++) {
-        m_macAddress[i] = macAddress[i];
+        m_macAddress.address[i] = macAddress[i];
     }
 }
 
@@ -2057,10 +2057,10 @@ QEFIDevicePathMessageIPv4Addr::QEFIDevicePathMessageIPv4Addr(
     m_protocol(protocol), m_staticIPAddress(staticIPAddr)
 {
     for (int i = 0; i < 4; i++) {
-        m_localIPv4Address[i] = localIPv4Addr[i];
-        m_remoteIPv4Address[i] = remoteIPv4Addr[i];
-        m_gateway[i] = gateway[i];
-        m_netmask[i] = netmask[i];
+        m_localIPv4Address.address[i] = localIPv4Addr[i];
+        m_remoteIPv4Address.address[i] = remoteIPv4Addr[i];
+        m_gateway.address[i] = gateway[i];
+        m_netmask.address[i] = netmask[i];
     }
 }
 
@@ -2094,6 +2094,16 @@ quint8 QEFIDevicePathMessageIPv6Addr::gatewayIPv6Address() const
     return m_gatewayIPv6Address;
 }
 
+QEFIIPv6Address QEFIDevicePathMessageIPv6Addr::remoteIPv6Address() const
+{
+    return m_remoteIPv6Address;
+}
+
+QEFIIPv6Address QEFIDevicePathMessageIPv6Addr::localIPv6Address() const
+{
+    return m_localIPv6Address;
+}
+
 QEFIDevicePathMessageIPv6Addr::QEFIDevicePathMessageIPv6Addr(
         quint8 *localIPv6Addr, quint8 *remoteIPv6Addr,
     quint16 localPort, quint16 remotePort, quint16 protocol,
@@ -2105,8 +2115,8 @@ QEFIDevicePathMessageIPv6Addr::QEFIDevicePathMessageIPv6Addr(
     m_gatewayIPv6Address(gatewayIPv6Addr)
 {
     for (int i = 0; i < 16; i++) {
-        m_localIPv6Address[i] = localIPv6Addr[i];
-        m_remoteIPv6Address[i] = remoteIPv6Addr[i];
+        m_localIPv6Address.address[i] = localIPv6Addr[i];
+        m_remoteIPv6Address.address[i] = remoteIPv6Addr[i];
     }
 }
 
@@ -2186,6 +2196,11 @@ quint16 QEFIDevicePathMessageUSBWWID::productId() const
     return m_productId;
 }
 
+QList<quint16> QEFIDevicePathMessageUSBWWID::serialNumber() const
+{
+    return m_serialNumber;
+}
+
 QEFIDevicePathMessageUSBWWID::QEFIDevicePathMessageUSBWWID(
         quint16 vendorId, quint16 productId, quint16 *sn)
     : QEFIDevicePathMessage(MSG_USBWWID),
@@ -2250,7 +2265,7 @@ QEFIDevicePathMessageISCSI::QEFIDevicePathMessageISCSI(
     m_tpgt(tpgt), m_targetName(targetName)
 {
     for (int i = 0; i < 8; i++) {
-        m_lun[i] = lun[i];
+        m_lun.data[i] = lun[i];
     }
 };
 
@@ -2267,8 +2282,8 @@ QEFIDevicePathMessageFibreChanEx::QEFIDevicePathMessageFibreChanEx(
     : QEFIDevicePathMessage(MSG_FibreChanEx), m_reserved(reserved)
 {
     for (int i = 0; i < 8; i++) {
-        m_wwn[i] = wwn[i];
-        m_lun[i] = lun[i];
+        m_wwn.data[i] = wwn[i];
+        m_lun.data[i] = lun[i];
     }
 }
 
@@ -2295,8 +2310,8 @@ QEFIDevicePathMessageSASEx::QEFIDevicePathMessageSASEx(
     m_driveBayID(driveBayID), m_rtp(rtp)
 {
     for (int i = 0; i < 8; i++) {
-        m_sasAddress[i] = sasAddress[i];
-        m_lun[i] = lun[i];
+        m_sasAddress.address[i] = sasAddress[i];
+        m_lun.data[i] = lun[i];
     }
 }
 
@@ -2309,7 +2324,7 @@ QEFIDevicePathMessageNVME::QEFIDevicePathMessageNVME(
         quint32 nid, quint8 *ieeeEui64)
     : QEFIDevicePathMessage(MSG_NVME), m_namespaceID(nid)
 {
-    memcpy(m_ieeeEui64, ieeeEui64, sizeof(quint8) * 64);
+    memcpy(m_ieeeEui64.eui, ieeeEui64, sizeof(quint8) * 64);
 }
 
 QUrl QEFIDevicePathMessageURI::uri() const
@@ -2347,7 +2362,7 @@ QEFIDevicePathMessageBT::QEFIDevicePathMessageBT(quint8 *address)
     : QEFIDevicePathMessage(MSG_BT)
 {
     for (int i = 0; i < 6; i++)
-        m_address[i] = address[i];
+        m_address.address[i] = address[i];
 }
 
 QString QEFIDevicePathMessageWiFi::ssid() const
@@ -2377,7 +2392,7 @@ QEFIDevicePathMessageBTLE::QEFIDevicePathMessageBTLE(
     m_addressType(addressType)
 {
     for (int i = 0; i < 6; i++)
-        m_address[i] = address[i];
+        m_address.address[i] = address[i];
 }
 
 QEFIDevicePathMessageDNS::QEFIDevicePathMessageDNS()
@@ -2390,3 +2405,68 @@ QUuid QEFIDevicePathMessageNVDIMM::uuid() const
 
 QEFIDevicePathMessageNVDIMM::QEFIDevicePathMessageNVDIMM(QUuid uuid)
     : QEFIDevicePathMessage(MSG_NVDIMM), m_uuid(uuid) {}
+
+
+QEFIIPv4Address QEFIDevicePathMessageIPv4Addr::remoteIPv4Address() const
+{
+    return m_remoteIPv4Address;
+}
+
+QEFIIPv4Address QEFIDevicePathMessageIPv4Addr::gateway() const
+{
+    return m_gateway;
+}
+
+QEFIIPv4Address QEFIDevicePathMessageIPv4Addr::netmask() const
+{
+    return m_netmask;
+}
+
+QEFIIPv4Address QEFIDevicePathMessageIPv4Addr::localIPv4Address() const
+{
+    return m_localIPv4Address;
+}
+
+
+
+QEFIDevicePathMessageLun QEFIDevicePathMessageISCSI::lun() const
+{
+    return m_lun;
+}
+
+QEFIDevicePathMessageLun QEFIDevicePathMessageFibreChanEx::lun() const
+{
+    return m_lun;
+}
+
+QEFIDevicePathMessageLun QEFIDevicePathMessageFibreChanEx::wwn() const
+{
+    return m_wwn;
+}
+
+QEFIDevicePathMessageLun QEFIDevicePathMessageSASEx::lun() const
+{
+    return m_lun;
+}
+
+QEFIDevicePathMessageSASAddress QEFIDevicePathMessageSASEx::sasAddress() const
+{
+    return m_sasAddress;
+}
+
+QEFIDevicePathMessageEUI64 QEFIDevicePathMessageNVME::ieeeEui64() const
+{
+    return m_ieeeEui64;
+}
+
+QEFIDevicePathMessageBTAddress QEFIDevicePathMessageBT::address() const
+{
+    return m_address;
+}
+
+QEFIDevicePathMessageBTAddress QEFIDevicePathMessageBTLE::address() const
+{
+    return m_address;
+}
+
+

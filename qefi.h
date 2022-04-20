@@ -321,8 +321,8 @@ protected:
     QList<quint32> m_addresses;
 public:
     QEFIDevicePathACPIADR(QList<quint32> addresses);
+    QList<quint32> addresses() const { return m_addresses; }
 };
-// TODO: Decode Device Path ACPI Address
 
 // Subclasses for message
 class QEFIDevicePathMessageATAPI : public QEFIDevicePathMessage {
@@ -420,26 +420,35 @@ public:
     QByteArray vendorData() const;
 };
 
+struct QEFIDevicePathMessageMACAddress {
+    quint8 address[32];
+};
+
 class QEFIDevicePathMessageMACAddr : public QEFIDevicePathMessage {
 protected:
-    quint8 m_macAddress[32];
+    QEFIDevicePathMessageMACAddress m_macAddress;
     quint8 m_interfaceType;
 public:
     QEFIDevicePathMessageMACAddr(quint8 *macAddress, quint8 interfaceType);
     quint8 interfaceType() const;
+    QEFIDevicePathMessageMACAddress macAddress()
+        const { return m_macAddress; }
+};
+
+struct QEFIIPv4Address {
+    quint8 address[4];
 };
 
 class QEFIDevicePathMessageIPv4Addr : public QEFIDevicePathMessage {
 protected:
-    // TODO: Replace IP address to the Qt ones
-    quint8 m_localIPv4Address[4];
-    quint8 m_remoteIPv4Address[4];
+    QEFIIPv4Address m_localIPv4Address;
+    QEFIIPv4Address m_remoteIPv4Address;
     quint16 m_localPort;
     quint16 m_remotePort;
     quint16 m_protocol;
     quint8 m_staticIPAddress;
-    quint8 m_gateway[4];
-    quint8 m_netmask[4];
+    QEFIIPv4Address m_gateway;
+    QEFIIPv4Address m_netmask;
 public:
     QEFIDevicePathMessageIPv4Addr(quint8 *localIPv4Addr, quint8 *remoteIPv4Addr,
         quint16 localPort, quint16 remotePort, quint16 protocol,
@@ -448,13 +457,20 @@ public:
     quint16 remotePort() const;
     quint16 protocol() const;
     quint8 staticIPAddress() const;
+    QEFIIPv4Address localIPv4Address() const;
+    QEFIIPv4Address remoteIPv4Address() const;
+    QEFIIPv4Address gateway() const;
+    QEFIIPv4Address netmask() const;
+};
+
+struct QEFIIPv6Address {
+    quint8 address[16];
 };
 
 class QEFIDevicePathMessageIPv6Addr : public QEFIDevicePathMessage {
 protected:
-    // TODO: Replace IP address to the Qt ones
-    quint8 m_localIPv6Address[16];
-    quint8 m_remoteIPv6Address[16];
+    QEFIIPv6Address m_localIPv6Address;
+    QEFIIPv6Address m_remoteIPv6Address;
     quint16 m_localPort;
     quint16 m_remotePort;
     quint16 m_protocol;
@@ -471,6 +487,8 @@ public:
     quint8 ipAddressOrigin() const;
     quint8 prefixLength() const;
     quint8 gatewayIPv6Address() const;
+    QEFIIPv6Address localIPv6Address() const;
+    QEFIIPv6Address remoteIPv6Address() const;
 };
 
 class QEFIDevicePathMessageUART : public QEFIDevicePathMessage {
@@ -518,6 +536,7 @@ public:
         quint16 *sn);
     quint16 vendorId() const;
     quint16 productId() const;
+    QList<quint16> serialNumber() const;
 };
 
 class QEFIDevicePathMessageLUN : public QEFIDevicePathMessage {
@@ -541,11 +560,15 @@ public:
     quint16 lun() const;
 };
 
+struct QEFIDevicePathMessageLun {
+    quint8 data[8];
+};
+
 class QEFIDevicePathMessageISCSI : public QEFIDevicePathMessage {
 protected:
     quint16 m_protocol;
     quint16 m_options;
-    quint8 m_lun[8];
+    QEFIDevicePathMessageLun m_lun;
     quint16 m_tpgt;
     QString m_targetName;
 public:
@@ -555,6 +578,7 @@ public:
     quint16 options() const;
     quint16 tpgt() const;
     QString targetName() const;
+    QEFIDevicePathMessageLun lun() const;
 };
 
 class QEFIDevicePathMessageVLAN : public QEFIDevicePathMessage {
@@ -568,17 +592,23 @@ public:
 class QEFIDevicePathMessageFibreChanEx : public QEFIDevicePathMessage {
 protected:
     quint32 m_reserved;
-    quint8 m_wwn[8];
-    quint8 m_lun[8];
+    QEFIDevicePathMessageLun m_wwn;
+    QEFIDevicePathMessageLun m_lun;
 public:
     QEFIDevicePathMessageFibreChanEx(quint32 reserved,
         quint8 *wwn, quint8 *lun);
+    QEFIDevicePathMessageLun wwn() const;
+    QEFIDevicePathMessageLun lun() const;
+};
+
+struct QEFIDevicePathMessageSASAddress {
+    quint8 address[8];
 };
 
 class QEFIDevicePathMessageSASEx : public QEFIDevicePathMessage {
 protected:
-    quint8 m_sasAddress[8];
-    quint8 m_lun[8];
+    QEFIDevicePathMessageSASAddress m_sasAddress;
+    QEFIDevicePathMessageLun m_lun;
     quint8 m_deviceTopologyInfo;
     quint8 m_driveBayID; /* If EFIDP_SAS_TOPOLOGY_NEXTBYTE set */
     quint16 m_rtp;
@@ -588,16 +618,23 @@ public:
     quint8 deviceTopologyInfo() const;
     quint8 driveBayID() const;
     quint16 rtp() const;
+    QEFIDevicePathMessageLun lun() const;
+    QEFIDevicePathMessageSASAddress sasAddress() const;
+};
+
+struct QEFIDevicePathMessageEUI64 {
+    quint8 eui[8];
 };
 
 class QEFIDevicePathMessageNVME : public QEFIDevicePathMessage {
 protected:
     quint32 m_namespaceID;
-    quint8 m_ieeeEui64[8];
+    QEFIDevicePathMessageEUI64 m_ieeeEui64;
 public:
     QEFIDevicePathMessageNVME(quint32 namespaceID,
         quint8 *ieeeEui64);
     quint32 namespaceID() const;
+    QEFIDevicePathMessageEUI64 ieeeEui64() const;
 };
 
 class QEFIDevicePathMessageURI : public QEFIDevicePathMessage {
@@ -626,11 +663,16 @@ public:
     quint8 slotNumber() const;
 };
 
+struct QEFIDevicePathMessageBTAddress {
+    quint8 address[6];
+};
+
 class QEFIDevicePathMessageBT : public QEFIDevicePathMessage {
 protected:
-    quint8 m_address[6];
+    QEFIDevicePathMessageBTAddress m_address;
 public:
     QEFIDevicePathMessageBT(quint8 *address);
+    QEFIDevicePathMessageBTAddress address() const;
 };
 
 class QEFIDevicePathMessageWiFi : public QEFIDevicePathMessage {
@@ -651,11 +693,12 @@ public:
 
 class QEFIDevicePathMessageBTLE : public QEFIDevicePathMessage {
 protected:
-    quint8 m_address[6];
+    QEFIDevicePathMessageBTAddress m_address;
     quint8 m_addressType;
 public:
     QEFIDevicePathMessageBTLE(quint8 *address, quint8 addressType);
     quint8 addressType() const;
+    QEFIDevicePathMessageBTAddress address() const;
 };
 
 class QEFIDevicePathMessageDNS : public QEFIDevicePathMessage {
