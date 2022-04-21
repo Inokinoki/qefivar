@@ -31,14 +31,19 @@ QString qefi_parse_ucs2_string(quint8 *data, int max_size);
 QEFIDevicePath *qefi_parse_dp_acpi_hid(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE)
+        return nullptr;
     if (dp->type != QEFIDevicePathType::DP_ACPI ||
         dp->subtype != QEFIDevicePathACPISubType::ACPI_HID)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint32))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint32 hid =
@@ -52,14 +57,19 @@ QEFIDevicePath *qefi_parse_dp_acpi_hid(
 QEFIDevicePath *qefi_parse_dp_acpi_hidex(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE)
+        return nullptr;
     if (dp->type != QEFIDevicePathType::DP_ACPI ||
         dp->subtype != QEFIDevicePathACPISubType::ACPI_HID)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint32) + sizeof(quint32))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint32 hid =
@@ -79,14 +89,14 @@ QEFIDevicePath *qefi_parse_dp_acpi_hidex(
 QEFIDevicePath *qefi_parse_dp_acpi_adr(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE)
+        return nullptr;
     if (dp->type != QEFIDevicePathType::DP_ACPI ||
         dp->subtype != QEFIDevicePathACPISubType::ACPI_ADR)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     QList<quint32> addresses;

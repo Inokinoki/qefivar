@@ -32,14 +32,13 @@ QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd);
 QEFIDevicePath *qefi_parse_dp_media_file(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_File)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     return new QEFIDevicePathMediaFile(qefi_parse_ucs2_string(dp_inner_pointer, 
         length - sizeof(struct qefi_device_path_header)));
@@ -48,14 +47,19 @@ QEFIDevicePath *qefi_parse_dp_media_file(
 QEFIDevicePath *qefi_parse_dp_media_hdd(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_HD)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
+    
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint64) + sizeof(quint64) +
+        sizeof(quint8) * 16 + sizeof(quint8) + sizeof(quint8))
+        return nullptr;
 
-    // TODO: Check size
     quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
     quint32 partitionNumber =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -79,14 +83,18 @@ QEFIDevicePath *qefi_parse_dp_media_hdd(
 QEFIDevicePath *qefi_parse_dp_media_cdrom(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_CDROM)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint64) + sizeof(quint64))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 entry =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -102,14 +110,18 @@ QEFIDevicePath *qefi_parse_dp_media_cdrom(
 QEFIDevicePath *qefi_parse_dp_media_vendor(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_Vendor)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 16)
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
     dp_inner_pointer += 16 * sizeof(quint8);
@@ -120,14 +132,18 @@ QEFIDevicePath *qefi_parse_dp_media_vendor(
 QEFIDevicePath *qefi_parse_dp_media_protocol(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_Protocol)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 16)
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     QUuid protocolGuid = qefi_format_guid(dp_inner_pointer);
     return new QEFIDevicePathMediaProtocol(protocolGuid);
@@ -136,14 +152,13 @@ QEFIDevicePath *qefi_parse_dp_media_protocol(
 QEFIDevicePath *qefi_parse_dp_media_firmware_file(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_FirmwareFile)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     QByteArray piInfo((char *)dp_inner_pointer, length);
     return new QEFIDevicePathMediaFirmwareFile(piInfo);
@@ -152,14 +167,13 @@ QEFIDevicePath *qefi_parse_dp_media_firmware_file(
 QEFIDevicePath *qefi_parse_dp_media_fv(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     QByteArray piInfo((char *)dp_inner_pointer, length);
     return new QEFIDevicePathMediaFirmwareFile(piInfo);
@@ -168,14 +182,18 @@ QEFIDevicePath *qefi_parse_dp_media_fv(
 QEFIDevicePath *qefi_parse_dp_media_relative_offset(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_RelativeOffset)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint64) + sizeof(quint64))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -191,14 +209,19 @@ QEFIDevicePath *qefi_parse_dp_media_relative_offset(
 QEFIDevicePath *qefi_parse_dp_media_ramdisk(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Media ||
         dp->subtype != QEFIDevicePathMediaSubType::MEDIA_RamDisk)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint64) + sizeof(quint64) +
+        sizeof(quint8) * 16 + sizeof(quint16))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint64 startAddress =
         qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));

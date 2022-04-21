@@ -31,14 +31,18 @@ QString qefi_parse_ucs2_string(quint8 *data, int max_size);
 QEFIDevicePath *qefi_parse_dp_message_atapi(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_ATAPI)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) + sizeof(quint8) + sizeof(quint16))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 primary = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -52,14 +56,18 @@ QEFIDevicePath *qefi_parse_dp_message_atapi(
 QEFIDevicePath *qefi_parse_dp_message_scsi(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_SCSI)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint16) + sizeof(quint16))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 target =
         qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
@@ -72,14 +80,18 @@ QEFIDevicePath *qefi_parse_dp_message_scsi(
 QEFIDevicePath *qefi_parse_dp_message_fibre_chan(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_FibreChan)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint64) + sizeof(quint64))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -95,14 +107,18 @@ QEFIDevicePath *qefi_parse_dp_message_fibre_chan(
 QEFIDevicePath *qefi_parse_dp_message_1394(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_1394)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint64))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reversed =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -115,14 +131,18 @@ QEFIDevicePath *qefi_parse_dp_message_1394(
 QEFIDevicePath *qefi_parse_dp_message_usb(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_USB)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 parentPort = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -133,14 +153,18 @@ QEFIDevicePath *qefi_parse_dp_message_usb(
 QEFIDevicePath *qefi_parse_dp_message_i2o(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_I2O)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 target =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -150,14 +174,19 @@ QEFIDevicePath *qefi_parse_dp_message_i2o(
 QEFIDevicePath *qefi_parse_dp_message_infiniband(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_InfiniBand)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint64) + sizeof(quint64) +
+        sizeof(quint64) + sizeof(quint64) + sizeof(quint64))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 resourceFlags =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -184,14 +213,18 @@ QEFIDevicePath *qefi_parse_dp_message_infiniband(
 QEFIDevicePath *qefi_parse_dp_message_vendor(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_Vendor)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 16)
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
     dp_inner_pointer += 16 * sizeof(quint8);
@@ -203,14 +236,18 @@ QEFIDevicePath *qefi_parse_dp_message_vendor(
 QEFIDevicePath *qefi_parse_dp_message_mac_addr(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_MACAddr)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 32 + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 *macAddress = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 32;
@@ -221,14 +258,21 @@ QEFIDevicePath *qefi_parse_dp_message_mac_addr(
 QEFIDevicePath *qefi_parse_dp_message_ipv4(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_IPv4)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 4 + sizeof(quint8) * 4 +
+        sizeof(quint16) + sizeof(quint16) +
+        sizeof(quint16) + sizeof(quint8) +
+        sizeof(quint8) * 4 + sizeof(quint8) * 4)
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 *localIPv4Addr = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 4;
@@ -259,14 +303,20 @@ QEFIDevicePath *qefi_parse_dp_message_ipv4(
 QEFIDevicePath *qefi_parse_dp_message_ipv6(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_IPv6)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 16 + sizeof(quint8) * 16 +
+        sizeof(quint16) + sizeof(quint16) + sizeof(quint16) +
+        sizeof(quint8) + sizeof(quint8) + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 *localIPv6Addr = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 16;
@@ -296,14 +346,19 @@ QEFIDevicePath *qefi_parse_dp_message_ipv6(
 QEFIDevicePath *qefi_parse_dp_message_uart(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_UART)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint64) +
+        sizeof(quint8) + sizeof(quint8) + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -323,14 +378,19 @@ QEFIDevicePath *qefi_parse_dp_message_uart(
 QEFIDevicePath *qefi_parse_dp_message_usb_class(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_USBClass)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint16) + sizeof(quint16) +
+        sizeof(quint8) + sizeof(quint8) + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vendorId =
         qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
@@ -351,14 +411,18 @@ QEFIDevicePath *qefi_parse_dp_message_usb_class(
 QEFIDevicePath *qefi_parse_dp_message_usb_wwid(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_USBWWID)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint16) + sizeof(quint16))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vendorId =
         qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
@@ -374,14 +438,18 @@ QEFIDevicePath *qefi_parse_dp_message_usb_wwid(
 QEFIDevicePath *qefi_parse_dp_message_lun(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_LUN)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 lun = *dp_inner_pointer;
     return new QEFIDevicePathMessageLUN(lun);
@@ -390,14 +458,18 @@ QEFIDevicePath *qefi_parse_dp_message_lun(
 QEFIDevicePath *qefi_parse_dp_message_sata(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_SATA)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint16) + sizeof(quint16) + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 hbaPort =
         qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
@@ -412,14 +484,19 @@ QEFIDevicePath *qefi_parse_dp_message_sata(
 QEFIDevicePath *qefi_parse_dp_message_iscsi(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_ISCSI)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint16) + sizeof(quint16) +
+        sizeof(quint8) * 16 + sizeof(quint16))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 protocol =
         qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
@@ -441,14 +518,18 @@ QEFIDevicePath *qefi_parse_dp_message_iscsi(
 QEFIDevicePath *qefi_parse_dp_message_vlan(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_VLAN)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint16))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vlanID =
         qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
@@ -458,14 +539,19 @@ QEFIDevicePath *qefi_parse_dp_message_vlan(
 QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_FibreChanEx)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint8) * 8 +
+        sizeof(quint8) * 8)
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -479,14 +565,20 @@ QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(
 QEFIDevicePath *qefi_parse_dp_message_sas_ex(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_SASEX)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint16) + sizeof(quint8) * 8 +
+        sizeof(quint8) * 8 + sizeof(quint8) +
+        sizeof(quint8) + sizeof(quint16))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vlanID =
         qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
@@ -507,14 +599,18 @@ QEFIDevicePath *qefi_parse_dp_message_sas_ex(
 QEFIDevicePath *qefi_parse_dp_message_nvme(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_NVME)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 nid =
         qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
@@ -525,14 +621,13 @@ QEFIDevicePath *qefi_parse_dp_message_nvme(
 QEFIDevicePath *qefi_parse_dp_message_uri(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_URI)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     QUrl uri(QString(QByteArray((const char *)dp_inner_pointer,
         length - (dp_inner_pointer - (quint8 *)dp))));
@@ -542,14 +637,18 @@ QEFIDevicePath *qefi_parse_dp_message_uri(
 QEFIDevicePath *qefi_parse_dp_message_ufs(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_UFS)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 targetID = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -560,14 +659,18 @@ QEFIDevicePath *qefi_parse_dp_message_ufs(
 QEFIDevicePath *qefi_parse_dp_message_sd(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_SD)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     return new QEFIDevicePathMessageSD(*dp_inner_pointer);
 }
@@ -575,14 +678,18 @@ QEFIDevicePath *qefi_parse_dp_message_sd(
 QEFIDevicePath *qefi_parse_dp_message_bt(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_BT)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 6)
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     return new QEFIDevicePathMessageBT(dp_inner_pointer);
 }
@@ -590,14 +697,13 @@ QEFIDevicePath *qefi_parse_dp_message_bt(
 QEFIDevicePath *qefi_parse_dp_message_wifi(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_WiFi)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     int ssid_len = length - sizeof(struct qefi_device_path_header);
     QString ssid(QByteArray((const char *)dp_inner_pointer,
@@ -608,14 +714,18 @@ QEFIDevicePath *qefi_parse_dp_message_wifi(
 QEFIDevicePath *qefi_parse_dp_message_emmc(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_EMMC)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     return new QEFIDevicePathMessageEMMC(*dp_inner_pointer);
 }
@@ -623,14 +733,18 @@ QEFIDevicePath *qefi_parse_dp_message_emmc(
 QEFIDevicePath *qefi_parse_dp_message_btle(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_BTLE)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 6 + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 *address = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 6;
@@ -641,14 +755,18 @@ QEFIDevicePath *qefi_parse_dp_message_btle(
 QEFIDevicePath *qefi_parse_dp_message_dns(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_DNS)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint8 is_ipv6 = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -659,14 +777,18 @@ QEFIDevicePath *qefi_parse_dp_message_dns(
 QEFIDevicePath *qefi_parse_dp_message_nvdimm(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Message ||
         dp->subtype != QEFIDevicePathMessageSubType::MSG_NVDIMM)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 8)
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     QUuid uuid = qefi_format_guid(dp_inner_pointer);
     return new QEFIDevicePathMessageNVDIMM(uuid);

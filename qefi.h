@@ -41,6 +41,8 @@ QEFI_EXPORT QUuid qefi_format_guid(const quint8 *data);
 #define QEFI_LOAD_OPTION_CATEGORY_BOOT	    0x00000000
 #define QEFI_LOAD_OPTION_CATEGORY_APP	    0x00000100
 
+#define QEFI_DEVICE_PATH_HEADER_SIZE 4
+
 enum QEFIDevicePathType
 {
     DP_Hardware    = 0x01,

@@ -31,14 +31,18 @@ QString qefi_parse_ucs2_string(quint8 *data, int max_size);
 QEFIDevicePath *qefi_parse_dp_hardware_pci(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Hardware ||
         dp->subtype != QEFIDevicePathHardwareSubType::HW_PCI)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) + sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint8 function = *dp_inner_pointer;
@@ -50,14 +54,18 @@ QEFIDevicePath *qefi_parse_dp_hardware_pci(
 QEFIDevicePath *qefi_parse_dp_hardware_pccard(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Hardware ||
         dp->subtype != QEFIDevicePathHardwareSubType::HW_PCCard)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint8 function = *dp_inner_pointer;
@@ -67,14 +75,18 @@ QEFIDevicePath *qefi_parse_dp_hardware_pccard(
 QEFIDevicePath *qefi_parse_dp_hardware_mmio(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Hardware ||
         dp->subtype != QEFIDevicePathHardwareSubType::HW_MMIO)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32) + sizeof(quint64) + sizeof(quint64))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
@@ -93,14 +105,18 @@ QEFIDevicePath *qefi_parse_dp_hardware_mmio(
 QEFIDevicePath *qefi_parse_dp_hardware_vendor(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Hardware ||
         dp->subtype != QEFIDevicePathHardwareSubType::HW_Vendor)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) * 16)
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
@@ -112,14 +128,18 @@ QEFIDevicePath *qefi_parse_dp_hardware_vendor(
 QEFIDevicePath *qefi_parse_dp_hardware_controller(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Hardware ||
         dp->subtype != QEFIDevicePathHardwareSubType::HW_Controller)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint32))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint32 controller =
@@ -130,14 +150,18 @@ QEFIDevicePath *qefi_parse_dp_hardware_controller(
 QEFIDevicePath *qefi_parse_dp_hardware_bmc(
     struct qefi_device_path_header *dp, int dp_size)
 {
-    if (dp_size < 4) return nullptr;
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE) return nullptr;
     if (dp->type != QEFIDevicePathType::DP_Hardware ||
         dp->subtype != QEFIDevicePathHardwareSubType::HW_BMC)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // TODO: Check size
+    // Check size
+    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
+        sizeof(quint8) + sizeof(quint64))
+        return nullptr;
+
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint8 interfaceType = *dp_inner_pointer;
