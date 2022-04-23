@@ -207,6 +207,7 @@ class QEFILoadOption
 {
     bool m_isValidated;
     bool m_isVisible;
+    quint32 m_attribute;
     QString m_name;
     QString m_shortPath;
     QList<QSharedPointer<QEFIDevicePath> > m_devicePathList;
@@ -225,6 +226,10 @@ public:
     QString path() const;
     QByteArray optionalData() const;
     QList<QSharedPointer<QEFIDevicePath> > devicePathList() const;
+
+    void setName(const QString &name);
+    void setIsVisible(bool isVisible);
+    void setOptionalData(const QByteArray &optionalData);
 };
 
 // Subclasses for hardware

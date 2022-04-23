@@ -1038,6 +1038,23 @@ QList<QSharedPointer<QEFIDevicePath> > QEFILoadOption::devicePathList() const
     return m_devicePathList;
 }
 
+void QEFILoadOption::setIsVisible(bool isVisible)
+{
+    m_isVisible = isVisible;
+    if (!isVisible) m_attribute &= ~QEFI_LOAD_OPTION_ACTIVE;
+    else m_attribute |= QEFI_LOAD_OPTION_ACTIVE;
+}
+
+void QEFILoadOption::setOptionalData(const QByteArray &optionalData)
+{
+    m_optionalData = optionalData;
+}
+
+void QEFILoadOption::setName(const QString &name)
+{
+    m_name = name;
+}
+
 QEFILoadOption::QEFILoadOption(QByteArray &bootData)
     : m_isValidated(false)
 {
@@ -1050,8 +1067,8 @@ bool QEFILoadOption::parse(QByteArray &bootData)
     if (qefi_loadopt_is_valid(bootData)) {
         struct qefi_load_option_header *header =
             (struct qefi_load_option_header *)bootData.data();
-        m_isVisible = (qFromLittleEndian<quint32>(header->attributes)
-            & QEFI_LOAD_OPTION_ACTIVE);
+        m_attribute = qFromLittleEndian<quint32>(header->attributes);
+        m_isVisible = (m_attribute & QEFI_LOAD_OPTION_ACTIVE);
         m_name = qefi_extract_name(bootData);
         m_shortPath = qefi_extract_path(bootData);
 
@@ -1107,8 +1124,7 @@ QByteArray QEFILoadOption::format()
     QByteArray loadOptionData;
 
     struct qefi_load_option_header header;
-    header.attributes = qToLittleEndian<quint32>(
-        m_isVisible ? QEFI_LOAD_OPTION_ACTIVE : 0);
+    header.attributes = qToLittleEndian<quint32>(m_attribute);
     // Parse and format DP
     header.path_list_length = 0;
 
