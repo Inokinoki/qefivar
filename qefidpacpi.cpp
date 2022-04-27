@@ -60,7 +60,7 @@ QEFIDevicePath *qefi_parse_dp_acpi_hidex(
     if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE)
         return nullptr;
     if (dp->type != QEFIDevicePathType::DP_ACPI ||
-        dp->subtype != QEFIDevicePathACPISubType::ACPI_HID)
+        dp->subtype != QEFIDevicePathACPISubType::ACPI_HIDEX)
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
@@ -104,6 +104,7 @@ QEFIDevicePath *qefi_parse_dp_acpi_adr(
         i += sizeof(quint32)) {
         addresses << 
             qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        dp_inner_pointer += sizeof(quint32);
     }
     return new QEFIDevicePathACPIADR(addresses);
 }
