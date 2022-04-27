@@ -160,7 +160,8 @@ QEFIDevicePath *qefi_parse_dp_media_firmware_file(
     if (length != dp_size || length <= 0) return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
-    QByteArray piInfo((char *)dp_inner_pointer, length);
+    QByteArray piInfo((char *)dp_inner_pointer,
+        length - (dp_inner_pointer - (quint8 *)dp));
     return new QEFIDevicePathMediaFirmwareFile(piInfo);
 }
 
@@ -175,8 +176,9 @@ QEFIDevicePath *qefi_parse_dp_media_fv(
     if (length != dp_size || length <= 0) return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
-    QByteArray piInfo((char *)dp_inner_pointer, length);
-    return new QEFIDevicePathMediaFirmwareFile(piInfo);
+    QByteArray piInfo((char *)dp_inner_pointer,
+        length - (dp_inner_pointer - (quint8 *)dp));
+    return new QEFIDevicePathMediaFirmwareVolume(piInfo);
 }
 
 QEFIDevicePath *qefi_parse_dp_media_relative_offset(
@@ -260,10 +262,10 @@ QByteArray qefi_format_dp_media_hdd(QEFIDevicePath *dp)
         qToLittleEndian<quint32>(dp_instance->partitionNumber());
     buffer.append((const char *)&partitionNumber, sizeof(quint32));
     quint64 start =
-        qToLittleEndian<quint64>(dp_instance->partitionNumber());
+        qToLittleEndian<quint64>(dp_instance->start());
     buffer.append((const char *)&start, sizeof(quint64));
     quint64 size =
-        qToLittleEndian<quint64>(dp_instance->partitionNumber());
+        qToLittleEndian<quint64>(dp_instance->size());
     buffer.append((const char *)&size, sizeof(quint64));
     const quint8 *signature = dp_instance->rawSignature();
     buffer.append((const char *)signature, sizeof(quint8) * 16);
