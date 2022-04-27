@@ -59,8 +59,6 @@ void TestDevicePathHardware::test_qefi_dp_hardware_pci()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_Hardware);
     QVERIFY(dp_header->subtype == QEFIDevicePathHardwareSubType::HW_PCI);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY((*((quint8 *)(dp_header + 1))) == dp.function());
-    QVERIFY((*((quint8 *)(dp_header + 1) + 1)) == dp.device());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
@@ -85,7 +83,6 @@ void TestDevicePathHardware::test_qefi_dp_hardware_pccard()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_Hardware);
     QVERIFY(dp_header->subtype == QEFIDevicePathHardwareSubType::HW_PCCard);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY((*((quint8 *)(dp_header + 1))) == dp.function());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
@@ -110,12 +107,6 @@ void TestDevicePathHardware::test_qefi_dp_hardware_mmio()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_Hardware);
     QVERIFY(dp_header->subtype == QEFIDevicePathHardwareSubType::HW_MMIO);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1)))
-        == dp.memoryType());
-    QVERIFY(qFromLittleEndian<quint64>(*(quint64 *)((quint8 *)(dp_header + 1)
-        + sizeof(quint32))) == dp.startingAddress());
-    QVERIFY(qFromLittleEndian<quint64>(*(quint64 *)((quint8 *)(dp_header + 1)
-        + sizeof(quint32) + sizeof(quint64))) == dp.endingAddress());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
@@ -143,9 +134,6 @@ void TestDevicePathHardware::test_qefi_dp_hardware_vendor()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_Hardware);
     QVERIFY(dp_header->subtype == QEFIDevicePathHardwareSubType::HW_Vendor);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY(qefi_format_guid(((quint8 *)(dp_header + 1))) == dp.vendorGuid());
-    QVERIFY(QByteArray(((const char *)(dp_header + 1) + sizeof(quint8) * 16),
-        dp.vendorData().length()) == dp.vendorData());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
@@ -171,8 +159,6 @@ void TestDevicePathHardware::test_qefi_dp_hardware_controller()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_Hardware);
     QVERIFY(dp_header->subtype == QEFIDevicePathHardwareSubType::HW_Controller);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1)))
-        == dp.controller());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
@@ -197,9 +183,6 @@ void TestDevicePathHardware::test_qefi_dp_hardware_bmc()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_Hardware);
     QVERIFY(dp_header->subtype == QEFIDevicePathHardwareSubType::HW_BMC);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY((*((quint8 *)(dp_header + 1))) == dp.interfaceType());
-    QVERIFY(qFromLittleEndian<quint64>(*(quint64 *)
-        ((quint8 *)(dp_header + 1) + sizeof(quint8))) == dp.baseAddress());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
