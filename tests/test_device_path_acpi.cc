@@ -47,11 +47,6 @@ void TestDevicePathACPI::test_qefi_dp_acpi_hid()
     // Test format
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_ACPI);
     QVERIFY(dp_header->subtype == QEFIDevicePathACPISubType::ACPI_HID);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1)))
-        == dp.hid());
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1) +
-        sizeof(quint32))) == dp.uid());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
@@ -80,13 +75,6 @@ void TestDevicePathACPI::test_qefi_dp_acpi_hidex()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_ACPI);
     QVERIFY(dp_header->subtype == QEFIDevicePathACPISubType::ACPI_HIDEX);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1)))
-        == dp.hid());
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1) +
-        sizeof(quint32))) == dp.uid());
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1) +
-        sizeof(quint32) + sizeof(quint32))) == dp.cid());
-    // TODO: Test strings format
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
@@ -121,12 +109,6 @@ void TestDevicePathACPI::test_qefi_dp_acpi_adr()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_ACPI);
     QVERIFY(dp_header->subtype == QEFIDevicePathACPISubType::ACPI_ADR);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1)))
-        == addresses[0]);
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1) +
-        sizeof(quint32))) == addresses[1]);
-    QVERIFY(qFromLittleEndian<quint32>(*(quint32 *)((quint8 *)(dp_header + 1) +
-        sizeof(quint32) + sizeof(quint32))) == addresses[2]);
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(

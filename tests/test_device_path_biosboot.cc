@@ -36,11 +36,6 @@ void TestDevicePathBIOSBoot::test_qefi_dp_biosboot()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_BIOSBoot);
     QVERIFY(dp_header->subtype == QEFIDevicePathBIOSBootSubType::BIOS_BIOSBoot);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    QVERIFY(qFromLittleEndian<quint16>(*(quint16 *)((quint8 *)(dp_header + 1)))
-        == dp.deviceType());
-    QVERIFY(qFromLittleEndian<quint16>(*(quint16 *)((quint8 *)(dp_header + 1) +
-        sizeof(quint16))) == dp.status());
-    // TODO: Test description
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
