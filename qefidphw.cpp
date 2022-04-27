@@ -280,7 +280,7 @@ QByteArray qefi_format_dp_hardware_vendor(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
-    buffer.append(dp_instance->vendorGuid().toRfc4122());
+    buffer.append(qefi_rfc4122_to_guid(dp_instance->vendorGuid().toRfc4122()));
     buffer.append(dp_instance->vendorData());
 
     // Fix the length

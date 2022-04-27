@@ -143,10 +143,9 @@ void TestDevicePathHardware::test_qefi_dp_hardware_vendor()
     QVERIFY(dp_header->type == QEFIDevicePathType::DP_Hardware);
     QVERIFY(dp_header->subtype == QEFIDevicePathHardwareSubType::HW_Vendor);
     QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-    // FIXME: Test not passed
-    // QVERIFY(qefi_format_guid(((quint8 *)(dp_header + 1))) == dp.vendorGuid());
-    // QVERIFY(QByteArray(((const char *)(dp_header + 1) + sizeof(quint64)),
-    //     dp.vendorData().length()) == dp.vendorData());
+    QVERIFY(qefi_format_guid(((quint8 *)(dp_header + 1))) == dp.vendorGuid());
+    QVERIFY(QByteArray(((const char *)(dp_header + 1) + sizeof(quint8) * 16),
+        dp.vendorData().length()) == dp.vendorData());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
@@ -156,8 +155,8 @@ void TestDevicePathHardware::test_qefi_dp_hardware_vendor()
     QEFIDevicePathHardwareVendor *subP =
         dynamic_cast<QEFIDevicePathHardwareVendor *>(p.get());
     QVERIFY(subP != nullptr);
-    // QVERIFY(subP->vendorGuid() == dp.vendorGuid());
-    // QVERIFY(subP->vendorData() == dp.vendorData());
+    QVERIFY(subP->vendorGuid() == dp.vendorGuid());
+    QVERIFY(subP->vendorData() == dp.vendorData());
 }
 
 void TestDevicePathHardware::test_qefi_dp_hardware_controller()

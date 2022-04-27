@@ -1178,3 +1178,31 @@ QUuid qefi_format_guid(const quint8 *data)
         (uchar)data[12], (uchar)data[13],
         (uchar)data[14], (uchar)data[15]);
 }
+
+QByteArray qefi_rfc4122_to_guid(const QByteArray data)
+{
+    if (data.length() < 8) return data;
+
+    QByteArray res(data);
+    quint8 temp;
+
+    // LE 32
+    temp = res[0];
+    res[0] = res[3];
+    res[3] = temp;
+    temp = res[1];
+    res[1] = res[2];
+    res[2] = temp;
+
+    // LE 16
+    temp = res[4];
+    res[4] = res[5];
+    res[5] = temp;
+
+    // LE 16
+    temp = res[6];
+    res[6] = res[7];
+    res[7] = temp;
+
+    return res;
+}
