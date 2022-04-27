@@ -357,7 +357,7 @@ QByteArray qefi_format_dp_media_vendor(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
-    buffer.append(dp_instance->vendorGuid().toRfc4122());
+    buffer.append(qefi_rfc4122_to_guid(dp_instance->vendorGuid().toRfc4122()));
     buffer.append(dp_instance->vendorData());
 
     // Fix the length
@@ -385,7 +385,7 @@ QByteArray qefi_format_dp_media_protocol(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
-    buffer.append(dp_instance->protocolGuid().toRfc4122());
+    buffer.append(qefi_rfc4122_to_guid(dp_instance->protocolGuid().toRfc4122()));
 
     // Fix the length
     quint16 len = (buffer.size() & 0xFFFF);
@@ -507,7 +507,7 @@ QByteArray qefi_format_dp_media_ramdisk(QEFIDevicePath *dp)
     quint64 endAddress =
         qToLittleEndian<quint64>(dp_instance->endAddress());
     buffer.append((const char *)&endAddress, sizeof(quint64));
-    buffer.append(dp_instance->diskTypeGuid().toRfc4122());
+    buffer.append(qefi_rfc4122_to_guid(dp_instance->diskTypeGuid().toRfc4122()));
     quint16 instanceNumber =
         qToLittleEndian<quint16>(dp_instance->instanceNumber());
     buffer.append((const char *)&instanceNumber, sizeof(quint16));

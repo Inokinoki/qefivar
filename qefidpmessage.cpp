@@ -1150,7 +1150,7 @@ QByteArray qefi_format_dp_message_vendor(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
-    buffer.append(dp_instance->vendorGuid().toRfc4122());
+    buffer.append(qefi_rfc4122_to_guid(dp_instance->vendorGuid().toRfc4122()));
     buffer.append(dp_instance->vendorData());
 
     // Fix the length
@@ -1892,7 +1892,7 @@ QByteArray qefi_format_dp_message_nvdimm(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
-    buffer.append(dp_instance->uuid().toRfc4122());
+    buffer.append(qefi_rfc4122_to_guid(dp_instance->uuid().toRfc4122()));
 
     // Fix the length
     quint16 len = (buffer.size() & 0xFFFF);
