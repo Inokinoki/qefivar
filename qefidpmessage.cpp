@@ -574,8 +574,8 @@ QEFIDevicePath *qefi_parse_dp_message_sas_ex(
 
     // Check size
     if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint16) + sizeof(quint8) * 8 +
-        sizeof(quint8) * 8 + sizeof(quint8) +
+        sizeof(quint8) * 8 + sizeof(quint8) * 8 +
+        sizeof(quint8) +
         sizeof(quint8) + sizeof(quint16))
         return nullptr;
 
@@ -608,7 +608,7 @@ QEFIDevicePath *qefi_parse_dp_message_nvme(
 
     // Check size
     if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32))
+        sizeof(quint32) + sizeof(quint64))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -1835,7 +1835,7 @@ QByteArray qefi_format_dp_message_btle(QEFIDevicePath *dp)
     // Append the address
     QEFIDevicePathMessageBTAddress addr =
         dp_instance->address();
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 6; i++) {
         buffer.append((const char)addr.address[i]);
     }
     buffer.append(dp_instance->addressType());
@@ -2474,7 +2474,7 @@ QEFIDevicePathMessageNVME::QEFIDevicePathMessageNVME(
         quint32 nid, quint8 *ieeeEui64)
     : QEFIDevicePathMessage(MSG_NVME), m_namespaceID(nid)
 {
-    memcpy(m_ieeeEui64.eui, ieeeEui64, sizeof(quint8) * 64);
+    memcpy(m_ieeeEui64.eui, ieeeEui64, sizeof(quint8) * 8);
 }
 
 QUrl QEFIDevicePathMessageURI::uri() const
