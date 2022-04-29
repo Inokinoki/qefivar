@@ -68,6 +68,9 @@ install(
 )
 
 if(BUILD_TESTING)
+    # Enable testing for the project
+    enable_testing()
+
     add_subdirectory(tests)
 endif()
 
