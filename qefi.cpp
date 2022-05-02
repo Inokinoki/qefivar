@@ -515,6 +515,7 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
     return QByteArray();
 }
 
+#ifndef EFIVAR_APP_DATA_DUMMY
 #ifdef Q_OS_WIN
 /* Implementation based on Windows API */
 #include <Windows.h>
@@ -853,6 +854,118 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
                                    );
 
     // TODO: Detect return code
+}
+#endif
+#else   // APP Data based backend
+#include <QStandardPaths>
+#include <QDebug>
+#include <QString>
+#include <QFile>
+#include <QDir>
+
+bool qefi_is_available()
+{
+    return true;
+}
+
+bool qefi_has_privilege()
+{
+    return true;
+}
+
+bool dummy_backend_get_dir(QString &dir)
+{
+    dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (dir.isNull()) return false;
+    QDir appDataDir(dir);
+    if (!appDataDir.exists()) {
+        if (!appDataDir.mkdir(dir)) return false;
+    }
+    return true;
+}
+
+quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
+{
+    QByteArray data;
+    quint16 value = 0;
+
+    QString dir;
+    if (dummy_backend_get_dir(dir)) {
+        QDir storedDir(dir);
+        QString filename = storedDir.absoluteFilePath(uuid.toString(QUuid::WithoutBraces)
+            + name + QStringLiteral(".bin"));
+
+        qDebug() << filename;
+        QFile file(filename);
+        if (file.exists()) {
+            file.open(QIODevice::ReadOnly);
+            data = file.readAll();
+            file.close();
+
+            if (data.size() >= 2) {
+                value = *((quint16 *)data.data());
+            }
+        }
+    }
+
+    return qFromLittleEndian<quint16>(value);
+}
+
+QByteArray qefi_get_variable(QUuid uuid, QString name)
+{
+    QByteArray data;
+
+    QString dir;
+    if (dummy_backend_get_dir(dir)) {
+        QDir storedDir(dir);
+        QString filename = storedDir.absoluteFilePath(uuid.toString(QUuid::WithoutBraces)
+            + name + QStringLiteral(".bin"));
+
+        qDebug() << filename;
+        QFile file(filename);
+        if (file.exists()) {
+            file.open(QIODevice::ReadOnly);
+            data = file.readAll();
+            file.close();
+        }
+    }
+
+    return data;
+}
+
+void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
+{
+    QString dir;
+    if (dummy_backend_get_dir(dir)) {
+        QDir storedDir(dir);
+        QString filename = storedDir.absoluteFilePath(uuid.toString(QUuid::WithoutBraces)
+            + name + QStringLiteral(".bin"));
+
+        QByteArray data;
+        data.append((const char)(value & 0xFF));
+        data.append((const char)(value >> 8));
+        qDebug() << filename;
+        QFile file(filename);
+        file.open(QIODevice::WriteOnly);
+        file.write(data);
+        file.close();
+    }
+}
+
+void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
+{
+    QString dir;
+    if (dummy_backend_get_dir(dir)) {
+        QDir storedDir(dir);
+        QString filename = storedDir.absoluteFilePath(uuid.toString(QUuid::WithoutBraces)
+            + name + QStringLiteral(".bin"));
+
+        qDebug() << filename;
+        QFile file(filename);
+        file.open(QIODevice::WriteOnly);
+        file.write(value);
+        file.close();
+    }
 }
 #endif
 
