@@ -1151,6 +1151,18 @@ QList<QSharedPointer<QEFIDevicePath> > QEFILoadOption::devicePathList() const
     return m_devicePathList;
 }
 
+void QEFILoadOption::addDevicePath(QEFIDevicePath *dp)
+{
+    m_devicePathList.append(QSharedPointer<QEFIDevicePath>(dp));
+}
+
+void QEFILoadOption::removeDevicePathAt(int index)
+{
+    if (index >= 0 && index < m_devicePathList.size()) {
+        m_devicePathList.removeAt(index);
+    }
+}
+
 void QEFILoadOption::setIsVisible(bool isVisible)
 {
     m_isVisible = isVisible;

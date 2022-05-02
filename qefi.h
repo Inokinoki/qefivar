@@ -231,6 +231,9 @@ public:
     void setName(const QString &name);
     void setIsVisible(bool isVisible);
     void setOptionalData(const QByteArray &optionalData);
+
+    void addDevicePath(QEFIDevicePath *dp); // Ownership is ours
+    void removeDevicePathAt(int index);
 };
 
 // Subclasses for hardware
