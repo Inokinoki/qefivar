@@ -1180,13 +1180,19 @@ void QEFILoadOption::setName(const QString &name)
     m_name = name;
 }
 
+QEFILoadOption::QEFILoadOption(const QByteArray &bootData)
+    : m_isValidated(false)
+{
+    parse(bootData);
+}
+
 QEFILoadOption::QEFILoadOption(QByteArray &bootData)
     : m_isValidated(false)
 {
     parse(bootData);
 }
 
-bool QEFILoadOption::parse(QByteArray &bootData)
+bool QEFILoadOption::parse(const QByteArray &bootData)
 {
     m_isValidated = false;
     if (qefi_loadopt_is_valid(bootData)) {

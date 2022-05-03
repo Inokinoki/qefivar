@@ -206,6 +206,7 @@ public:
 // Load option
 class QEFILoadOption
 {
+protected:
     bool m_isValidated;
     bool m_isVisible;
     quint32 m_attribute;
@@ -215,9 +216,10 @@ class QEFILoadOption
     QByteArray m_optionalData;
 public:
     QEFILoadOption(QByteArray &bootData);
+    QEFILoadOption(const QByteArray &bootData);
     virtual ~QEFILoadOption();
 
-    bool parse(QByteArray &bootData);
+    bool parse(const QByteArray &bootData);
     QByteArray format();
 
     bool isValidated() const;
