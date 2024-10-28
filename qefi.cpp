@@ -892,8 +892,8 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     QString dir;
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
-        QString filename = storedDir.absoluteFilePath(uuid.toString(QUuid::WithoutBraces)
-            + name + QStringLiteral(".bin"));
+        QString filename = storedDir.absoluteFilePath(
+	    QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
@@ -918,8 +918,8 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     QString dir;
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
-        QString filename = storedDir.absoluteFilePath(uuid.toString(QUuid::WithoutBraces)
-            + name + QStringLiteral(".bin"));
+        QString filename = storedDir.absoluteFilePath(
+	    QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
@@ -938,8 +938,8 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     QString dir;
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
-        QString filename = storedDir.absoluteFilePath(uuid.toString(QUuid::WithoutBraces)
-            + name + QStringLiteral(".bin"));
+        QString filename = storedDir.absoluteFilePath(
+	    QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         QByteArray data;
         data.append((const char)(value & 0xFF));
@@ -957,8 +957,8 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
     QString dir;
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
-        QString filename = storedDir.absoluteFilePath(uuid.toString(QUuid::WithoutBraces)
-            + name + QStringLiteral(".bin"));
+        QString filename = storedDir.absoluteFilePath(
+	    QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
