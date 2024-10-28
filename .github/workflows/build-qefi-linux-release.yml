@@ -25,7 +25,9 @@ jobs:
 
     - name: Show Ubuntu release version
       run: |
-        cat /etc/lsb_release
+        sudo apt update -y
+        sudo apt install -y lsb-release
+        lsb_release -a
     
     - name: Install libefivar, libefiboot and their dev files
       run: |
