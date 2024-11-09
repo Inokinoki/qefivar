@@ -20,9 +20,9 @@ void TestLoadOptionParsing::testParseTestBootData()
     QVERIFY(loadOption.name() == QString(test_boot_name));
     QVERIFY(loadOption.path() == QString(test_boot_path));
     QVERIFY(loadOption.devicePathList().size() == 2);
-    auto devicePathList = loadOption.devicePathList();
-    for (int i = 0; i < devicePathList.size(); i++) {
-        QSharedPointer<QEFIDevicePath> &dp = devicePathList[i];
+
+    const auto &devicePathList = loadOption.devicePathList();
+    for (const auto &dp : devicePathList) {
         if (dp->type() == QEFIDevicePathType::DP_Media &&
             dp->subType() == QEFIDevicePathMediaSubType::MEDIA_HD) {
             QEFIDevicePathMediaHD *dpMediaHD =
@@ -46,9 +46,8 @@ void TestLoadOptionParsing::testParseTestBootData2()
     QVERIFY(loadOption.name() == QString(test_boot_name2));
     QVERIFY(loadOption.path() == QString(test_boot_path2));
     QVERIFY(loadOption.devicePathList().size() == 2);
-    auto devicePathList = loadOption.devicePathList();
-    for (int i = 0; i < devicePathList.size(); i++) {
-        QSharedPointer<QEFIDevicePath> &dp = devicePathList[i];
+    const auto &devicePathList = loadOption.devicePathList();
+    for (const auto &dp : devicePathList) {
         if (dp->type() == QEFIDevicePathType::DP_Media &&
             dp->subType() == QEFIDevicePathMediaSubType::MEDIA_HD) {
             QEFIDevicePathMediaHD *dpMediaHD =

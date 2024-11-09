@@ -633,8 +633,8 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     }
     else
     {
-        for (size_t i = 0; i < length; i++) {
-            value.append(buffer[i]);
+        for (const auto &byte : buffer) {
+            value.append(byte);
         }
     }
 
@@ -1269,9 +1269,8 @@ QByteArray QEFILoadOption::format()
     // Append name
     loadOptionData.append(name);
     // Append DP
-    for (QList<QSharedPointer<QEFIDevicePath> >::iterator i = m_devicePathList.begin();
-         i != m_devicePathList.end(); i++) {
-        loadOptionData.append(qefi_format_dp((*i).get()));
+    for (const auto &dp : std::as_const(m_devicePathList)) {
+        loadOptionData.append(qefi_format_dp(dp.get()));
     }
     // Append the end of DP
     loadOptionData.append((char)QEFIDevicePathType::DP_End);
