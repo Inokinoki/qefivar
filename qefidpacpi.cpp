@@ -199,10 +199,9 @@ QByteArray qefi_format_dp_acpi_adr(QEFIDevicePath *dp)
     buffer.append((char)4);
     buffer.append((char)0);
     // Append the fields
-    QList<quint32> addresses = dp_instance->addresses();
-    for (int i = 0; i < addresses.size(); i++) {
-        quint32 adr =
-            qToLittleEndian<quint32>(addresses[i]);
+    const auto &addresses = dp_instance->addresses();
+    for (const auto &addr : addresses) {
+        quint32 adr = qToLittleEndian<quint32>(addr);
         buffer.append((const char *)&adr, sizeof(quint32));
     }
 
