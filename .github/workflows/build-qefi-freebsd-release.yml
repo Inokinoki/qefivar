@@ -32,7 +32,7 @@ jobs:
           pkg install -y cmake qt5 pkgconf efivar gcc
         run: |
           uname -a
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr -DPATCH_FREEBSD_EFIVAR=ON -DCMAKE_CXX_COMPILER=g++ -DBUILD_TESTING=YES
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr -DPATCH_FREEBSD_EFIVAR=ON -DUSE_EFIVAR_OLD_API=ON -DCMAKE_CXX_COMPILER=g++ -DBUILD_TESTING=YES
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     # Test
