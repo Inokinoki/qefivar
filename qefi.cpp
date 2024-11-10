@@ -822,7 +822,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     *((uint16_t *)buffer) = qToLittleEndian<quint16>(value);
     return_code = efi_set_variable(guid, c_name, buffer, 2,
                                    default_write_attribute
-#ifndef EFIVAR_OLD_API
+#ifndef EFIVAR_WITHOUT_MODE
                                  , 0644
 #endif
                                    );
@@ -848,7 +848,7 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 
     return_code = efi_set_variable(guid, c_name, (uint8_t *)value.data(), value.size(),
                                    default_write_attribute
-#ifndef EFIVAR_OLD_API
+#ifndef EFIVAR_WITHOUT_MODE
                                  , 0644
 #endif
                                    );

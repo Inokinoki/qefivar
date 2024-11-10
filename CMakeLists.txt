@@ -36,7 +36,16 @@ target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY)
 
 find_package(PkgConfig)
 if(PkgConfig_FOUND)
-    pkg_check_modules(EFIVAR efivar)
+    pkg_check_modules(EFIVAR efivar>=0.15)
+    if(NOT DEFINED EFIVAR_FOUND)
+        # Find and link efivar<0.15: no mode
+        pkg_check_modules(EFIVAR efivar)
+        if(EFIVAR_FOUND)
+            # Consider it as an old lib (without mode and return non-zero)
+            # TODO(Inoki): to check https://github.com/rhboot/efivar/commit/7bd2e309aeec210509d215c803a762725591ccc7
+            add_definitions(-DEFIVAR_WITHOUT_MODE)
+        endif()
+    endif()
 endif()
 
 if(APP_DATA_DUMMY_BACKEND)
