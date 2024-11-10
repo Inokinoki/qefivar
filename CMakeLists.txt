@@ -67,6 +67,12 @@ if(USE_EFIVAR_OLD_API)
     add_definitions(-DEFIVAR_OLD_API)
 endif()
 
+if(PATCH_FREEBSD_EFIVAR)
+    # Patch efivar 0.15 build for FreeBSD
+    # TODO(Inoki): check 0.15 build for FreeBSD
+    target_link_libraries(QEFI PRIVATE geom)
+endif()
+
 install(
     TARGETS QEFI
     EXPORT QEFITargets
