@@ -686,6 +686,10 @@ extern "C" {
 #include <efivar.h>
 #endif
 #include <unistd.h>
+
+#ifdef EFIVAR_FREEBSD_PATCH
+efi_guid_t efi_guid_zero = {0};
+#endif
 }
 
 bool qefi_is_available()

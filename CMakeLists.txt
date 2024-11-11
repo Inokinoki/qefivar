@@ -70,6 +70,7 @@ endif()
 if(PATCH_FREEBSD_EFIVAR)
     # Patch efivar 0.15 build for FreeBSD
     # TODO(Inoki): check 0.15 build for FreeBSD
+    add_definitions(-DEFIVAR_FREEBSD_PATCH)
     target_link_libraries(QEFI PRIVATE geom)
 endif()
 
