@@ -684,7 +684,6 @@ extern "C" {
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <linux/fs.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -800,27 +799,6 @@ static int qefivar_efivarfs_get_variable(QUuid &guid, QString &name, uint8_t **d
 }
 
 static int
-efivarfs_make_fd_mutable(int fd, unsigned long *orig_attrs)
-{
-    unsigned long mutable_attrs = 0;
-
-    *orig_attrs = 0;
-
-    if (ioctl(fd, FS_IOC_GETFLAGS, orig_attrs) == -1)
-        return -1;
-
-    if ((*orig_attrs & FS_IMMUTABLE_FL) == 0)
-        return 0;
-
-    mutable_attrs = *orig_attrs & ~(unsigned long)FS_IMMUTABLE_FL;
-
-    if (ioctl(fd, FS_IOC_SETFLAGS, &mutable_attrs) == -1)
-        return -1;
-
-    return 0;
-}
-
-static int
 qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, const uint8_t *data,
     size_t data_size, uint32_t attributes, mode_t mode)
 {
@@ -829,7 +807,7 @@ qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, const uint8_t
     int rfd = -1;
     struct stat rfd_stat;
     unsigned long orig_attrs = 0;
-    int restore_immutable_fd = -1;
+    // int restore_immutable_fd = -1;
     int wfd = -1;
     int open_wflags;
     int ret = -1;
@@ -866,18 +844,6 @@ qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, const uint8_t
      * either.
      */
     rfd = open(path, O_RDONLY);
-    if (rfd != -1) {
-        /* save the containing device and the inode number for later */
-        if (fstat(rfd, &rfd_stat) == -1) {
-            // efi_error("fstat() failed on r/o fd %d", rfd);
-            goto err;
-        }
-
-        /* if the file is indeed immutable, clear and remember it */
-        if (efivarfs_make_fd_mutable(rfd, &orig_attrs) == 0 &&
-            (orig_attrs & FS_IMMUTABLE_FL))
-            restore_immutable_fd = rfd;
-    }
 
     /*
      * Open the variable file for writing now. First, use O_APPEND
@@ -912,9 +878,9 @@ qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, const uint8_t
      * immediately, and the write() below would fail otherwise.
      */
     if (rfd == -1) {
-        if (efivarfs_make_fd_mutable(wfd, &orig_attrs) == 0 &&
-            (orig_attrs & FS_IMMUTABLE_FL))
-            restore_immutable_fd = wfd;
+        // if (efivarfs_make_fd_mutable(wfd, &orig_attrs) == 0 &&
+        //     (orig_attrs & FS_IMMUTABLE_FL))
+        //     restore_immutable_fd = wfd;
     } else {
         /* make sure rfd and wfd refer to the same file */
         struct stat wfd_stat;
@@ -952,7 +918,7 @@ err:
         // efi_error("failed to unlink %s", path);
     }
 
-    ioctl(restore_immutable_fd, FS_IOC_SETFLAGS, &orig_attrs);
+    // ioctl(restore_immutable_fd, FS_IOC_SETFLAGS, &orig_attrs);
 
     if (wfd >= 0)
         close(wfd);
