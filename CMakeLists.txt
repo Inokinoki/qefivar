@@ -34,37 +34,15 @@ set_target_properties(QEFI PROPERTIES PUBLIC_HEADER qefi.h)
 target_link_libraries(QEFI PUBLIC Qt${QT_VERSION_MAJOR}::Core)
 target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY)
 
-find_package(PkgConfig)
-if(PkgConfig_FOUND)
-    pkg_check_modules(EFIVAR efivar>=0.15)
-    if(NOT DEFINED EFIVAR_FOUND)
-        # Find and link efivar<0.15: no mode
-        pkg_check_modules(EFIVAR efivar)
-        if(EFIVAR_FOUND)
-            # Consider it as an old lib (without mode and return non-zero)
-            # TODO(Inoki): to check https://github.com/rhboot/efivar/commit/7bd2e309aeec210509d215c803a762725591ccc7
-            add_definitions(-DEFIVAR_WITHOUT_MODE)
-        endif()
-    endif()
-endif()
-
 if(APP_DATA_DUMMY_BACKEND)
     # Use the directory under QStandardPaths::AppDataLocation for test purpose
     message("Use dummy backend for EFI operations")
     add_definitions(-DEFIVAR_APP_DATA_DUMMY)
-elseif(EFIVAR_FOUND)
-    message("Use libefivar for EFI operations")
-    include_directories(QEFI ${EFIVAR_INCLUDE_DIRS})
-    target_link_libraries(QEFI PRIVATE ${EFIVAR_LIBRARIES})
 elseif(WIN32)
     message("Use Windows API for EFI operations")
     # TODO: Add include and lib from Windows API
 else()
-    message(FATAL_ERROR "No EFI utility library found, please make sure you have libefivar installed")
-endif()
-
-if(USE_EFIVAR_OLD_API)
-    add_definitions(-DEFIVAR_OLD_API)
+    message("Use my libefivar for EFI operations")
 endif()
 
 if(PATCH_FREEBSD_EFIVAR)

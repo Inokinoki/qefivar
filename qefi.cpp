@@ -679,18 +679,292 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 #else
 /* Implementation based on libefivar */
 extern "C" {
-#ifndef EFIVAR_OLD_API
-#include <efivar/efivar.h>
-#include <efivar/efiboot.h>
-#else
-#include <efivar.h>
-#endif
+#include <fcntl.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 
-#ifdef EFIVAR_FREEBSD_PATCH
-efi_guid_t efi_guid_zero = {0};
-#endif
+#include <linux/fs.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#define EFI_VARIABLE_NON_VOLATILE				((uint64_t)0x0000000000000001)
+#define EFI_VARIABLE_BOOTSERVICE_ACCESS				((uint64_t)0x0000000000000002)
+#define EFI_VARIABLE_RUNTIME_ACCESS				((uint64_t)0x0000000000000004)
+#define EFI_VARIABLE_HARDWARE_ERROR_RECORD			((uint64_t)0x0000000000000008)
+#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS			((uint64_t)0x0000000000000010)
+#define EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS	((uint64_t)0x0000000000000020)
+#define EFI_VARIABLE_APPEND_WRITE				((uint64_t)0x0000000000000040)
+#define EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS		((uint64_t)0x0000000000000080)
 }
+
+#include <QFile>
+#include <QFileInfo>
+
+/* Get rid of efivar */
+static QString const default_efivarfs_path = QStringLiteral("/sys/firmware/efi/efivars/");
+static QString efivarfs_path;
+
+static QString get_efivarfs_path(void)
+{
+    // Cached path
+    if (efivarfs_path.size() > 0)
+    {
+        return efivarfs_path;
+    }
+
+    QString efivarfs_path_from_env = qgetenv("EFIVARFS_PATH");
+    if (efivarfs_path_from_env.size() > 0)
+    {
+        efivarfs_path = efivarfs_path_from_env;
+    }
+    else
+    {
+        efivarfs_path = default_efivarfs_path;
+    }
+
+    return efivarfs_path;
+}
+
+int efi_variables_supported(void)
+{
+    QFileInfo fileInfo(get_efivarfs_path());
+    if (!fileInfo.exists() || !fileInfo.isDir())
+        return 0;
+    return 1;
+}
+
+static QString make_efivarfs_path(const QUuid &guid, const QString &name)
+{
+    return QString("%1%2-%3").arg(get_efivarfs_path()).arg(name).arg(guid.toString(QUuid::WithoutBraces));
+}
+
+static int qefivar_efivarfs_get_variable_size(const QUuid &guid, const QString &name, size_t *size)
+{
+    int ret = -1;
+    const QString &path = make_efivarfs_path(guid, name);
+    QFileInfo fileInfo(path);
+    if (!fileInfo.exists())
+    {
+        qCritical() << "stat(" << path << ") failed";
+        return ret;
+    }
+
+    ret = 0;
+    // Compensate for the size of the Attributes field.
+    *size = fileInfo.size() - sizeof(uint32_t);
+
+    return ret;
+}
+
+static int qefivar_efivarfs_get_variable(QUuid &guid, QString &name, uint8_t **data, size_t *size, uint32_t *attributes)
+{
+    int ret = -1;
+
+    const QString &path = make_efivarfs_path(guid, name);
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        qCritical() << "open(" << path << ") failed";
+        return ret;
+    }
+
+    // Read the Attributes field.
+    if (file.read((char *)attributes, sizeof(uint32_t)) != sizeof(uint32_t))
+    {
+        qCritical() << "read(" << path << ") failed";
+        return ret;
+    }
+
+    // Compensate for the size of the Attributes field.
+    *size = file.size() - sizeof(uint32_t);
+
+    *data = (uint8_t *)malloc(*size);
+    if (!*data)
+    {
+        qCritical() << "malloc(" << *size << ") failed";
+        return ret;
+    }
+
+    if (file.read((char *)*data, *size) != *size)
+    {
+        qCritical() << "read(" << path << ") failed";
+        free(*data);
+        return ret;
+    }
+
+    ret = 0;
+
+    return ret;
+}
+
+static int
+efivarfs_make_fd_mutable(int fd, unsigned long *orig_attrs)
+{
+    unsigned long mutable_attrs = 0;
+
+    *orig_attrs = 0;
+
+    if (ioctl(fd, FS_IOC_GETFLAGS, orig_attrs) == -1)
+        return -1;
+
+    if ((*orig_attrs & FS_IMMUTABLE_FL) == 0)
+        return 0;
+
+    mutable_attrs = *orig_attrs & ~(unsigned long)FS_IMMUTABLE_FL;
+
+    if (ioctl(fd, FS_IOC_SETFLAGS, &mutable_attrs) == -1)
+        return -1;
+
+    return 0;
+}
+
+static int
+qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, const uint8_t *data,
+    size_t data_size, uint32_t attributes, mode_t mode)
+{
+    size_t alloc_size;
+    uint8_t *buf;
+    int rfd = -1;
+    struct stat rfd_stat;
+    unsigned long orig_attrs = 0;
+    int restore_immutable_fd = -1;
+    int wfd = -1;
+    int open_wflags;
+    int ret = -1;
+    int save_errno;
+
+    if (name.size() > 1024) {
+        errno = EINVAL;
+        // efi_error("name too long (%zu of 1024)", name.size());
+        return -1;
+    }
+
+    if (data_size > (size_t)-1 - sizeof (attributes)) {
+        errno = EOVERFLOW;
+        // efi_error("data_size too large (%zu)", data_size);
+        return -1;
+    }
+
+    const QString &rawPath = make_efivarfs_path(guid, name);
+    const char *path = rawPath.toLocal8Bit().constData();
+
+    alloc_size = sizeof(attributes) + data_size;
+    buf = (uint8_t *)malloc(alloc_size);
+    if (buf == NULL) {
+        // efi_error("malloc(%zu) failed", alloc_size);
+        goto err;
+    }
+
+    /*
+     * Open the file first in read-only mode. This is necessary when the
+     * variable exists and it is also protected -- then we first have to
+     * *attempt* to clear the immutable flag from the file. For clearing
+     * the flag, we can only open the file read-only. In other cases,
+     * opening the file for reading is not necessary, but it doesn't hurt
+     * either.
+     */
+    rfd = open(path, O_RDONLY);
+    if (rfd != -1) {
+        /* save the containing device and the inode number for later */
+        if (fstat(rfd, &rfd_stat) == -1) {
+            // efi_error("fstat() failed on r/o fd %d", rfd);
+            goto err;
+        }
+
+        /* if the file is indeed immutable, clear and remember it */
+        if (efivarfs_make_fd_mutable(rfd, &orig_attrs) == 0 &&
+            (orig_attrs & FS_IMMUTABLE_FL))
+            restore_immutable_fd = rfd;
+    }
+
+    /*
+     * Open the variable file for writing now. First, use O_APPEND
+     * dependent on the input attributes. Second, the file either doesn't
+     * exist here, or it does and we made an attempt to make it mutable
+     * above. If the file was created afresh between the two open()s, then
+     * we catch that with O_EXCL. If the file was removed between the two
+     * open()s, we catch that with lack of O_CREAT. If the file was
+     * *replaced* between the two open()s, we'll catch that later with
+     * fstat() comparison.
+     */
+    open_wflags = O_WRONLY;
+    if (attributes & EFI_VARIABLE_APPEND_WRITE)
+        open_wflags |= O_APPEND;
+    if (rfd == -1)
+        open_wflags |= O_CREAT | O_EXCL;
+
+    wfd = open(path, open_wflags, mode);
+    if (wfd == -1) {
+        // efi_error("failed to %s %s for %s",
+        // 	  rfd == -1 ? "create" : "open",
+        // 	  path,
+        // 	  ((attributes & EFI_VARIABLE_APPEND_WRITE) ?
+        // 	   "appending" : "writing"));
+        goto err;
+    }
+
+    /*
+     * If we couldn't open the file for reading, then we have to attempt
+     * making it mutable now -- in case we created a protected file (for
+     * writing or appending), then the kernel made it immutable
+     * immediately, and the write() below would fail otherwise.
+     */
+    if (rfd == -1) {
+        if (efivarfs_make_fd_mutable(wfd, &orig_attrs) == 0 &&
+            (orig_attrs & FS_IMMUTABLE_FL))
+            restore_immutable_fd = wfd;
+    } else {
+        /* make sure rfd and wfd refer to the same file */
+        struct stat wfd_stat;
+
+        if (fstat(wfd, &wfd_stat) == -1) {
+            // efi_error("fstat() failed on w/o fd %d", wfd);
+            goto err;
+        }
+        if (rfd_stat.st_dev != wfd_stat.st_dev ||
+            rfd_stat.st_ino != wfd_stat.st_ino) {
+            errno = EINVAL;
+            // efi_error("r/o fd %d and w/o fd %d refer to different "
+            //	  "files", rfd, wfd);
+            goto err;
+        }
+    }
+
+    memcpy(buf, &attributes, sizeof (attributes));
+    memcpy(buf + sizeof (attributes), data, data_size);
+
+    if (write(wfd, buf, alloc_size) == -1) {
+        // efi_error("writing to fd %d failed", wfd);
+        goto err;
+    }
+
+    /* we're done */
+    ret = 0;
+
+err:
+    save_errno = errno;
+
+    /* if we're exiting with error and created the file, remove it */
+    if (ret == -1 && rfd == -1 && wfd != -1 && unlink(path) == -1)
+    {
+        // efi_error("failed to unlink %s", path);
+    }
+
+    ioctl(restore_immutable_fd, FS_IOC_SETFLAGS, &orig_attrs);
+
+    if (wfd >= 0)
+        close(wfd);
+    if (rfd >= 0)
+        close(rfd);
+
+    free(buf);
+
+    errno = save_errno;
+    return ret;
+}
+/* End: Get rid of efivar */
 
 bool qefi_is_available()
 {
@@ -706,21 +980,8 @@ bool qefi_has_privilege()
 quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 {
     int return_code;
-
-    std::string std_name = name.toStdString();
-    const char *c_name = std_name.c_str();
-    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
-    const char *c_uuid = std_uuid.c_str();
-
-    efi_guid_t guid;
-    return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code != 0)
-    {
-        return 0;
-    }
-
     size_t var_size;
-    return_code = efi_get_variable_size(guid, c_name, &var_size);
+    return_code = qefivar_efivarfs_get_variable_size(uuid, name, &var_size);
     if (var_size == 0 || return_code != 0)
     {
         return 0;
@@ -728,14 +989,10 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 
     uint8_t *data;
     uint32_t attributes;
-    return_code = efi_get_variable(guid, c_name, &data, &var_size, &attributes);
+    return_code = qefivar_efivarfs_get_variable(uuid, name, &data, &var_size, &attributes);
 
     quint16 value;
-#ifndef EFIVAR_OLD_API
     if (return_code != 0)
-#else
-    if (return_code == 0)
-#endif
     {
         value = 0;
     }
@@ -753,20 +1010,8 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
 {
     int return_code;
 
-    std::string std_name = name.toStdString();
-    const char *c_name = std_name.c_str();
-    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
-    const char *c_uuid = std_uuid.c_str();
-
-    efi_guid_t guid;
-    return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code != 0)
-    {
-        return QByteArray();
-    }
-
     size_t var_size;
-    return_code = efi_get_variable_size(guid, c_name, &var_size);
+    return_code = qefivar_efivarfs_get_variable_size(uuid, name, &var_size);
     if (var_size == 0 || return_code != 0)
     {
         return QByteArray();
@@ -774,14 +1019,10 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
 
     uint8_t *data;
     uint32_t attributes;
-    return_code = efi_get_variable(guid, c_name, &data, &var_size, &attributes);
+    return_code = qefivar_efivarfs_get_variable(uuid, name, &data, &var_size, &attributes);
 
     QByteArray value;
-#ifndef EFIVAR_OLD_API
     if (return_code != 0)
-#else
-    if (return_code == 0)
-#endif
     {
         value.clear();
     }
@@ -805,31 +1046,11 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 {
     int return_code;
 
-    std::string std_name = name.toStdString();
-    const char *c_name = std_name.c_str();
-    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
-    const char *c_uuid = std_uuid.c_str();
-
-    efi_guid_t guid;
-    return_code = efi_str_to_guid(c_uuid, &guid);
-
-#ifndef EFIVAR_OLD_API
-    if (return_code != 0)
-#else
-    if (return_code == 0)
-#endif
-    {
-        return;
-    }
-
     uint8_t buffer[2];
     *((uint16_t *)buffer) = qToLittleEndian<quint16>(value);
-    return_code = efi_set_variable(guid, c_name, buffer, 2,
-                                   default_write_attribute
-#ifndef EFIVAR_WITHOUT_MODE
-                                 , 0644
-#endif
-                                   );
+    return_code = qefi_efivarfs_set_variable(uuid, name, buffer, 2,
+                                             default_write_attribute,
+                                             0644);
 
     // TODO: Detect return code
 }
@@ -838,24 +1059,9 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 {
     int return_code;
 
-    std::string std_name = name.toStdString();
-    const char *c_name = std_name.c_str();
-    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
-    const char *c_uuid = std_uuid.c_str();
-
-    efi_guid_t guid;
-    return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code != 0)
-    {
-        return;
-    }
-
-    return_code = efi_set_variable(guid, c_name, (uint8_t *)value.data(), value.size(),
-                                   default_write_attribute
-#ifndef EFIVAR_WITHOUT_MODE
-                                 , 0644
-#endif
-                                   );
+    return_code = qefi_efivarfs_set_variable(uuid, name, (uint8_t *)value.data(), value.size(),
+                                             default_write_attribute,
+                                             0644);
 
     // TODO: Detect return code
 }
@@ -897,7 +1103,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
         QString filename = storedDir.absoluteFilePath(
-	    QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
+        QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
@@ -923,7 +1129,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
         QString filename = storedDir.absoluteFilePath(
-	    QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
+        QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
@@ -943,7 +1149,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
         QString filename = storedDir.absoluteFilePath(
-	    QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
+        QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         QByteArray data;
         data.append((const char)(value & 0xFF));
@@ -962,7 +1168,7 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
         QString filename = storedDir.absoluteFilePath(
-	    QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
+        QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
