@@ -698,6 +698,7 @@ extern "C" {
 #define EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS		((uint64_t)0x0000000000000080)
 }
 
+#include <QByteArray>
 #include <QFile>
 #include <QFileInfo>
 
@@ -799,19 +800,30 @@ static int qefivar_efivarfs_get_variable(QUuid &guid, QString &name, uint8_t **d
 }
 
 static int
+qefi_efivarfs_del_variable(const QUuid &guid, const QString &name)
+{
+    const QString &rawPath = make_efivarfs_path(guid, name);
+    const char *path = rawPath.toLocal8Bit().constData();
+
+    int rc = unlink(path);
+
+    typeof(errno) errno_value = errno;
+    errno = errno_value;
+
+    return rc;
+}
+
+static int
 qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, const uint8_t *data,
     size_t data_size, uint32_t attributes, mode_t mode)
 {
-    size_t alloc_size;
-    uint8_t *buf;
-    int rfd = -1;
-    struct stat rfd_stat;
-    unsigned long orig_attrs = 0;
-    // int restore_immutable_fd = -1;
-    int wfd = -1;
-    int open_wflags;
+    QByteArray buf((qsizetype)(sizeof (attributes) + data_size), (char)0);
+    __typeof__(errno) errno_value;
     int ret = -1;
-    int save_errno;
+    int fd = -1;
+    int flags = 0;
+    char *flagstr;
+    int rc;
 
     if (name.size() > 1024) {
         errno = EINVAL;
@@ -828,106 +840,31 @@ qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, const uint8_t
     const QString &rawPath = make_efivarfs_path(guid, name);
     const char *path = rawPath.toLocal8Bit().constData();
 
-    alloc_size = sizeof(attributes) + data_size;
-    buf = (uint8_t *)malloc(alloc_size);
-    if (buf == NULL) {
-        // efi_error("malloc(%zu) failed", alloc_size);
-        goto err;
+    if (!access(path, F_OK) && !(attributes & EFI_VARIABLE_APPEND_WRITE)) {
+        rc = qefi_efivarfs_del_variable(guid, name);
+        if (rc < 0)
+            goto err;
     }
 
-    /*
-     * Open the file first in read-only mode. This is necessary when the
-     * variable exists and it is also protected -- then we first have to
-     * *attempt* to clear the immutable flag from the file. For clearing
-     * the flag, we can only open the file read-only. In other cases,
-     * opening the file for reading is not necessary, but it doesn't hurt
-     * either.
-     */
-    rfd = open(path, O_RDONLY);
-
-    /*
-     * Open the variable file for writing now. First, use O_APPEND
-     * dependent on the input attributes. Second, the file either doesn't
-     * exist here, or it does and we made an attempt to make it mutable
-     * above. If the file was created afresh between the two open()s, then
-     * we catch that with O_EXCL. If the file was removed between the two
-     * open()s, we catch that with lack of O_CREAT. If the file was
-     * *replaced* between the two open()s, we'll catch that later with
-     * fstat() comparison.
-     */
-    open_wflags = O_WRONLY;
-    if (attributes & EFI_VARIABLE_APPEND_WRITE)
-        open_wflags |= O_APPEND;
-    if (rfd == -1)
-        open_wflags |= O_CREAT | O_EXCL;
-
-    wfd = open(path, open_wflags, mode);
-    if (wfd == -1) {
-        // efi_error("failed to %s %s for %s",
-        // 	  rfd == -1 ? "create" : "open",
-        // 	  path,
-        // 	  ((attributes & EFI_VARIABLE_APPEND_WRITE) ?
-        // 	   "appending" : "writing"));
+    fd = open(path, O_WRONLY|O_CREAT, mode);
+    if (fd < 0)
         goto err;
-    }
 
-    /*
-     * If we couldn't open the file for reading, then we have to attempt
-     * making it mutable now -- in case we created a protected file (for
-     * writing or appending), then the kernel made it immutable
-     * immediately, and the write() below would fail otherwise.
-     */
-    if (rfd == -1) {
-        // if (efivarfs_make_fd_mutable(wfd, &orig_attrs) == 0 &&
-        //     (orig_attrs & FS_IMMUTABLE_FL))
-        //     restore_immutable_fd = wfd;
+    memcpy(buf.data(), &attributes, sizeof (attributes));
+    memcpy(buf.data() + sizeof (attributes), data, data_size);
+    rc = write(fd, buf.data(), sizeof (attributes) + data_size);
+    if (rc >= 0) {
+        ret = 0;
     } else {
-        /* make sure rfd and wfd refer to the same file */
-        struct stat wfd_stat;
-
-        if (fstat(wfd, &wfd_stat) == -1) {
-            // efi_error("fstat() failed on w/o fd %d", wfd);
-            goto err;
-        }
-        if (rfd_stat.st_dev != wfd_stat.st_dev ||
-            rfd_stat.st_ino != wfd_stat.st_ino) {
-            errno = EINVAL;
-            // efi_error("r/o fd %d and w/o fd %d refer to different "
-            //	  "files", rfd, wfd);
-            goto err;
-        }
+        unlink(path);
     }
-
-    memcpy(buf, &attributes, sizeof (attributes));
-    memcpy(buf + sizeof (attributes), data, data_size);
-
-    if (write(wfd, buf, alloc_size) == -1) {
-        // efi_error("writing to fd %d failed", wfd);
-        goto err;
-    }
-
-    /* we're done */
-    ret = 0;
-
 err:
-    save_errno = errno;
+    errno_value = errno;
 
-    /* if we're exiting with error and created the file, remove it */
-    if (ret == -1 && rfd == -1 && wfd != -1 && unlink(path) == -1)
-    {
-        // efi_error("failed to unlink %s", path);
-    }
+    if (fd >= 0)
+        close(fd);
 
-    // ioctl(restore_immutable_fd, FS_IOC_SETFLAGS, &orig_attrs);
-
-    if (wfd >= 0)
-        close(wfd);
-    if (rfd >= 0)
-        close(rfd);
-
-    free(buf);
-
-    errno = save_errno;
+    errno = errno_value;
     return ret;
 }
 /* End: Get rid of efivar */
