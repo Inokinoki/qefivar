@@ -678,6 +678,98 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 
 #else
 /* Implementation based on libefivar */
+#define EFI_VARIABLE_NON_VOLATILE				((uint64_t)0x0000000000000001)
+#define EFI_VARIABLE_BOOTSERVICE_ACCESS				((uint64_t)0x0000000000000002)
+#define EFI_VARIABLE_RUNTIME_ACCESS				((uint64_t)0x0000000000000004)
+#define EFI_VARIABLE_HARDWARE_ERROR_RECORD			((uint64_t)0x0000000000000008)
+#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS			((uint64_t)0x0000000000000010)
+#define EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS	((uint64_t)0x0000000000000020)
+#define EFI_VARIABLE_APPEND_WRITE				((uint64_t)0x0000000000000040)
+#define EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS		((uint64_t)0x0000000000000080)
+
+#include <QByteArray>
+#include <QFile>
+#include <QFileInfo>
+
+/* Get rid of efivar */
+#if defined(Q_OS_FREEBSD)
+
+extern "C" {
+// Use FreeBSD system-level libefivar
+#include <efivar.h>
+}
+
+int qefivar_variables_supported(void)
+{
+    return efi_variables_supported();
+}
+
+static int qefivar_get_variable_size(const QUuid &uuid, const QString &name, size_t *size)
+{
+    int return_code;
+
+    std::string std_name = name.toStdString();
+    const char *c_name = std_name.c_str();
+    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
+    const char *c_uuid = std_uuid.c_str();
+
+    efi_guid_t guid;
+    return_code = efi_str_to_guid(c_uuid, &guid);
+    if (return_code != 0)
+    {
+        return return_code;
+    }
+
+    return efi_get_variable_size(guid, c_name, size);
+}
+
+static int qefivar_get_variable(QUuid &uuid, QString &name, uint8_t **data, size_t *size, uint32_t *attributes)
+{
+    int return_code;
+
+    std::string std_name = name.toStdString();
+    const char *c_name = std_name.c_str();
+    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
+    const char *c_uuid = std_uuid.c_str();
+
+    efi_guid_t guid;
+    return_code = efi_str_to_guid(c_uuid, &guid);
+    if (return_code != 0)
+    {
+        return return_code;
+    }
+
+    return_code = efi_get_variable_size(guid, c_name, size);
+    if (size == 0 || return_code != 0)
+    {
+        return return_code;
+    }
+
+    return efi_get_variable(guid, c_name, data, size, attributes);
+}
+
+static int qefi_set_variable(const QUuid &uuid, const QString &name, const uint8_t *data,
+    size_t data_size, uint32_t attributes, mode_t mode)
+{
+    int return_code;
+
+    std::string std_name = name.toStdString();
+    const char *c_name = std_name.c_str();
+    std::string std_uuid = uuid.toString(QUuid::WithoutBraces).toStdString();
+    const char *c_uuid = std_uuid.c_str();
+
+    efi_guid_t guid;
+    return_code = efi_str_to_guid(c_uuid, &guid);
+    if (return_code != 0)
+    {
+        return;
+    }
+
+    // Arg "mode" is not supported here
+    return efi_set_variable(guid, c_name, data, data_size, attributes);
+}
+
+#else
 extern "C" {
 #include <fcntl.h>
 #include <stdio.h>
@@ -687,22 +779,8 @@ extern "C" {
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#define EFI_VARIABLE_NON_VOLATILE				((uint64_t)0x0000000000000001)
-#define EFI_VARIABLE_BOOTSERVICE_ACCESS				((uint64_t)0x0000000000000002)
-#define EFI_VARIABLE_RUNTIME_ACCESS				((uint64_t)0x0000000000000004)
-#define EFI_VARIABLE_HARDWARE_ERROR_RECORD			((uint64_t)0x0000000000000008)
-#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS			((uint64_t)0x0000000000000010)
-#define EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS	((uint64_t)0x0000000000000020)
-#define EFI_VARIABLE_APPEND_WRITE				((uint64_t)0x0000000000000040)
-#define EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS		((uint64_t)0x0000000000000080)
 }
 
-#include <QByteArray>
-#include <QFile>
-#include <QFileInfo>
-
-/* Get rid of efivar */
 static QString const default_efivarfs_path = QStringLiteral("/sys/firmware/efi/efivars/");
 static QString efivarfs_path;
 
@@ -727,7 +805,7 @@ static QString get_efivarfs_path(void)
     return efivarfs_path;
 }
 
-int efi_variables_supported(void)
+int qefivar_variables_supported(void)
 {
     QFileInfo fileInfo(get_efivarfs_path());
     if (!fileInfo.exists() || !fileInfo.isDir())
@@ -756,6 +834,11 @@ static int qefivar_efivarfs_get_variable_size(const QUuid &guid, const QString &
     *size = fileInfo.size() - sizeof(uint32_t);
 
     return ret;
+}
+
+static int inline qefivar_get_variable_size(const QUuid &guid, const QString &name, size_t *size)
+{
+    return qefivar_efivarfs_get_variable_size(guid, name, size);
 }
 
 static int qefivar_efivarfs_get_variable(QUuid &guid, QString &name, uint8_t **data, size_t *size, uint32_t *attributes)
@@ -797,6 +880,11 @@ static int qefivar_efivarfs_get_variable(QUuid &guid, QString &name, uint8_t **d
     ret = 0;
 
     return ret;
+}
+
+static int inline qefivar_get_variable(QUuid &guid, QString &name, uint8_t **data, size_t *size, uint32_t *attributes)
+{
+    return qefivar_efivarfs_get_variable(guid, name, data, size, attributes);
 }
 
 static int
@@ -867,11 +955,19 @@ err:
     errno = errno_value;
     return ret;
 }
+
+static inline int
+qefi_set_variable(const QUuid &guid, const QString &name, const uint8_t *data,
+    size_t data_size, uint32_t attributes, mode_t mode)
+{
+    return qefi_efivarfs_set_variable(guid, name, data, data_size, attributes, mode);
+}
+#endif
 /* End: Get rid of efivar */
 
 bool qefi_is_available()
 {
-    return efi_variables_supported();
+    return qefivar_variables_supported();
 }
 
 bool qefi_has_privilege()
@@ -884,7 +980,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 {
     int return_code;
     size_t var_size;
-    return_code = qefivar_efivarfs_get_variable_size(uuid, name, &var_size);
+    return_code = qefivar_get_variable_size(uuid, name, &var_size);
     if (var_size == 0 || return_code != 0)
     {
         return 0;
@@ -892,7 +988,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 
     uint8_t *data;
     uint32_t attributes;
-    return_code = qefivar_efivarfs_get_variable(uuid, name, &data, &var_size, &attributes);
+    return_code = qefivar_get_variable(uuid, name, &data, &var_size, &attributes);
 
     quint16 value;
     if (return_code != 0)
@@ -914,7 +1010,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     int return_code;
 
     size_t var_size;
-    return_code = qefivar_efivarfs_get_variable_size(uuid, name, &var_size);
+    return_code = qefivar_get_variable_size(uuid, name, &var_size);
     if (var_size == 0 || return_code != 0)
     {
         return QByteArray();
@@ -922,7 +1018,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
 
     uint8_t *data;
     uint32_t attributes;
-    return_code = qefivar_efivarfs_get_variable(uuid, name, &data, &var_size, &attributes);
+    return_code = qefivar_get_variable(uuid, name, &data, &var_size, &attributes);
 
     QByteArray value;
     if (return_code != 0)
@@ -951,7 +1047,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 
     uint8_t buffer[2];
     *((uint16_t *)buffer) = qToLittleEndian<quint16>(value);
-    return_code = qefi_efivarfs_set_variable(uuid, name, buffer, 2,
+    return_code = qefi_set_variable(uuid, name, buffer, 2,
                                              default_write_attribute,
                                              0644);
 
@@ -962,7 +1058,7 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 {
     int return_code;
 
-    return_code = qefi_efivarfs_set_variable(uuid, name, (uint8_t *)value.data(), value.size(),
+    return_code = qefi_set_variable(uuid, name, (uint8_t *)value.data(), value.size(),
                                              default_write_attribute,
                                              0644);
 
