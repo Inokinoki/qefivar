@@ -701,6 +701,7 @@ extern "C" {
 // Use FreeBSD system-level libefivar
 #include <efivar.h>
 }
+#include <iostream>
 
 int qefivar_variables_supported(void)
 {
@@ -718,12 +719,13 @@ static int qefivar_get_variable_size(const QUuid &uuid, const QString &name, siz
 
     efi_guid_t guid;
     return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code != 0)
+    if (return_code < 0)
     {
         return return_code;
     }
+    return_code = efi_get_variable_size(guid, c_name, size);
 
-    return efi_get_variable_size(guid, c_name, size);
+    return 0;
 }
 
 static int qefivar_get_variable(QUuid &uuid, QString &name, uint8_t **data, size_t *size, uint32_t *attributes)
@@ -737,18 +739,32 @@ static int qefivar_get_variable(QUuid &uuid, QString &name, uint8_t **data, size
 
     efi_guid_t guid;
     return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code != 0)
+    if (return_code < 0)
     {
         return return_code;
     }
 
     return_code = efi_get_variable_size(guid, c_name, size);
-    if (size == 0 || return_code != 0)
+    if (*size == 0 || return_code < 0)
     {
         return return_code;
     }
 
-    return efi_get_variable(guid, c_name, data, size, attributes);
+    uint8_t *temp_data;
+    return_code = efi_get_variable(guid, c_name, &temp_data, size, attributes);
+    if (*size == 0 || return_code < 0)
+    {
+        return return_code;
+    }
+    // Allocate to have the same behaviour with Linux efivar
+    *data = (uint8_t *)malloc(*size);
+    std::memcpy(*data, temp_data, *size);
+
+    if (return_code < 0)
+    {
+        return return_code;
+    }
+    return 0;
 }
 
 static int qefivar_set_variable(const QUuid &uuid, const QString &name, uint8_t *data,
@@ -763,13 +779,20 @@ static int qefivar_set_variable(const QUuid &uuid, const QString &name, uint8_t 
 
     efi_guid_t guid;
     return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code != 0)
+    if (return_code < 0)
     {
         return return_code;
     }
 
     // Arg "mode" is not supported here
-    return efi_set_variable(guid, c_name, data, data_size, attributes);
+    return_code = efi_set_variable(guid, c_name, data, data_size, attributes);
+
+    if (return_code < 0)
+    {
+        return return_code;
+    }
+
+    return 0;
 }
 
 #else
