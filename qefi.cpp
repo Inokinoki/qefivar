@@ -751,7 +751,7 @@ static int qefivar_get_variable(QUuid &uuid, QString &name, uint8_t **data, size
     return efi_get_variable(guid, c_name, data, size, attributes);
 }
 
-static int qefi_set_variable(const QUuid &uuid, const QString &name, uint8_t *data,
+static int qefivar_set_variable(const QUuid &uuid, const QString &name, uint8_t *data,
     size_t data_size, uint32_t attributes, mode_t mode)
 {
     int return_code;
@@ -890,7 +890,7 @@ static int inline qefivar_get_variable(QUuid &guid, QString &name, uint8_t **dat
 }
 
 static int
-qefi_efivarfs_del_variable(const QUuid &guid, const QString &name)
+qefivar_efivarfs_del_variable(const QUuid &guid, const QString &name)
 {
     const QString &rawPath = make_efivarfs_path(guid, name);
     const char *path = rawPath.toLocal8Bit().constData();
@@ -904,7 +904,7 @@ qefi_efivarfs_del_variable(const QUuid &guid, const QString &name)
 }
 
 static int
-qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *data,
+qefivar_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *data,
     size_t data_size, uint32_t attributes, mode_t mode)
 {
     QByteArray buf((qsizetype)(sizeof (attributes) + data_size), (char)0);
@@ -931,7 +931,7 @@ qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *data
     const char *path = rawPath.toLocal8Bit().constData();
 
     if (!access(path, F_OK) && !(attributes & EFI_VARIABLE_APPEND_WRITE)) {
-        rc = qefi_efivarfs_del_variable(guid, name);
+        rc = qefivar_efivarfs_del_variable(guid, name);
         if (rc < 0)
             goto err;
     }
@@ -959,10 +959,10 @@ err:
 }
 
 static inline int
-qefi_set_variable(const QUuid &guid, const QString &name, const uint8_t *data,
+qefivar_set_variable(const QUuid &guid, const QString &name, uint8_t *data,
     size_t data_size, uint32_t attributes, mode_t mode)
 {
-    return qefi_efivarfs_set_variable(guid, name, data, data_size, attributes, mode);
+    return qefivar_efivarfs_set_variable(guid, name, data, data_size, attributes, mode);
 }
 #endif
 /* End: Get rid of efivar */
@@ -1049,7 +1049,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 
     uint8_t buffer[2];
     *((uint16_t *)buffer) = qToLittleEndian<quint16>(value);
-    return_code = qefi_set_variable(uuid, name, buffer, 2,
+    return_code = qefivar_set_variable(uuid, name, buffer, 2,
                                              default_write_attribute,
                                              0644);
 
@@ -1060,7 +1060,7 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 {
     int return_code;
 
-    return_code = qefi_set_variable(uuid, name, (uint8_t *)value.data(), value.size(),
+    return_code = qefivar_set_variable(uuid, name, (uint8_t *)value.data(), value.size(),
                                              default_write_attribute,
                                              0644);
 
