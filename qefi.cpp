@@ -751,7 +751,7 @@ static int qefivar_get_variable(QUuid &uuid, QString &name, uint8_t **data, size
     return efi_get_variable(guid, c_name, data, size, attributes);
 }
 
-static int qefi_set_variable(const QUuid &uuid, const QString &name, const uint8_t *data,
+static int qefi_set_variable(const QUuid &uuid, const QString &name, uint8_t *data,
     size_t data_size, uint32_t attributes, mode_t mode)
 {
     int return_code;
@@ -765,7 +765,7 @@ static int qefi_set_variable(const QUuid &uuid, const QString &name, const uint8
     return_code = efi_str_to_guid(c_uuid, &guid);
     if (return_code != 0)
     {
-        return;
+        return return_code;
     }
 
     // Arg "mode" is not supported here
@@ -904,7 +904,7 @@ qefi_efivarfs_del_variable(const QUuid &guid, const QString &name)
 }
 
 static int
-qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, const uint8_t *data,
+qefi_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *data,
     size_t data_size, uint32_t attributes, mode_t mode)
 {
     QByteArray buf((qsizetype)(sizeof (attributes) + data_size), (char)0);
