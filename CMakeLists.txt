@@ -43,8 +43,9 @@ elseif(WIN32)
     # TODO: Add include and lib from Windows API
 else()
     if(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
-        # Link with FreeBSD system-level libefivar
-        target_link_libraries(QEFI PUBLIC efivar)
+        # Link with FreeBSD system-level libefivar and geom
+        # see source code of usr.sbin/efibootmgr/Makefile and usr.sbin/efivar/Makefile
+        target_link_libraries(QEFI PUBLIC efivar geom)
     endif()
     message("Use qefivar implementations for EFI operations")
 endif()
