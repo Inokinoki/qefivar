@@ -677,6 +677,9 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 }
 
 #else
+extern "C" {
+#include <unistd.h>
+}
 /* Implementation based on libefivar */
 #define EFI_VARIABLE_NON_VOLATILE				((uint64_t)0x0000000000000001)
 #define EFI_VARIABLE_BOOTSERVICE_ACCESS				((uint64_t)0x0000000000000002)
@@ -773,7 +776,6 @@ static int qefi_set_variable(const QUuid &uuid, const QString &name, const uint8
 extern "C" {
 #include <fcntl.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 
 #include <sys/ioctl.h>
