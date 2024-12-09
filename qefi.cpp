@@ -634,7 +634,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     }
     else
     {
-        for (size_t i = 0; i < length / skip; i++) {
+        for (size_t i = 0; i < (length + skip - 1) / skip; i++) {
             for (size_t j = 0; j < skip; j++) {
                 const quint8 byte = (quint8)((buffer[i] & (0xFF << (8 * j))) >> (8 * j));
                 value.append(byte);
