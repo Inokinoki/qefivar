@@ -622,6 +622,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     LPCTSTR c_uuid = std_uuid.c_str();
 
     // Create a buffer
+    size_t skip = sizeof(TCHAR) / sizeof(quint8);
     TCHAR buffer[EFIVAR_BUFFER_SIZE];
 
     size_t length = read_efivar_win(c_name, c_uuid, (PVOID)buffer, EFIVAR_BUFFER_SIZE);
@@ -633,8 +634,11 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     }
     else
     {
-        for (const auto &byte : buffer) {
-            value.append(byte);
+        for (size_t i = 0; i < length / skip; i++) {
+            for (size_t j = 0; j < skip; j++) {
+                const quint8 byte = (quint8)((buffer[i] & (0xFF << (8 * j))) >> (8 * j));
+                value.append(byte);
+            }
         }
     }
 
