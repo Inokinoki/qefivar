@@ -1,7 +1,7 @@
 #include "qefi.h"
 
-#include <QtEndian>
 #include <QDebug>
+#include <QtEndian>
 
 #pragma pack(push, 1)
 struct qefi_load_option_header {
@@ -21,300 +21,252 @@ struct qefi_device_path_header {
 
 int qefi_dp_length(const struct qefi_device_path_header *dp_header)
 {
-    if (!dp_header) return -1;
+    if (!dp_header)
+        return -1;
     return qFromLittleEndian<quint16>(dp_header->length);
 }
 
 int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer, int max_dp_size)
 {
-    if (!dp_header_pointer) return -1;
+    if (!dp_header_pointer)
+        return -1;
 
     int count = 0;
     int size = 0;
     while (size < max_dp_size) {
         int tempLength = qefi_dp_length(dp_header_pointer);
-        if (tempLength <= 0) return tempLength;
+        if (tempLength <= 0)
+            return tempLength;
 
         size += tempLength;
         count++;
 
-        if (dp_header_pointer->type == QEFIDevicePathType::DP_End &&
-            dp_header_pointer->subtype == 0xFF)
+        if (dp_header_pointer->type == QEFIDevicePathType::DP_End && dp_header_pointer->subtype == 0xFF)
             break;
 
-        dp_header_pointer = (struct qefi_device_path_header *)
-            ((quint8 *)dp_header_pointer + tempLength);
+        dp_header_pointer = (struct qefi_device_path_header *)((quint8 *)dp_header_pointer + tempLength);
     }
     return count;
 }
 
 int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer, int max_dp_size)
 {
-    if (!dp_header_pointer) return -1;
+    if (!dp_header_pointer)
+        return -1;
 
-    if (dp_header_pointer->type == QEFIDevicePathType::DP_End &&
-        dp_header_pointer->subtype == 0xFF) return qefi_dp_length(dp_header_pointer);
+    if (dp_header_pointer->type == QEFIDevicePathType::DP_End && dp_header_pointer->subtype == 0xFF)
+        return qefi_dp_length(dp_header_pointer);
 
     int size = 0;
     int count = qefi_dp_count(dp_header_pointer, max_dp_size);
-    if (count < 0) return -1;
-    for (int i = 0; i < count, size < max_dp_size; i++) {
+    if (count < 0)
+        return -1;
+    for (int i = 0; i < count && size < max_dp_size; i++) {
         int tempLength = qefi_dp_length(dp_header_pointer);
-        if (tempLength <= 0) return tempLength;
+        if (tempLength <= 0)
+            return tempLength;
+
+        // Bounds check before advancing
+        if (size + tempLength > max_dp_size) {
+            return -1;
+        }
 
         size += tempLength;
 
-        if (dp_header_pointer->type == QEFIDevicePathType::DP_End &&
-            dp_header_pointer->subtype == 0xFF)
+        if (dp_header_pointer->type == QEFIDevicePathType::DP_End && dp_header_pointer->subtype == 0xFF)
             break;
 
-        dp_header_pointer = (struct qefi_device_path_header *)
-            ((quint8 *)dp_header_pointer + tempLength);
+        dp_header_pointer = (struct qefi_device_path_header *)((quint8 *)dp_header_pointer + tempLength);
     }
     return (size == max_dp_size ? size : -1);
 }
 
 QString qefi_parse_ucs2_string(quint8 *data, int max_size)
 {
-    QString str; str.reserve(max_size / 2);
+    QString str;
+    str.reserve(max_size / 2);
     quint16 *c = (quint16 *)data;
     for (int index = 0; index < max_size; index += 2, c++) {
-        if (*c == 0) break;
+        if (*c == 0)
+            break;
         str.append(QChar(qFromLittleEndian<quint16>(*c)));
     }
     return str;
 }
 
-// TODO: Test it
-QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd)
+// Convert QString to UCS-2 (UTF-16 LE) byte array
+QByteArray qefi_format_string_to_ucs2(const QString &str, bool isEnd)
 {
-    QByteArray utf8 = str.toUtf8();
     QByteArray ucs2;
 
-    for (int i = 0, j = 0; i < utf8.size() && utf8[i] != '\0'; j++) {
-        quint16 val16;
-        quint32 val = 0;
+    // QString uses UTF-16 internally, get the UTF-16 data
+    const QChar *unicode = str.unicode();
+    int length = str.length();
 
-        if ((utf8[i] & 0xe0) == 0xe0 && !(utf8[i] & 0x10)) {
-            val = ((utf8[i+0] & 0x0f) << 10)
-                | ((utf8[i+1] & 0x3f) << 6)
-                | ((utf8[i+2] & 0x3f) << 0);
-            i += 3;
-        } else if ((utf8[i] & 0xc0) == 0xc0 && !(utf8[i] & 0x20)) {
-            val = ((utf8[i+0] & 0x1f) << 6) | ((utf8[i+1] & 0x3f) << 0);
-            i += 2;
-        } else {
-            val = utf8[i] & 0x7f;
-            i += 1;
-        }
-        val16 = (val & 0xFFFF);
+    // Reserve space (2 bytes per character, plus optional null terminator)
+    ucs2.reserve((length + (isEnd ? 1 : 0)) * 2);
 
-        // Append L8
-        ucs2.append((char)(val16 & 0xFF));
-        // Append H8
-        ucs2.append((char)((val16 >> 8) & 0xFF));
+    // Convert to little-endian UTF-16
+    for (int i = 0; i < length; i++) {
+        quint16 val = unicode[i].unicode();
+        quint16 val_le = qToLittleEndian<quint16>(val);
+        ucs2.append((char)(val_le & 0xFF));
+        ucs2.append((char)((val_le >> 8) & 0xFF));
     }
+
     if (isEnd) {
-        // Append \0 terminator
+        // Append \0 terminator (little-endian)
         ucs2.append((char)0x00);
         ucs2.append((char)0x00);
     }
+
     return ucs2;
 }
 
 // Hardware parsing
-QEFIDevicePath *qefi_parse_dp_hardware_pci(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_pci(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_hardware_pccard(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_pccard(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_hardware_mmio(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_mmio(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_hardware_vendor(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_vendor(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_hardware_controller(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_controller(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_hardware_bmc(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_bmc(struct qefi_device_path_header *dp, int dp_size);
 
 // ACPI parsing
-QEFIDevicePath *qefi_parse_dp_acpi_hid(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_acpi_hid(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_acpi_hidex(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_acpi_hidex(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_acpi_adr(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_acpi_adr(struct qefi_device_path_header *dp, int dp_size);
 
 // Message parsing
-QEFIDevicePath *qefi_parse_dp_message_atapi(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_atapi(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_scsi(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_scsi(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_fibre_chan(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_fibre_chan(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_1394(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_1394(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_usb(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_usb(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_i2o(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_i2o(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_infiniband(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_infiniband(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_vendor(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_vendor(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_mac_addr(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_mac_addr(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_ipv4(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_ipv4(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_ipv6(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_ipv6(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_uart(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_uart(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_usb_class(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_usb_class(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_usb_wwid(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_usb_wwid(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_lun(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_lun(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_sata(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_sata(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_iscsi(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_iscsi(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_vlan(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_vlan(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_sas_ex(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_sas_ex(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_nvme(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_nvme(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_uri(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_uri(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_ufs(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_ufs(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_sd(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_sd(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_bt(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_bt(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_wifi(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_wifi(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_emmc(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_emmc(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_btle(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_btle(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_dns(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_dns(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_message_nvdimm(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_nvdimm(struct qefi_device_path_header *dp, int dp_size);
 
 // Media parsing
-QEFIDevicePath *qefi_parse_dp_media_file(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_file(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_media_hdd(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_hdd(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_media_cdrom(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_cdrom(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_media_vendor(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_vendor(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_media_protocol(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_protocol(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_media_firmware_file(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_firmware_file(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_media_fv(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_fv(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_media_relative_offset(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_relative_offset(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_parse_dp_media_ramdisk(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_ramdisk(struct qefi_device_path_header *dp, int dp_size);
 
-QEFIDevicePath *qefi_private_parse_message_subtype(
-    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_private_parse_message_subtype(struct qefi_device_path_header *dp, int dp_size);
 
 QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
 {
     quint8 type = dp->type, subtype = dp->subtype;
     int length = qefi_dp_length(dp);
-    qDebug() << "Parsing DP: length " << length << " " <<
-        "type" << type << "subtype" << subtype;
-    if (length != dp_size || length <= 0) return nullptr;
+    qDebug() << "Parsing DP: length " << length << " " << "type" << type << "subtype" << subtype;
+    if (length != dp_size || length <= 0)
+        return nullptr;
 
     if (type == QEFIDevicePathType::DP_Hardware) {
         // Parse hardware
         switch (subtype) {
-            case QEFIDevicePathHardwareSubType::HW_PCI:
-                qDebug() << "Parsing DP hardware PCI";
-                return qefi_parse_dp_hardware_pci(dp, length);
-            case QEFIDevicePathHardwareSubType::HW_PCCard:
-                qDebug() << "Parsing DP hardware PCCard";
-                return qefi_parse_dp_hardware_pccard(dp, length);
-            case QEFIDevicePathHardwareSubType::HW_MMIO:
-                qDebug() << "Parsing DP hardware MMIO";
-                return qefi_parse_dp_hardware_mmio(dp, length);
-            case QEFIDevicePathHardwareSubType::HW_Vendor:
-                qDebug() << "Parsing DP hardware Vendor";
-                return qefi_parse_dp_hardware_vendor(dp, length);
-            case QEFIDevicePathHardwareSubType::HW_Controller:
-                qDebug() << "Parsing DP hardware Controller";
-                return qefi_parse_dp_hardware_controller(dp, length);
-            case QEFIDevicePathHardwareSubType::HW_BMC:
-                qDebug() << "Parsing DP hardware BMC";
-                return qefi_parse_dp_hardware_bmc(dp, length);
+        case QEFIDevicePathHardwareSubType::HW_PCI:
+            qDebug() << "Parsing DP hardware PCI";
+            return qefi_parse_dp_hardware_pci(dp, length);
+        case QEFIDevicePathHardwareSubType::HW_PCCard:
+            qDebug() << "Parsing DP hardware PCCard";
+            return qefi_parse_dp_hardware_pccard(dp, length);
+        case QEFIDevicePathHardwareSubType::HW_MMIO:
+            qDebug() << "Parsing DP hardware MMIO";
+            return qefi_parse_dp_hardware_mmio(dp, length);
+        case QEFIDevicePathHardwareSubType::HW_Vendor:
+            qDebug() << "Parsing DP hardware Vendor";
+            return qefi_parse_dp_hardware_vendor(dp, length);
+        case QEFIDevicePathHardwareSubType::HW_Controller:
+            qDebug() << "Parsing DP hardware Controller";
+            return qefi_parse_dp_hardware_controller(dp, length);
+        case QEFIDevicePathHardwareSubType::HW_BMC:
+            qDebug() << "Parsing DP hardware BMC";
+            return qefi_parse_dp_hardware_bmc(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_ACPI) {
         // Parse DP_ACPI
         switch (subtype) {
-            case QEFIDevicePathACPISubType::ACPI_HID:
-                qDebug() << "Parsing DP ACPI HID";
-                return qefi_parse_dp_acpi_hid(dp, length);
-            case QEFIDevicePathACPISubType::ACPI_HIDEX:
-                qDebug() << "Parsing DP ACPI HIDEX";
-                return qefi_parse_dp_acpi_hidex(dp, length);
-            case QEFIDevicePathACPISubType::ACPI_ADR:
-                qDebug() << "Parsing DP ACPI ADR";
-                return qefi_parse_dp_acpi_adr(dp, length);
+        case QEFIDevicePathACPISubType::ACPI_HID:
+            qDebug() << "Parsing DP ACPI HID";
+            return qefi_parse_dp_acpi_hid(dp, length);
+        case QEFIDevicePathACPISubType::ACPI_HIDEX:
+            qDebug() << "Parsing DP ACPI HIDEX";
+            return qefi_parse_dp_acpi_hidex(dp, length);
+        case QEFIDevicePathACPISubType::ACPI_ADR:
+            qDebug() << "Parsing DP ACPI ADR";
+            return qefi_parse_dp_acpi_adr(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_Message) {
         // Parse Message
@@ -322,42 +274,40 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
     } else if (type == QEFIDevicePathType::DP_Media) {
         // Parse Media
         switch (subtype) {
-            case QEFIDevicePathMediaSubType::MEDIA_HD:
-                qDebug() << "Parsing DP media HD";
-                return qefi_parse_dp_media_hdd(dp, length);
-            case QEFIDevicePathMediaSubType::MEDIA_File:
-                qDebug() << "Parsing DP media file";
-                return qefi_parse_dp_media_file(dp, length);
-            case QEFIDevicePathMediaSubType::MEDIA_CDROM:
-                qDebug() << "Parsing DP media CDROM";
-                return qefi_parse_dp_media_cdrom(dp, length);
-            case QEFIDevicePathMediaSubType::MEDIA_Vendor:
-                qDebug() << "Parsing DP media vendor";
-                return qefi_parse_dp_media_vendor(dp, length);
-            case QEFIDevicePathMediaSubType::MEDIA_Protocol:
-                qDebug() << "Parsing DP media protocol";
-                return qefi_parse_dp_media_protocol(dp, length);
-            case QEFIDevicePathMediaSubType::MEDIA_FirmwareFile:
-                qDebug() << "Parsing DP media firmware file";
-                return qefi_parse_dp_media_firmware_file(dp, length);
-            case QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume:
-                qDebug() << "Parsing DP media FV";
-                return qefi_parse_dp_media_fv(dp, length);
-            case QEFIDevicePathMediaSubType::MEDIA_RelativeOffset:
-                qDebug() << "Parsing DP media relative offset";
-                return qefi_parse_dp_media_relative_offset(dp, length);
-            case QEFIDevicePathMediaSubType::MEDIA_RamDisk:
-                qDebug() << "Parsing DP media ramdisk";
-                return qefi_parse_dp_media_ramdisk(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_HD:
+            qDebug() << "Parsing DP media HD";
+            return qefi_parse_dp_media_hdd(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_File:
+            qDebug() << "Parsing DP media file";
+            return qefi_parse_dp_media_file(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_CDROM:
+            qDebug() << "Parsing DP media CDROM";
+            return qefi_parse_dp_media_cdrom(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_Vendor:
+            qDebug() << "Parsing DP media vendor";
+            return qefi_parse_dp_media_vendor(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_Protocol:
+            qDebug() << "Parsing DP media protocol";
+            return qefi_parse_dp_media_protocol(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_FirmwareFile:
+            qDebug() << "Parsing DP media firmware file";
+            return qefi_parse_dp_media_firmware_file(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume:
+            qDebug() << "Parsing DP media FV";
+            return qefi_parse_dp_media_fv(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_RelativeOffset:
+            qDebug() << "Parsing DP media relative offset";
+            return qefi_parse_dp_media_relative_offset(dp, length);
+        case QEFIDevicePathMediaSubType::MEDIA_RamDisk:
+            qDebug() << "Parsing DP media ramdisk";
+            return qefi_parse_dp_media_ramdisk(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
         // Parse BIOSBoot
         quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
-        quint16 deviceType =
-            qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        quint16 deviceType = qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
         dp_inner_pointer += sizeof(quint16);
-        quint16 status =
-            qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        quint16 status = qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
         dp_inner_pointer += sizeof(quint16);
         QByteArray description; // TODO: Parse it
         return new QEFIDevicePathBIOSBoot(deviceType, status, description);
@@ -407,7 +357,6 @@ QByteArray qefi_format_dp_media_relative_offset(QEFIDevicePath *dp);
 
 QByteArray qefi_format_dp_media_ramdisk(QEFIDevicePath *dp);
 
-
 QByteArray qefi_format_dp(QEFIDevicePath *dp)
 {
     QEFIDevicePathType type = dp->type();
@@ -417,37 +366,37 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
     if (type == QEFIDevicePathType::DP_Hardware) {
         // Format hardware
         switch (subtype) {
-            case QEFIDevicePathHardwareSubType::HW_PCI:
-                qDebug() << "Formating DP hardware PCI";
-                return qefi_format_dp_hardware_pci(dp);
-            case QEFIDevicePathHardwareSubType::HW_PCCard:
-                qDebug() << "Formating DP hardware PCCard";
-                return qefi_format_dp_hardware_pccard(dp);
-            case QEFIDevicePathHardwareSubType::HW_MMIO:
-                qDebug() << "Formating DP hardware MMIO";
-                return qefi_format_dp_hardware_mmio(dp);
-            case QEFIDevicePathHardwareSubType::HW_Vendor:
-                qDebug() << "Formating DP hardware Vendor";
-                return qefi_format_dp_hardware_vendor(dp);
-            case QEFIDevicePathHardwareSubType::HW_Controller:
-                qDebug() << "Formating DP hardware Controller";
-                return qefi_format_dp_hardware_controller(dp);
-            case QEFIDevicePathHardwareSubType::HW_BMC:
-                qDebug() << "Formating DP hardware BMC";
-                return qefi_format_dp_hardware_bmc(dp);
+        case QEFIDevicePathHardwareSubType::HW_PCI:
+            qDebug() << "Formating DP hardware PCI";
+            return qefi_format_dp_hardware_pci(dp);
+        case QEFIDevicePathHardwareSubType::HW_PCCard:
+            qDebug() << "Formating DP hardware PCCard";
+            return qefi_format_dp_hardware_pccard(dp);
+        case QEFIDevicePathHardwareSubType::HW_MMIO:
+            qDebug() << "Formating DP hardware MMIO";
+            return qefi_format_dp_hardware_mmio(dp);
+        case QEFIDevicePathHardwareSubType::HW_Vendor:
+            qDebug() << "Formating DP hardware Vendor";
+            return qefi_format_dp_hardware_vendor(dp);
+        case QEFIDevicePathHardwareSubType::HW_Controller:
+            qDebug() << "Formating DP hardware Controller";
+            return qefi_format_dp_hardware_controller(dp);
+        case QEFIDevicePathHardwareSubType::HW_BMC:
+            qDebug() << "Formating DP hardware BMC";
+            return qefi_format_dp_hardware_bmc(dp);
         }
     } else if (type == QEFIDevicePathType::DP_ACPI) {
         // Format DP_ACPI
         switch (subtype) {
-            case QEFIDevicePathACPISubType::ACPI_HID:
-                qDebug() << "Formating DP ACPI HID";
-                return qefi_format_dp_acpi_hid(dp);
-            case QEFIDevicePathACPISubType::ACPI_HIDEX:
-                qDebug() << "Formating DP ACPI HIDEX";
-                return qefi_format_dp_acpi_hidex(dp);
-            case QEFIDevicePathACPISubType::ACPI_ADR:
-                qDebug() << "Formating DP ACPI ADR";
-                return qefi_format_dp_acpi_adr(dp);
+        case QEFIDevicePathACPISubType::ACPI_HID:
+            qDebug() << "Formating DP ACPI HID";
+            return qefi_format_dp_acpi_hid(dp);
+        case QEFIDevicePathACPISubType::ACPI_HIDEX:
+            qDebug() << "Formating DP ACPI HIDEX";
+            return qefi_format_dp_acpi_hidex(dp);
+        case QEFIDevicePathACPISubType::ACPI_ADR:
+            qDebug() << "Formating DP ACPI ADR";
+            return qefi_format_dp_acpi_adr(dp);
         }
     } else if (type == QEFIDevicePathType::DP_Message) {
         // Format Message
@@ -455,39 +404,39 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
     } else if (type == QEFIDevicePathType::DP_Media) {
         // Format Media
         switch (subtype) {
-            case QEFIDevicePathMediaSubType::MEDIA_HD:
-                qDebug() << "Formating DP media HD";
-                return qefi_format_dp_media_hdd(dp);
-            case QEFIDevicePathMediaSubType::MEDIA_File:
-                qDebug() << "Formating DP media file";
-                return qefi_format_dp_media_file(dp);
-            case QEFIDevicePathMediaSubType::MEDIA_CDROM:
-                qDebug() << "Formating DP media CDROM";
-                return qefi_format_dp_media_cdrom(dp);
-            case QEFIDevicePathMediaSubType::MEDIA_Vendor:
-                qDebug() << "Formating DP media vendor";
-                return qefi_format_dp_media_vendor(dp);
-            case QEFIDevicePathMediaSubType::MEDIA_Protocol:
-                qDebug() << "Formating DP media protocol";
-                return qefi_format_dp_media_protocol(dp);
-            case QEFIDevicePathMediaSubType::MEDIA_FirmwareFile:
-                qDebug() << "Formating DP media firmware file";
-                return qefi_format_dp_media_firmware_file(dp);
-            case QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume:
-                qDebug() << "Formating DP media FV";
-                return qefi_format_dp_media_fv(dp);
-            case QEFIDevicePathMediaSubType::MEDIA_RelativeOffset:
-                qDebug() << "Formating DP media relative offset";
-                return qefi_format_dp_media_relative_offset(dp);
-            case QEFIDevicePathMediaSubType::MEDIA_RamDisk:
-                qDebug() << "Formating DP media ramdisk";
-                return qefi_format_dp_media_ramdisk(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_HD:
+            qDebug() << "Formating DP media HD";
+            return qefi_format_dp_media_hdd(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_File:
+            qDebug() << "Formating DP media file";
+            return qefi_format_dp_media_file(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_CDROM:
+            qDebug() << "Formating DP media CDROM";
+            return qefi_format_dp_media_cdrom(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_Vendor:
+            qDebug() << "Formating DP media vendor";
+            return qefi_format_dp_media_vendor(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_Protocol:
+            qDebug() << "Formating DP media protocol";
+            return qefi_format_dp_media_protocol(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_FirmwareFile:
+            qDebug() << "Formating DP media firmware file";
+            return qefi_format_dp_media_firmware_file(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume:
+            qDebug() << "Formating DP media FV";
+            return qefi_format_dp_media_fv(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_RelativeOffset:
+            qDebug() << "Formating DP media relative offset";
+            return qefi_format_dp_media_relative_offset(dp);
+        case QEFIDevicePathMediaSubType::MEDIA_RamDisk:
+            qDebug() << "Formating DP media ramdisk";
+            return qefi_format_dp_media_ramdisk(dp);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
         // Format BIOSBoot
-        QEFIDevicePathBIOSBoot *dp_instance =
-            dynamic_cast<QEFIDevicePathBIOSBoot *>(dp);
-        if (dp_instance == nullptr) return QByteArray();
+        QEFIDevicePathBIOSBoot *dp_instance = dynamic_cast<QEFIDevicePathBIOSBoot *>(dp);
+        if (dp_instance == nullptr)
+            return QByteArray();
 
         QByteArray buffer;
         // Append the types
@@ -497,11 +446,9 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
         buffer.append((char)4);
         buffer.append((char)0);
         // Append the fields
-        quint16 deviceType =
-            qToLittleEndian<quint16>(dp_instance->deviceType());
+        quint16 deviceType = qToLittleEndian<quint16>(dp_instance->deviceType());
         buffer.append((const char *)&deviceType, sizeof(quint16));
-        quint16 status =
-            qToLittleEndian<quint16>(dp_instance->status());
+        quint16 status = qToLittleEndian<quint16>(dp_instance->status());
         buffer.append((const char *)&status, sizeof(quint16));
         buffer.append(dp_instance->description());
 
@@ -518,24 +465,23 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
 #ifndef EFIVAR_APP_DATA_DUMMY
 #ifdef Q_OS_WIN
 /* Implementation based on Windows API */
-#include <Windows.h>
 #include <WinBase.h>
+#include <Windows.h>
 #include <tchar.h>
 #include <wbemidl.h>
 
-DWORD ObtainPrivileges(LPCTSTR privilege) {
+DWORD ObtainPrivileges(LPCTSTR privilege)
+{
     HANDLE hToken;
     TOKEN_PRIVILEGES tkp;
     BOOL res;
     // Obtain required privileges
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
-    {
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
         return GetLastError();
     }
 
     res = LookupPrivilegeValue(NULL, privilege, &tkp.Privileges[0].Luid);
-    if (!res)
-    {
+    if (!res) {
         return GetLastError();
     }
     tkp.PrivilegeCount = 1;
@@ -560,8 +506,7 @@ bool qefi_has_privilege()
 DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, PVOID buffer, DWORD size)
 {
     DWORD len = GetFirmwareEnvironmentVariable(name, uuid, buffer, size);
-    if (len == 0)
-    {
+    if (len == 0) {
         DWORD errorCode = GetLastError();
         // std::cerr << "Error reading : code " << errorCode << "\n";
     }
@@ -571,8 +516,7 @@ DWORD read_efivar_win(LPCTSTR name, LPCTSTR uuid, PVOID buffer, DWORD size)
 DWORD write_efivar_win(LPCTSTR name, LPCTSTR uuid, PVOID buffer, DWORD size)
 {
     DWORD len = SetFirmwareEnvironmentVariable(name, uuid, buffer, size);
-    if (len == 0)
-    {
+    if (len == 0) {
         DWORD errorCode = GetLastError();
         // std::cerr << "Error writing : code " << errorCode << "\n";
     }
@@ -598,8 +542,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 
     size_t length = read_efivar_win(c_name, c_uuid, (PVOID)buffer, EFIVAR_BUFFER_SIZE);
 
-    if (length < 2)
-    {
+    if (length < 2) {
         return 0;
     }
 
@@ -628,12 +571,9 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     size_t length = read_efivar_win(c_name, c_uuid, (PVOID)buffer, EFIVAR_BUFFER_SIZE);
 
     QByteArray value;
-    if (length == 0)
-    {
+    if (length == 0) {
         value.clear();
-    }
-    else
-    {
+    } else {
         for (size_t i = 0; i < (length + skip - 1) / skip; i++) {
             for (size_t j = 0; j < skip; j++) {
                 const quint8 byte = (quint8)((buffer[i] & (0xFF << (8 * j))) >> (8 * j));
@@ -685,14 +625,14 @@ extern "C" {
 #include <unistd.h>
 }
 /* Implementation based on libefivar */
-#define EFI_VARIABLE_NON_VOLATILE				((uint64_t)0x0000000000000001)
-#define EFI_VARIABLE_BOOTSERVICE_ACCESS				((uint64_t)0x0000000000000002)
-#define EFI_VARIABLE_RUNTIME_ACCESS				((uint64_t)0x0000000000000004)
-#define EFI_VARIABLE_HARDWARE_ERROR_RECORD			((uint64_t)0x0000000000000008)
-#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS			((uint64_t)0x0000000000000010)
-#define EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS	((uint64_t)0x0000000000000020)
-#define EFI_VARIABLE_APPEND_WRITE				((uint64_t)0x0000000000000040)
-#define EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS		((uint64_t)0x0000000000000080)
+#define EFI_VARIABLE_NON_VOLATILE ((uint64_t)0x0000000000000001)
+#define EFI_VARIABLE_BOOTSERVICE_ACCESS ((uint64_t)0x0000000000000002)
+#define EFI_VARIABLE_RUNTIME_ACCESS ((uint64_t)0x0000000000000004)
+#define EFI_VARIABLE_HARDWARE_ERROR_RECORD ((uint64_t)0x0000000000000008)
+#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS ((uint64_t)0x0000000000000010)
+#define EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS ((uint64_t)0x0000000000000020)
+#define EFI_VARIABLE_APPEND_WRITE ((uint64_t)0x0000000000000040)
+#define EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS ((uint64_t)0x0000000000000080)
 
 #include <QByteArray>
 #include <QFile>
@@ -723,8 +663,7 @@ static int qefivar_get_variable_size(const QUuid &uuid, const QString &name, siz
 
     efi_guid_t guid;
     return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code < 0)
-    {
+    if (return_code < 0) {
         return return_code;
     }
     return_code = efi_get_variable_size(guid, c_name, size);
@@ -743,36 +682,31 @@ static int qefivar_get_variable(QUuid &uuid, QString &name, uint8_t **data, size
 
     efi_guid_t guid;
     return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code < 0)
-    {
+    if (return_code < 0) {
         return return_code;
     }
 
     return_code = efi_get_variable_size(guid, c_name, size);
-    if (*size == 0 || return_code < 0)
-    {
+    if (*size == 0 || return_code < 0) {
         return return_code;
     }
 
     uint8_t *temp_data;
     return_code = efi_get_variable(guid, c_name, &temp_data, size, attributes);
-    if (*size == 0 || return_code < 0)
-    {
+    if (*size == 0 || return_code < 0) {
         return return_code;
     }
     // Allocate to have the same behaviour with Linux efivar
     *data = (uint8_t *)malloc(*size);
     std::memcpy(*data, temp_data, *size);
 
-    if (return_code < 0)
-    {
+    if (return_code < 0) {
         return return_code;
     }
     return 0;
 }
 
-static int qefivar_set_variable(const QUuid &uuid, const QString &name, uint8_t *data,
-    size_t data_size, uint32_t attributes, mode_t mode)
+static int qefivar_set_variable(const QUuid &uuid, const QString &name, uint8_t *data, size_t data_size, uint32_t attributes, mode_t mode)
 {
     int return_code;
 
@@ -783,16 +717,14 @@ static int qefivar_set_variable(const QUuid &uuid, const QString &name, uint8_t 
 
     efi_guid_t guid;
     return_code = efi_str_to_guid(c_uuid, &guid);
-    if (return_code < 0)
-    {
+    if (return_code < 0) {
         return return_code;
     }
 
     // Arg "mode" is not supported here
     return_code = efi_set_variable(guid, c_name, data, data_size, attributes);
 
-    if (return_code < 0)
-    {
+    if (return_code < 0) {
         return return_code;
     }
 
@@ -816,18 +748,14 @@ static QString efivarfs_path;
 static QString get_efivarfs_path(void)
 {
     // Cached path
-    if (efivarfs_path.size() > 0)
-    {
+    if (efivarfs_path.size() > 0) {
         return efivarfs_path;
     }
 
     QString efivarfs_path_from_env = qgetenv("EFIVARFS_PATH");
-    if (efivarfs_path_from_env.size() > 0)
-    {
+    if (efivarfs_path_from_env.size() > 0) {
         efivarfs_path = efivarfs_path_from_env;
-    }
-    else
-    {
+    } else {
         efivarfs_path = default_efivarfs_path;
     }
 
@@ -852,8 +780,7 @@ static int qefivar_efivarfs_get_variable_size(const QUuid &guid, const QString &
     int ret = -1;
     const QString &path = make_efivarfs_path(guid, name);
     QFileInfo fileInfo(path);
-    if (!fileInfo.exists())
-    {
+    if (!fileInfo.exists()) {
         qCritical() << "stat(" << path << ") failed";
         return ret;
     }
@@ -876,15 +803,13 @@ static int qefivar_efivarfs_get_variable(QUuid &guid, QString &name, uint8_t **d
 
     const QString &path = make_efivarfs_path(guid, name);
     QFile file(path);
-    if (!file.open(QIODevice::ReadOnly))
-    {
+    if (!file.open(QIODevice::ReadOnly)) {
         qCritical() << "open(" << path << ") failed";
         return ret;
     }
 
     // Read the Attributes field.
-    if (file.read((char *)attributes, sizeof(uint32_t)) != sizeof(uint32_t))
-    {
+    if (file.read((char *)attributes, sizeof(uint32_t)) != sizeof(uint32_t)) {
         qCritical() << "read(" << path << ") failed";
         return ret;
     }
@@ -893,14 +818,12 @@ static int qefivar_efivarfs_get_variable(QUuid &guid, QString &name, uint8_t **d
     *size = file.size() - sizeof(uint32_t);
 
     *data = (uint8_t *)malloc(*size);
-    if (!*data)
-    {
+    if (!*data) {
         qCritical() << "malloc(" << *size << ") failed";
         return ret;
     }
 
-    if (file.read((char *)*data, *size) != *size)
-    {
+    if (file.read((char *)*data, *size) != *size) {
         qCritical() << "read(" << path << ") failed";
         free(*data);
         return ret;
@@ -916,8 +839,7 @@ static int inline qefivar_get_variable(QUuid &guid, QString &name, uint8_t **dat
     return qefivar_efivarfs_get_variable(guid, name, data, size, attributes);
 }
 
-static int
-qefivar_efivarfs_del_variable(const QUuid &guid, const QString &name)
+static int qefivar_efivarfs_del_variable(const QUuid &guid, const QString &name)
 {
     const QString &rawPath = make_efivarfs_path(guid, name);
     const char *path = rawPath.toLocal8Bit().constData();
@@ -930,11 +852,9 @@ qefivar_efivarfs_del_variable(const QUuid &guid, const QString &name)
     return rc;
 }
 
-static int
-qefivar_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *data,
-    size_t data_size, uint32_t attributes, mode_t mode)
+static int qefivar_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *data, size_t data_size, uint32_t attributes, mode_t mode)
 {
-    QByteArray buf((qsizetype)(sizeof (attributes) + data_size), (char)0);
+    QByteArray buf((qsizetype)(sizeof(attributes) + data_size), (char)0);
     __typeof__(errno) errno_value;
     int ret = -1;
     int fd = -1;
@@ -948,7 +868,7 @@ qefivar_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *d
         return -1;
     }
 
-    if (data_size > (size_t)-1 - sizeof (attributes)) {
+    if (data_size > (size_t)-1 - sizeof(attributes)) {
         errno = EOVERFLOW;
         // efi_error("data_size too large (%zu)", data_size);
         return -1;
@@ -963,13 +883,13 @@ qefivar_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *d
             goto err;
     }
 
-    fd = open(path, O_WRONLY|O_CREAT, mode);
+    fd = open(path, O_WRONLY | O_CREAT, mode);
     if (fd < 0)
         goto err;
 
-    memcpy(buf.data(), &attributes, sizeof (attributes));
-    memcpy(buf.data() + sizeof (attributes), data, data_size);
-    rc = write(fd, buf.data(), sizeof (attributes) + data_size);
+    memcpy(buf.data(), &attributes, sizeof(attributes));
+    memcpy(buf.data() + sizeof(attributes), data, data_size);
+    rc = write(fd, buf.data(), sizeof(attributes) + data_size);
     if (rc >= 0) {
         ret = 0;
     } else {
@@ -985,9 +905,7 @@ err:
     return ret;
 }
 
-static inline int
-qefivar_set_variable(const QUuid &guid, const QString &name, uint8_t *data,
-    size_t data_size, uint32_t attributes, mode_t mode)
+static inline int qefivar_set_variable(const QUuid &guid, const QString &name, uint8_t *data, size_t data_size, uint32_t attributes, mode_t mode)
 {
     return qefivar_efivarfs_set_variable(guid, name, data, data_size, attributes, mode);
 }
@@ -1001,7 +919,8 @@ bool qefi_is_available()
 
 bool qefi_has_privilege()
 {
-    if (getuid() != 0) return false;
+    if (getuid() != 0)
+        return false;
     return true;
 }
 
@@ -1010,8 +929,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     int return_code;
     size_t var_size;
     return_code = qefivar_get_variable_size(uuid, name, &var_size);
-    if (var_size == 0 || return_code != 0)
-    {
+    if (var_size == 0 || return_code != 0) {
         return 0;
     }
 
@@ -1020,12 +938,9 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     return_code = qefivar_get_variable(uuid, name, &data, &var_size, &attributes);
 
     quint16 value;
-    if (return_code != 0)
-    {
+    if (return_code != 0) {
         value = 0;
-    }
-    else
-    {
+    } else {
         // Read as uint16, platform-independant
         value = *((quint16 *)data);
         free(data);
@@ -1040,8 +955,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
 
     size_t var_size;
     return_code = qefivar_get_variable_size(uuid, name, &var_size);
-    if (var_size == 0 || return_code != 0)
-    {
+    if (var_size == 0 || return_code != 0) {
         return QByteArray();
     }
 
@@ -1050,12 +964,9 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     return_code = qefivar_get_variable(uuid, name, &data, &var_size, &attributes);
 
     QByteArray value;
-    if (return_code != 0)
-    {
+    if (return_code != 0) {
         value.clear();
-    }
-    else
-    {
+    } else {
         for (size_t i = 0; i < var_size; i++) {
             value.append(data[i]);
         }
@@ -1065,10 +976,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     return value;
 }
 
-
-const uint32_t default_write_attribute = EFI_VARIABLE_NON_VOLATILE |
-                                         EFI_VARIABLE_BOOTSERVICE_ACCESS |
-                                         EFI_VARIABLE_RUNTIME_ACCESS;
+const uint32_t default_write_attribute = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
 
 void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 {
@@ -1076,9 +984,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 
     uint8_t buffer[2];
     *((uint16_t *)buffer) = qToLittleEndian<quint16>(value);
-    return_code = qefivar_set_variable(uuid, name, buffer, 2,
-                                             default_write_attribute,
-                                             0644);
+    return_code = qefivar_set_variable(uuid, name, buffer, 2, default_write_attribute, 0644);
 
     // TODO: Detect return code
 }
@@ -1087,19 +993,17 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 {
     int return_code;
 
-    return_code = qefivar_set_variable(uuid, name, (uint8_t *)value.data(), value.size(),
-                                             default_write_attribute,
-                                             0644);
+    return_code = qefivar_set_variable(uuid, name, (uint8_t *)value.data(), value.size(), default_write_attribute, 0644);
 
     // TODO: Detect return code
 }
 #endif
-#else   // APP Data based backend
-#include <QStandardPaths>
+#else // APP Data based backend
 #include <QDebug>
-#include <QString>
-#include <QFile>
 #include <QDir>
+#include <QFile>
+#include <QStandardPaths>
+#include <QString>
 
 bool qefi_is_available()
 {
@@ -1114,10 +1018,12 @@ bool qefi_has_privilege()
 bool dummy_backend_get_dir(QString &dir)
 {
     dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (dir.isNull()) return false;
+    if (dir.isNull())
+        return false;
     QDir appDataDir(dir);
     if (!appDataDir.exists()) {
-        if (!appDataDir.mkdir(dir)) return false;
+        if (!appDataDir.mkdir(dir))
+            return false;
     }
     return true;
 }
@@ -1130,8 +1036,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     QString dir;
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
-        QString filename = storedDir.absoluteFilePath(
-        QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
+        QString filename = storedDir.absoluteFilePath(QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
@@ -1156,8 +1061,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
     QString dir;
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
-        QString filename = storedDir.absoluteFilePath(
-        QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
+        QString filename = storedDir.absoluteFilePath(QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
@@ -1176,8 +1080,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     QString dir;
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
-        QString filename = storedDir.absoluteFilePath(
-        QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
+        QString filename = storedDir.absoluteFilePath(QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         QByteArray data;
         data.append((const char)(value & 0xFF));
@@ -1195,8 +1098,7 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
     QString dir;
     if (dummy_backend_get_dir(dir)) {
         QDir storedDir(dir);
-        QString filename = storedDir.absoluteFilePath(
-        QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
+        QString filename = storedDir.absoluteFilePath(QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
         qDebug() << filename;
         QFile file(filename);
@@ -1213,10 +1115,10 @@ QString qefi_extract_name(const QByteArray &data)
     QString entry_name;
     if (qefi_loadopt_is_valid(data)) {
         int desc_length = qefi_loadopt_description_length(data);
-        if (desc_length < 0) return entry_name;
+        if (desc_length < 0)
+            return entry_name;
 
-        return qefi_parse_ucs2_string((quint8 *)(data.data() +
-            sizeof(struct qefi_load_option_header)), desc_length);
+        return qefi_parse_ucs2_string((quint8 *)(data.data() + sizeof(struct qefi_load_option_header)), desc_length);
     }
     return entry_name;
 }
@@ -1226,32 +1128,38 @@ QString qefi_extract_path(const QByteArray &data)
     QString path;
     if (qefi_loadopt_is_valid(data)) {
         int desc_length = qefi_loadopt_description_length(data);
-        if (desc_length < 0) return path;
+        if (desc_length < 0)
+            return path;
         desc_length += 2;
 
         int dp_list_length = qefi_loadopt_dp_list_length(data);
-        if (dp_list_length < 0) return path;
+        if (dp_list_length < 0)
+            return path;
 
-        quint16 *c = (quint16*)(data.data() +
-            sizeof(struct qefi_load_option_header) + desc_length);
+        quint16 *c = (quint16 *)(data.data() + sizeof(struct qefi_load_option_header) + desc_length);
 
         // Keep the remainder length
         qint32 remainder_length = dp_list_length;
         quint8 *list_pointer = ((quint8 *)c);
         while (remainder_length > 0) {
-            struct qefi_device_path_header *dp_header =
-                (struct qefi_device_path_header *)list_pointer;
+            struct qefi_device_path_header *dp_header = (struct qefi_device_path_header *)list_pointer;
             int length = qefi_dp_length(dp_header);
-            if (length < 0) return path;
+            if (length < 0)
+                return path;
+
+            // Bounds check
+            if (length > remainder_length) {
+                return path;
+            }
 
             if (dp_header->type == DP_Media && dp_header->subtype == MEDIA_File) {
                 // Media File
-                QScopedPointer<QEFIDevicePath> dp(
-                    qefi_parse_dp_media_file(dp_header, length));
-                if (dp.isNull()) continue;
-                QEFIDevicePathMediaFile *media_file_dp =
-                    dynamic_cast<QEFIDevicePathMediaFile *>(dp.get());
-                if (media_file_dp == nullptr) continue;
+                QScopedPointer<QEFIDevicePath> dp(qefi_parse_dp_media_file(dp_header, length));
+                if (dp.isNull())
+                    continue;
+                QEFIDevicePathMediaFile *media_file_dp = dynamic_cast<QEFIDevicePathMediaFile *>(dp.get());
+                if (media_file_dp == nullptr)
+                    continue;
                 path.append(media_file_dp->name());
                 break;
             } else if (dp_header->type == DP_End) {
@@ -1270,8 +1178,7 @@ QByteArray qefi_extract_optional_data(const QByteArray &data)
     int optional_data_len = qefi_loadopt_optional_data_length(data);
     if (optional_data_len > 0 && optional_data_len < data.size()) {
         // The optional data lays on the tail of load option
-        return QByteArray(data.constData() +
-            (data.size() - optional_data_len), optional_data_len);
+        return QByteArray(data.constData() + (data.size() - optional_data_len), optional_data_len);
     }
     return QByteArray();
 }
@@ -1282,13 +1189,15 @@ int qefi_loadopt_description_length(const QByteArray &data)
     int tempLength;
 
     // Check header
-    if (size < sizeof(struct qefi_load_option_header)) return -1;
+    if (size < sizeof(struct qefi_load_option_header))
+        return -1;
 
     tempLength = qefi_loadopt_dp_list_length(data);
-    if (tempLength < 0) return -1;
+    if (tempLength < 0)
+        return -1;
     quint16 dpListLength = (quint16)(tempLength & 0xFFFF);
 
-    quint16 *c = (quint16*)(data.data() + sizeof(struct qefi_load_option_header));
+    quint16 *c = (quint16 *)(data.data() + sizeof(struct qefi_load_option_header));
     bool isDescValid = false;
     tempLength = 0;
     while (size > 0) {
@@ -1299,7 +1208,8 @@ int qefi_loadopt_description_length(const QByteArray &data)
         }
         size -= 2, c++, tempLength += 2;
     }
-    if (!isDescValid) return -1;
+    if (!isDescValid)
+        return -1;
 
     return tempLength;
 }
@@ -1309,10 +1219,10 @@ int qefi_loadopt_dp_list_length(const QByteArray &data)
     int size = data.size();
 
     // Check header
-    if (size < sizeof(struct qefi_load_option_header)) return -1;
+    if (size < sizeof(struct qefi_load_option_header))
+        return -1;
 
-    struct qefi_load_option_header *header =
-        (struct qefi_load_option_header *)data.data();
+    struct qefi_load_option_header *header = (struct qefi_load_option_header *)data.data();
     return qFromLittleEndian<quint16>(header->path_list_length);
 }
 
@@ -1322,22 +1232,26 @@ int qefi_loadopt_optional_data_length(const QByteArray &data)
     int tempLength;
 
     // Check header
-    if (size < sizeof(struct qefi_load_option_header)) return -1;
+    if (size < sizeof(struct qefi_load_option_header))
+        return -1;
     size -= sizeof(struct qefi_load_option_header);
 
     // Check device path list length
     tempLength = qefi_loadopt_dp_list_length(data);
-    if (tempLength < 0) return -1;
+    if (tempLength < 0)
+        return -1;
     quint16 dpListLength = (quint16)(tempLength & 0xFFFF);
-    if (size < dpListLength) return -1;
+    if (size < dpListLength)
+        return -1;
 
     size -= dpListLength;
 
     // Check description length
     tempLength = qefi_loadopt_description_length(data);
-    if (tempLength < 0) return -1;
+    if (tempLength < 0)
+        return -1;
     size -= tempLength;
-    size -= 2;  // Assume 0x00 0x00 after
+    size -= 2; // Assume 0x00 0x00 after
 
     // The remainder is the optional data size
     return size;
@@ -1352,7 +1266,8 @@ bool qefi_loadopt_is_valid(const QByteArray &data)
     //  - the device path list
     //  - the description
     int optionalSize = qefi_loadopt_optional_data_length(data);
-    if (optionalSize < 0) return false;
+    if (optionalSize < 0)
+        return false;
 
     // TODO: Check device path
 
@@ -1364,7 +1279,7 @@ bool QEFILoadOption::isValidated() const
     return m_isValidated;
 }
 
-QString QEFILoadOption::name() const
+const QString &QEFILoadOption::name() const
 {
     return m_name;
 }
@@ -1374,17 +1289,17 @@ bool QEFILoadOption::isVisible() const
     return m_isVisible;
 }
 
-QString QEFILoadOption::path() const
+const QString &QEFILoadOption::path() const
 {
     return m_shortPath;
 }
 
-QByteArray QEFILoadOption::optionalData() const
+const QByteArray &QEFILoadOption::optionalData() const
 {
     return m_optionalData;
 }
 
-QList<QSharedPointer<QEFIDevicePath> > QEFILoadOption::devicePathList() const
+const QList<QSharedPointer<QEFIDevicePath>> &QEFILoadOption::devicePathList() const
 {
     return m_devicePathList;
 }
@@ -1404,8 +1319,10 @@ void QEFILoadOption::removeDevicePathAt(int index)
 void QEFILoadOption::setIsVisible(bool isVisible)
 {
     m_isVisible = isVisible;
-    if (!isVisible) m_attribute &= ~QEFI_LOAD_OPTION_ACTIVE;
-    else m_attribute |= QEFI_LOAD_OPTION_ACTIVE;
+    if (!isVisible)
+        m_attribute &= ~QEFI_LOAD_OPTION_ACTIVE;
+    else
+        m_attribute |= QEFI_LOAD_OPTION_ACTIVE;
 }
 
 void QEFILoadOption::setOptionalData(const QByteArray &optionalData)
@@ -1424,18 +1341,11 @@ QEFILoadOption::QEFILoadOption(const QByteArray &bootData)
     parse(bootData);
 }
 
-QEFILoadOption::QEFILoadOption(QByteArray &bootData)
-    : m_isValidated(false)
-{
-    parse(bootData);
-}
-
 bool QEFILoadOption::parse(const QByteArray &bootData)
 {
     m_isValidated = false;
     if (qefi_loadopt_is_valid(bootData)) {
-        struct qefi_load_option_header *header =
-            (struct qefi_load_option_header *)bootData.data();
+        struct qefi_load_option_header *header = (struct qefi_load_option_header *)bootData.data();
         m_attribute = qFromLittleEndian<quint32>(header->attributes);
         m_isVisible = (m_attribute & QEFI_LOAD_OPTION_ACTIVE);
         m_name = qefi_extract_name(bootData);
@@ -1446,21 +1356,26 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
         // Parse the device path if exists
         int dp_list_length = qefi_loadopt_dp_list_length(bootData);
         if (dp_list_length >= 0) {
-            int dp_infered_length = bootData.size() -     // Optional + DP
-                sizeof(struct qefi_load_option_header) -    // Header
-                (m_name.length() + 1) * 2;                  // Description
+            int dp_infered_length = bootData.size() - // Optional + DP
+                sizeof(struct qefi_load_option_header) - // Header
+                (m_name.length() + 1) * 2; // Description
 
             // Get the device list count
             struct qefi_device_path_header *dp_header_pointer =
-                (struct qefi_device_path_header *)(((quint8 *)header) +
-                    sizeof(struct qefi_load_option_header) +
-                    (m_name.length() + 1) * 2);
-            int dp_list_count = qefi_dp_count(dp_header_pointer,
-                dp_list_length < dp_infered_length ?
-                dp_list_length : dp_infered_length);
+                (struct qefi_device_path_header *)(((quint8 *)header) + sizeof(struct qefi_load_option_header) + (m_name.length() + 1) * 2);
+            int dp_list_count = qefi_dp_count(dp_header_pointer, dp_list_length < dp_infered_length ? dp_list_length : dp_infered_length);
+            int consumed_size = 0;
+            int max_size = dp_list_length < dp_infered_length ? dp_list_length : dp_infered_length;
             for (int i = 0; i < dp_list_count; i++) {
                 int tempLength = qefi_dp_length(dp_header_pointer);
-                if (tempLength < 0) break;
+                if (tempLength < 0)
+                    break;
+
+                // Bounds check before parsing and advancing
+                if (consumed_size + tempLength > max_size) {
+                    qDebug() << "Device path list exceeds bounds, stopping parse";
+                    break;
+                }
 
                 // Parse DP
                 qDebug() << "Parsing a device path" << i + 1 << "length" << tempLength;
@@ -1469,19 +1384,16 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
                     m_devicePathList.append(QSharedPointer<QEFIDevicePath>(path));
                 }
 
-                dp_header_pointer = (struct qefi_device_path_header *)
-                    (((quint8 *)dp_header_pointer) + tempLength);
+                consumed_size += tempLength;
+                dp_header_pointer = (struct qefi_device_path_header *)(((quint8 *)dp_header_pointer) + tempLength);
             }
         }
 
         // Optional data
-        int optionalDataBegin = sizeof(struct qefi_load_option_header) +
-            (m_name.length() + 1) * 2 + dp_list_length;
+        int optionalDataBegin = sizeof(struct qefi_load_option_header) + (m_name.length() + 1) * 2 + dp_list_length;
         if (optionalDataBegin < bootData.size()) {
-            m_optionalData = QByteArray(((const char *)header) +
-                sizeof(struct qefi_load_option_header) +
-                (m_name.length() + 1) * 2 + dp_list_length,
-                bootData.size() - optionalDataBegin);
+            m_optionalData = QByteArray(((const char *)header) + sizeof(struct qefi_load_option_header) + (m_name.length() + 1) * 2 + dp_list_length,
+                                        bootData.size() - optionalDataBegin);
         }
     }
     return m_isValidated;
@@ -1499,11 +1411,11 @@ QByteArray QEFILoadOption::format()
 
     // Encode name
     QByteArray name = qefi_format_string_to_ucs2(m_name, true);
-    if (!name.size()) name.append(2, '\0');
+    if (!name.size())
+        name.append(2, '\0');
 
     // Append header
-    loadOptionData.append((const char *)&header,
-        sizeof(struct qefi_load_option_header));
+    loadOptionData.append((const char *)&header, sizeof(struct qefi_load_option_header));
     // Append name
     loadOptionData.append(name);
     // Append DP
@@ -1516,8 +1428,7 @@ QByteArray QEFILoadOption::format()
     loadOptionData.append((char)0x04);
     loadOptionData.append((char)0x00);
     // Fixup DP length
-    int path_list_length = (loadOptionData.size() -
-        (sizeof(struct qefi_load_option_header) + name.size()));
+    int path_list_length = (loadOptionData.size() - (sizeof(struct qefi_load_option_header) + name.size()));
     header.path_list_length = (quint16)(path_list_length < 0 ? 0 : path_list_length);
     loadOptionData[4] = (char)(header.path_list_length & 0xFF);
     loadOptionData[5] = (char)(header.path_list_length >> 8);
@@ -1525,7 +1436,8 @@ QByteArray QEFILoadOption::format()
     loadOptionData.append(m_optionalData);
 
     // Never return invalidated data
-    if (!qefi_loadopt_is_valid(loadOptionData)) return QByteArray();
+    if (!qefi_loadopt_is_valid(loadOptionData))
+        return QByteArray();
     return loadOptionData;
 }
 
@@ -1536,20 +1448,23 @@ QEFILoadOption::~QEFILoadOption()
 
 QUuid qefi_format_guid(const quint8 *data)
 {
-    return QUuid(
-        (uint)((uint)data[0] | (uint)data[1] << 8 |
-            (uint)data[2] << 16 | (uint)data[3] << 24), // LE
-        (ushort)data[4] | (ushort)data[5] << 8, // LE
-        (ushort)data[6] | (ushort)data[7] << 8, // LE
-        (uchar)data[8], (uchar)data[9],         // BE
-        (uchar)data[10], (uchar)data[11],
-        (uchar)data[12], (uchar)data[13],
-        (uchar)data[14], (uchar)data[15]);
+    return QUuid((uint)((uint)data[0] | (uint)data[1] << 8 | (uint)data[2] << 16 | (uint)data[3] << 24), // LE
+                 (ushort)data[4] | (ushort)data[5] << 8, // LE
+                 (ushort)data[6] | (ushort)data[7] << 8, // LE
+                 (uchar)data[8],
+                 (uchar)data[9], // BE
+                 (uchar)data[10],
+                 (uchar)data[11],
+                 (uchar)data[12],
+                 (uchar)data[13],
+                 (uchar)data[14],
+                 (uchar)data[15]);
 }
 
 QByteArray qefi_rfc4122_to_guid(const QByteArray data)
 {
-    if (data.length() < 8) return data;
+    if (data.length() < 8)
+        return data;
 
     QByteArray res(data);
     quint8 temp;
