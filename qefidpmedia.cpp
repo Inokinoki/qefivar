@@ -24,7 +24,7 @@ int qefi_dp_length(const struct qefi_device_path_header *dp_header);
 int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer, int max_dp_size);
 int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer, int max_dp_size);
 QString qefi_parse_ucs2_string(quint8 *data, int max_size);
-QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd);
+QByteArray qefi_format_string_to_ucs2(const QString &str, bool isEnd);
 
 // Media parsing
 QEFIDevicePath *qefi_parse_dp_media_file(struct qefi_device_path_header *dp, int dp_size)
