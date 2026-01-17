@@ -509,8 +509,8 @@ QEFIDevicePath *qefi_parse_dp_message_iscsi(
     quint16 tpgt =
         qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
     dp_inner_pointer += sizeof(quint16);
-    QString targetName(QByteArray((const char *)dp_inner_pointer,
-        length - (dp_inner_pointer - (quint8 *)dp)));
+    QString targetName(QString::fromUtf8(QByteArray((const char *)dp_inner_pointer,
+        length - (dp_inner_pointer - (quint8 *)dp))));
     return new QEFIDevicePathMessageISCSI(protocol, options, lun,
         tpgt, targetName);
 }
@@ -629,7 +629,7 @@ QEFIDevicePath *qefi_parse_dp_message_uri(
     if (length != dp_size || length <= 0) return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
-    QUrl uri(QString(QByteArray((const char *)dp_inner_pointer,
+    QUrl uri(QString::fromUtf8(QByteArray((const char *)dp_inner_pointer,
         length - (dp_inner_pointer - (quint8 *)dp))));
     return new QEFIDevicePathMessageURI(uri);
 }
@@ -706,8 +706,8 @@ QEFIDevicePath *qefi_parse_dp_message_wifi(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     int ssid_len = length - sizeof(struct qefi_device_path_header);
-    QString ssid(QByteArray((const char *)dp_inner_pointer,
-        ssid_len < 32 ? ssid_len : 32));
+    QString ssid(QString::fromUtf8(QByteArray((const char *)dp_inner_pointer,
+        ssid_len < 32 ? ssid_len : 32)));
     return new QEFIDevicePathMessageWiFi(ssid);
 }
 

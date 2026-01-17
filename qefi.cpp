@@ -3,6 +3,9 @@
 #include <QtEndian>
 #include <QDebug>
 
+#include <QString>
+#include <QtEnvironmentVariables>
+
 #pragma pack(push, 1)
 struct qefi_load_option_header {
     quint32 attributes;
@@ -821,7 +824,7 @@ static QString get_efivarfs_path(void)
         return efivarfs_path;
     }
 
-    QString efivarfs_path_from_env = qgetenv("EFIVARFS_PATH");
+    QString efivarfs_path_from_env = QString::fromUtf8(qgetenv("EFIVARFS_PATH"));
     if (efivarfs_path_from_env.size() > 0)
     {
         efivarfs_path = efivarfs_path_from_env;
@@ -844,7 +847,7 @@ int qefivar_variables_supported(void)
 
 static QString make_efivarfs_path(const QUuid &guid, const QString &name)
 {
-    return QString("%1%2-%3").arg(get_efivarfs_path()).arg(name).arg(guid.toString(QUuid::WithoutBraces));
+    return QStringLiteral("%1%2-%3").arg(get_efivarfs_path()).arg(name).arg(guid.toString(QUuid::WithoutBraces));
 }
 
 static int qefivar_efivarfs_get_variable_size(const QUuid &guid, const QString &name, size_t *size)
