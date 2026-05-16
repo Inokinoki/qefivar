@@ -1,23 +1,8 @@
 #include "qefi.h"
+#include "qefi_p.h"
 
 #include <QtEndian>
 #include <QDebug>
-
-#pragma pack(push, 1)
-struct qefi_load_option_header {
-    quint32 attributes;
-    quint16 path_list_length;
-};
-#pragma pack(pop)
-
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
 
 int qefi_dp_length(const struct qefi_device_path_header *dp_header)
 {
@@ -1502,6 +1487,7 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
     m_isVisible = false;
 
     m_isValidated = false;
+    m_lastError.clear();
     if (qefi_loadopt_is_valid(bootData)) {
         struct qefi_load_option_header *header =
             (struct qefi_load_option_header *)bootData.data();
@@ -1552,6 +1538,8 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
                 (m_name.length() + 1) * 2 + dp_list_length,
                 bootData.size() - optionalDataBegin);
         }
+    } else {
+        m_lastError = QStringLiteral("Invalid load option data");
     }
     return m_isValidated;
 }

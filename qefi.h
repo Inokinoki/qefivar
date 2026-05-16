@@ -222,7 +222,6 @@ protected:
     QString m_shortPath;
     QList<QSharedPointer<QEFIDevicePath> > m_devicePathList;
     QByteArray m_optionalData;
-    QString m_errorString;
     QString m_lastError;
 public:
     // Default constructor - creates empty load option
@@ -236,16 +235,13 @@ public:
     // Format to binary data
     QByteArray format();
 
-    // Error handling for format()
+    // Error handling for parse() and format()
     bool hasError() const;
     QString lastError() const;
     void clearError();
 
     // Check if parsing was successful (renamed from isValidated)
     bool isValid() const;
-
-    // Last error message from parse() or format()
-    QString errorString() const;
 
     // Getters
     QString name() const;
