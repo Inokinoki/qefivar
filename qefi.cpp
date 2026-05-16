@@ -1497,6 +1497,9 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
     m_devicePathList.clear();
     m_optionalData.clear();
     m_shortPath.clear();
+    m_name.clear();
+    m_attribute = 0;
+    m_isVisible = false;
 
     m_isValidated = false;
     if (qefi_loadopt_is_valid(bootData)) {
