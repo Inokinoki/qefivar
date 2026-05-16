@@ -5,7 +5,10 @@
 #include <QtEndian>
 #include <QByteArray>
 #include <QString>
+#include <QLoggingCategory>
 #include <cstring>
+
+Q_DECLARE_LOGGING_CATEGORY(QEFI_LOG)
 
 #pragma pack(push, 1)
 struct qefi_load_option_header {

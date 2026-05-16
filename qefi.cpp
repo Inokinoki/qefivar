@@ -4,6 +4,8 @@
 #include <QtEndian>
 #include <QDebug>
 
+Q_LOGGING_CATEGORY(QEFI_LOG, "qefi")
+
 int qefi_dp_length(const struct qefi_device_path_header *dp_header)
 {
     if (!dp_header) return -1;
@@ -263,7 +265,7 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
 {
     quint8 type = dp->type, subtype = dp->subtype;
     int length = qefi_dp_length(dp);
-    qDebug() << "Parsing DP: length " << length << " " <<
+    qCDebug(QEFI_LOG) << "Parsing DP: length " << length << " " <<
         "type" << type << "subtype" << subtype;
     if (length != dp_size || length <= 0) return nullptr;
 
@@ -271,35 +273,35 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
         // Parse hardware
         switch (subtype) {
             case QEFIDevicePathHardwareSubType::HW_PCI:
-                qDebug() << "Parsing DP hardware PCI";
+                qCDebug(QEFI_LOG) << "Parsing DP hardware PCI";
                 return qefi_parse_dp_hardware_pci(dp, length);
             case QEFIDevicePathHardwareSubType::HW_PCCard:
-                qDebug() << "Parsing DP hardware PCCard";
+                qCDebug(QEFI_LOG) << "Parsing DP hardware PCCard";
                 return qefi_parse_dp_hardware_pccard(dp, length);
             case QEFIDevicePathHardwareSubType::HW_MMIO:
-                qDebug() << "Parsing DP hardware MMIO";
+                qCDebug(QEFI_LOG) << "Parsing DP hardware MMIO";
                 return qefi_parse_dp_hardware_mmio(dp, length);
             case QEFIDevicePathHardwareSubType::HW_Vendor:
-                qDebug() << "Parsing DP hardware Vendor";
+                qCDebug(QEFI_LOG) << "Parsing DP hardware Vendor";
                 return qefi_parse_dp_hardware_vendor(dp, length);
             case QEFIDevicePathHardwareSubType::HW_Controller:
-                qDebug() << "Parsing DP hardware Controller";
+                qCDebug(QEFI_LOG) << "Parsing DP hardware Controller";
                 return qefi_parse_dp_hardware_controller(dp, length);
             case QEFIDevicePathHardwareSubType::HW_BMC:
-                qDebug() << "Parsing DP hardware BMC";
+                qCDebug(QEFI_LOG) << "Parsing DP hardware BMC";
                 return qefi_parse_dp_hardware_bmc(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_ACPI) {
         // Parse DP_ACPI
         switch (subtype) {
             case QEFIDevicePathACPISubType::ACPI_HID:
-                qDebug() << "Parsing DP ACPI HID";
+                qCDebug(QEFI_LOG) << "Parsing DP ACPI HID";
                 return qefi_parse_dp_acpi_hid(dp, length);
             case QEFIDevicePathACPISubType::ACPI_HIDEX:
-                qDebug() << "Parsing DP ACPI HIDEX";
+                qCDebug(QEFI_LOG) << "Parsing DP ACPI HIDEX";
                 return qefi_parse_dp_acpi_hidex(dp, length);
             case QEFIDevicePathACPISubType::ACPI_ADR:
-                qDebug() << "Parsing DP ACPI ADR";
+                qCDebug(QEFI_LOG) << "Parsing DP ACPI ADR";
                 return qefi_parse_dp_acpi_adr(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_Message) {
@@ -309,31 +311,31 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
         // Parse Media
         switch (subtype) {
             case QEFIDevicePathMediaSubType::MEDIA_HD:
-                qDebug() << "Parsing DP media HD";
+                qCDebug(QEFI_LOG) << "Parsing DP media HD";
                 return qefi_parse_dp_media_hdd(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_File:
-                qDebug() << "Parsing DP media file";
+                qCDebug(QEFI_LOG) << "Parsing DP media file";
                 return qefi_parse_dp_media_file(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_CDROM:
-                qDebug() << "Parsing DP media CDROM";
+                qCDebug(QEFI_LOG) << "Parsing DP media CDROM";
                 return qefi_parse_dp_media_cdrom(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_Vendor:
-                qDebug() << "Parsing DP media vendor";
+                qCDebug(QEFI_LOG) << "Parsing DP media vendor";
                 return qefi_parse_dp_media_vendor(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_Protocol:
-                qDebug() << "Parsing DP media protocol";
+                qCDebug(QEFI_LOG) << "Parsing DP media protocol";
                 return qefi_parse_dp_media_protocol(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_FirmwareFile:
-                qDebug() << "Parsing DP media firmware file";
+                qCDebug(QEFI_LOG) << "Parsing DP media firmware file";
                 return qefi_parse_dp_media_firmware_file(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume:
-                qDebug() << "Parsing DP media FV";
+                qCDebug(QEFI_LOG) << "Parsing DP media FV";
                 return qefi_parse_dp_media_fv(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_RelativeOffset:
-                qDebug() << "Parsing DP media relative offset";
+                qCDebug(QEFI_LOG) << "Parsing DP media relative offset";
                 return qefi_parse_dp_media_relative_offset(dp, length);
             case QEFIDevicePathMediaSubType::MEDIA_RamDisk:
-                qDebug() << "Parsing DP media ramdisk";
+                qCDebug(QEFI_LOG) << "Parsing DP media ramdisk";
                 return qefi_parse_dp_media_ramdisk(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
@@ -398,41 +400,41 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
 {
     QEFIDevicePathType type = dp->type();
     quint8 subtype = dp->subType();
-    qDebug() << "Formating DP: type" << type << "subtype" << subtype;
+    qCDebug(QEFI_LOG) << "Formating DP: type" << type << "subtype" << subtype;
 
     if (type == QEFIDevicePathType::DP_Hardware) {
         // Format hardware
         switch (subtype) {
             case QEFIDevicePathHardwareSubType::HW_PCI:
-                qDebug() << "Formating DP hardware PCI";
+                qCDebug(QEFI_LOG) << "Formating DP hardware PCI";
                 return qefi_format_dp_hardware_pci(dp);
             case QEFIDevicePathHardwareSubType::HW_PCCard:
-                qDebug() << "Formating DP hardware PCCard";
+                qCDebug(QEFI_LOG) << "Formating DP hardware PCCard";
                 return qefi_format_dp_hardware_pccard(dp);
             case QEFIDevicePathHardwareSubType::HW_MMIO:
-                qDebug() << "Formating DP hardware MMIO";
+                qCDebug(QEFI_LOG) << "Formating DP hardware MMIO";
                 return qefi_format_dp_hardware_mmio(dp);
             case QEFIDevicePathHardwareSubType::HW_Vendor:
-                qDebug() << "Formating DP hardware Vendor";
+                qCDebug(QEFI_LOG) << "Formating DP hardware Vendor";
                 return qefi_format_dp_hardware_vendor(dp);
             case QEFIDevicePathHardwareSubType::HW_Controller:
-                qDebug() << "Formating DP hardware Controller";
+                qCDebug(QEFI_LOG) << "Formating DP hardware Controller";
                 return qefi_format_dp_hardware_controller(dp);
             case QEFIDevicePathHardwareSubType::HW_BMC:
-                qDebug() << "Formating DP hardware BMC";
+                qCDebug(QEFI_LOG) << "Formating DP hardware BMC";
                 return qefi_format_dp_hardware_bmc(dp);
         }
     } else if (type == QEFIDevicePathType::DP_ACPI) {
         // Format DP_ACPI
         switch (subtype) {
             case QEFIDevicePathACPISubType::ACPI_HID:
-                qDebug() << "Formating DP ACPI HID";
+                qCDebug(QEFI_LOG) << "Formating DP ACPI HID";
                 return qefi_format_dp_acpi_hid(dp);
             case QEFIDevicePathACPISubType::ACPI_HIDEX:
-                qDebug() << "Formating DP ACPI HIDEX";
+                qCDebug(QEFI_LOG) << "Formating DP ACPI HIDEX";
                 return qefi_format_dp_acpi_hidex(dp);
             case QEFIDevicePathACPISubType::ACPI_ADR:
-                qDebug() << "Formating DP ACPI ADR";
+                qCDebug(QEFI_LOG) << "Formating DP ACPI ADR";
                 return qefi_format_dp_acpi_adr(dp);
         }
     } else if (type == QEFIDevicePathType::DP_Message) {
@@ -442,31 +444,31 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
         // Format Media
         switch (subtype) {
             case QEFIDevicePathMediaSubType::MEDIA_HD:
-                qDebug() << "Formating DP media HD";
+                qCDebug(QEFI_LOG) << "Formating DP media HD";
                 return qefi_format_dp_media_hdd(dp);
             case QEFIDevicePathMediaSubType::MEDIA_File:
-                qDebug() << "Formating DP media file";
+                qCDebug(QEFI_LOG) << "Formating DP media file";
                 return qefi_format_dp_media_file(dp);
             case QEFIDevicePathMediaSubType::MEDIA_CDROM:
-                qDebug() << "Formating DP media CDROM";
+                qCDebug(QEFI_LOG) << "Formating DP media CDROM";
                 return qefi_format_dp_media_cdrom(dp);
             case QEFIDevicePathMediaSubType::MEDIA_Vendor:
-                qDebug() << "Formating DP media vendor";
+                qCDebug(QEFI_LOG) << "Formating DP media vendor";
                 return qefi_format_dp_media_vendor(dp);
             case QEFIDevicePathMediaSubType::MEDIA_Protocol:
-                qDebug() << "Formating DP media protocol";
+                qCDebug(QEFI_LOG) << "Formating DP media protocol";
                 return qefi_format_dp_media_protocol(dp);
             case QEFIDevicePathMediaSubType::MEDIA_FirmwareFile:
-                qDebug() << "Formating DP media firmware file";
+                qCDebug(QEFI_LOG) << "Formating DP media firmware file";
                 return qefi_format_dp_media_firmware_file(dp);
             case QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume:
-                qDebug() << "Formating DP media FV";
+                qCDebug(QEFI_LOG) << "Formating DP media FV";
                 return qefi_format_dp_media_fv(dp);
             case QEFIDevicePathMediaSubType::MEDIA_RelativeOffset:
-                qDebug() << "Formating DP media relative offset";
+                qCDebug(QEFI_LOG) << "Formating DP media relative offset";
                 return qefi_format_dp_media_relative_offset(dp);
             case QEFIDevicePathMediaSubType::MEDIA_RamDisk:
-                qDebug() << "Formating DP media ramdisk";
+                qCDebug(QEFI_LOG) << "Formating DP media ramdisk";
                 return qefi_format_dp_media_ramdisk(dp);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
@@ -1116,7 +1118,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
         QString filename = storedDir.absoluteFilePath(
         QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
-        qDebug() << filename;
+        qCDebug(QEFI_LOG) << filename;
         QFile file(filename);
         if (file.exists()) {
             file.open(QIODevice::ReadOnly);
@@ -1142,7 +1144,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
         QString filename = storedDir.absoluteFilePath(
         QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
-        qDebug() << filename;
+        qCDebug(QEFI_LOG) << filename;
         QFile file(filename);
         if (file.exists()) {
             file.open(QIODevice::ReadOnly);
@@ -1165,7 +1167,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
         QByteArray data;
         data.append((const char)(value & 0xFF));
         data.append((const char)(value >> 8));
-        qDebug() << filename;
+        qCDebug(QEFI_LOG) << filename;
         QFile file(filename);
         file.open(QIODevice::WriteOnly);
         file.write(data);
@@ -1181,7 +1183,7 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
         QString filename = storedDir.absoluteFilePath(
         QStringLiteral("%1%2.bin").arg(uuid.toString(QUuid::WithoutBraces), name));
 
-        qDebug() << filename;
+        qCDebug(QEFI_LOG) << filename;
         QFile file(filename);
         file.open(QIODevice::WriteOnly);
         file.write(value);
@@ -1515,7 +1517,7 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
                 if (tempLength < 0) break;
 
                 // Parse DP
-                qDebug() << "Parsing a device path" << i + 1 << "length" << tempLength;
+                qCDebug(QEFI_LOG) << "Parsing a device path" << i + 1 << "length" << tempLength;
                 QEFIDevicePath *path = qefi_parse_dp(dp_header_pointer, tempLength);
                 if (path != nullptr) {
                     m_devicePathList.append(QSharedPointer<QEFIDevicePath>(path));
