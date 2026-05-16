@@ -68,13 +68,13 @@ QEFIDevicePath *qefi_parse_dp_hardware_mmio(
         sizeof(struct qefi_device_path_header);
     QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
     quint32 memoryType = 
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 startingAddress =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 endingAddress =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     return new QEFIDevicePathHardwareMMIO(memoryType,
         startingAddress, endingAddress);
 }
@@ -120,7 +120,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_controller(
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint32 controller =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     return new QEFIDevicePathHardwareController(controller);
 }
 
@@ -144,7 +144,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_bmc(
     quint8 interfaceType = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
     quint64 baseAddress =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     return new QEFIDevicePathHardwareBMC(interfaceType, baseAddress);
 }
 

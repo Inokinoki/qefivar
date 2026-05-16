@@ -26,7 +26,7 @@ QEFIDevicePath *qefi_parse_dp_message_atapi(
     quint8 slave = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
     quint16 lun =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageATAPI(primary, slave, lun);
 }
 
@@ -47,10 +47,10 @@ QEFIDevicePath *qefi_parse_dp_message_scsi(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 target =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 lun =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageSCSI(target, lun);
 }
 
@@ -71,13 +71,13 @@ QEFIDevicePath *qefi_parse_dp_message_fibre_chan(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 wwn =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 lun =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     return new QEFIDevicePathMessageFibreChan(reserved, wwn, lun);
 }
 
@@ -98,10 +98,10 @@ QEFIDevicePath *qefi_parse_dp_message_1394(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reversed =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 guid =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     return new QEFIDevicePathMessage1394(reversed, guid);
 }
 
@@ -144,7 +144,7 @@ QEFIDevicePath *qefi_parse_dp_message_i2o(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 target =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     return new QEFIDevicePathMessageI2O(target);
 }
 
@@ -166,22 +166,22 @@ QEFIDevicePath *qefi_parse_dp_message_infiniband(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 resourceFlags =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 portGID1 =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 portGID2 =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 sharedField =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 targetPortID =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 deviceID =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     return new QEFIDevicePathMessageInfiniBand(resourceFlags,
         portGID1, portGID2, sharedField,
         targetPortID, deviceID);
@@ -256,13 +256,13 @@ QEFIDevicePath *qefi_parse_dp_message_ipv4(
     quint8 *remoteIPv4Addr = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 4;
     quint16 localPort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 remotePort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 protocol =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 staticIPAddr = *dp_inner_pointer;    // A bool value
     dp_inner_pointer += sizeof(quint8);
@@ -300,13 +300,13 @@ QEFIDevicePath *qefi_parse_dp_message_ipv6(
     quint8 *remoteIPv6Addr = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 16;
     quint16 localPort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 remotePort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 protocol =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 ipAddrOrigin = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -338,10 +338,10 @@ QEFIDevicePath *qefi_parse_dp_message_uart(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 baudRate =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));;
+        qefi_read_le<quint64>(dp_inner_pointer);;
     dp_inner_pointer += sizeof(quint64);
     quint8 dataBits = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -370,10 +370,10 @@ QEFIDevicePath *qefi_parse_dp_message_usb_class(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vendorId =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 productId =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 deviceClass = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -402,13 +402,17 @@ QEFIDevicePath *qefi_parse_dp_message_usb_wwid(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vendorId =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 productId =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
-    // TODO: Parse sn
-    quint16 *sn = (quint16 *)dp_inner_pointer;
+    // Parse serial number from remaining bytes
+    int sn_bytes = length - (dp_inner_pointer - (quint8 *)dp);
+    QList<quint16> sn;
+    for (int i = 0; i + 1 < sn_bytes; i += 2) {
+        sn << qefi_read_le<quint16>(dp_inner_pointer + i);
+    }
     return new QEFIDevicePathMessageUSBWWID(vendorId, productId, sn);
 }
 
@@ -449,10 +453,10 @@ QEFIDevicePath *qefi_parse_dp_message_sata(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 hbaPort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 portMultiplierPort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 lun = *dp_inner_pointer;
     return new QEFIDevicePathMessageSATA(hbaPort, portMultiplierPort, lun);
@@ -476,15 +480,15 @@ QEFIDevicePath *qefi_parse_dp_message_iscsi(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 protocol =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 options =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 *lun = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 8;
     quint16 tpgt =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     QString targetName(QByteArray((const char *)dp_inner_pointer,
         length - (dp_inner_pointer - (quint8 *)dp)));
@@ -509,7 +513,7 @@ QEFIDevicePath *qefi_parse_dp_message_vlan(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vlanID =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageVLAN(vlanID);
 }
 
@@ -531,7 +535,7 @@ QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint8 *wwn = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 8;
@@ -558,7 +562,7 @@ QEFIDevicePath *qefi_parse_dp_message_sas_ex(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vlanID =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     quint8 *sasAddress = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 8;
     quint8 *lun = dp_inner_pointer;
@@ -568,7 +572,7 @@ QEFIDevicePath *qefi_parse_dp_message_sas_ex(
     quint8 driveBayID = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
     quint16 rtp =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageSASEx(sasAddress, lun,
         deviceTopologyInfo, driveBayID, rtp);
 }
@@ -590,7 +594,7 @@ QEFIDevicePath *qefi_parse_dp_message_nvme(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 nid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     return new QEFIDevicePathMessageNVME(nid, dp_inner_pointer);
 }
@@ -1368,7 +1372,10 @@ QByteArray qefi_format_dp_message_usb_wwid(QEFIDevicePath *dp)
     quint16 productId =
         qToLittleEndian<quint16>(dp_instance->productId());
     buffer.append((const char *)&productId, sizeof(quint16));
-    // TODO: Append SN
+    for (const auto &sn : dp_instance->serialNumber()) {
+        quint16 sn_le = qToLittleEndian<quint16>(sn);
+        buffer.append((const char *)&sn_le, sizeof(quint16));
+    }
 
     // Fix the length
     quint16 len = (buffer.size() & 0xFFFF);
@@ -2329,11 +2336,10 @@ QList<quint16> QEFIDevicePathMessageUSBWWID::serialNumber() const
 }
 
 QEFIDevicePathMessageUSBWWID::QEFIDevicePathMessageUSBWWID(
-        quint16 vendorId, quint16 productId, quint16 *sn)
+        quint16 vendorId, quint16 productId, QList<quint16> sn)
     : QEFIDevicePathMessage(MSG_USBWWID),
-    m_vendorId(vendorId), m_productId(productId)
+    m_vendorId(vendorId), m_productId(productId), m_serialNumber(sn)
 {
-    // TODO: Clarify the SN length
 }
 
 quint8 QEFIDevicePathMessageLUN::lun() const

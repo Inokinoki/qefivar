@@ -24,10 +24,10 @@ QEFIDevicePath *qefi_parse_dp_acpi_hid(
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint32 hid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint32 uid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     return new QEFIDevicePathACPIHID(hid, uid);
 }
 
@@ -50,13 +50,13 @@ QEFIDevicePath *qefi_parse_dp_acpi_hidex(
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint32 hid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint32 uid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint32 cid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     // TODO: Parse strings, the string format is not clear
     return new QEFIDevicePathACPIHIDEX(hid, uid, cid,
@@ -80,7 +80,7 @@ QEFIDevicePath *qefi_parse_dp_acpi_adr(
     for (int i = sizeof(struct qefi_device_path_header); i < length;
         i += sizeof(quint32)) {
         addresses << 
-            qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+            qefi_read_le<quint32>(dp_inner_pointer);
         dp_inner_pointer += sizeof(quint32);
     }
     return new QEFIDevicePathACPIADR(addresses);

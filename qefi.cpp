@@ -62,10 +62,11 @@ int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer, int ma
 QString qefi_parse_ucs2_string(quint8 *data, int max_size)
 {
     QString str; str.reserve(max_size / 2);
-    quint16 *c = (quint16 *)data;
-    for (int index = 0; index < max_size; index += 2, c++) {
-        if (*c == 0) break;
-        str.append(QChar(qFromLittleEndian<quint16>(*c)));
+    quint8 *c = data;
+    for (int index = 0; index < max_size; index += 2, c += 2) {
+        quint16 ch = qefi_read_le<quint16>(c);
+        if (ch == 0) break;
+        str.append(QChar(ch));
     }
     return str;
 }
@@ -339,10 +340,10 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
         // Parse BIOSBoot
         quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
         quint16 deviceType =
-            qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+            qefi_read_le<quint16>(dp_inner_pointer);
         dp_inner_pointer += sizeof(quint16);
         quint16 status =
-            qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+            qefi_read_le<quint16>(dp_inner_pointer);
         dp_inner_pointer += sizeof(quint16);
         QByteArray description; // TODO: Parse it
         return new QEFIDevicePathBIOSBoot(deviceType, status, description);
@@ -588,10 +589,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
         return 0;
     }
 
-    // Read as uint16, platform-independant
-    quint16 value = *((quint16 *)buffer);
-
-    return qFromLittleEndian<quint16>(value);
+    return qefi_read_le<quint16>(buffer);
 }
 
 QByteArray qefi_get_variable(QUuid uuid, QString name)
@@ -1012,11 +1010,11 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
     else
     {
         // Read as uint16, platform-independant
-        value = *((quint16 *)data);
+        value = qefi_read_le<quint16>(data);
         free(data);
     }
 
-    return qFromLittleEndian<quint16>(value);
+    return value;
 }
 
 QByteArray qefi_get_variable(QUuid uuid, QString name)
@@ -1060,7 +1058,7 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
     int return_code;
 
     uint8_t buffer[2];
-    *((uint16_t *)buffer) = qToLittleEndian<quint16>(value);
+    qefi_write_le<quint16>(buffer, value);
     return_code = qefivar_set_variable(uuid, name, buffer, 2,
                                              default_write_attribute,
                                              0644);
@@ -1126,7 +1124,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
             file.close();
 
             if (data.size() >= 2) {
-                value = *((quint16 *)data.data());
+                value = qefi_read_le<quint16>(data.data());
             }
         }
     }
@@ -1217,12 +1215,11 @@ QString qefi_extract_path(const QByteArray &data)
         int dp_list_length = qefi_loadopt_dp_list_length(data);
         if (dp_list_length < 0) return path;
 
-        quint16 *c = (quint16*)(data.data() +
+        quint8 *list_pointer = (quint8*)(data.data() +
             sizeof(struct qefi_load_option_header) + desc_length);
 
         // Keep the remainder length
         qint32 remainder_length = dp_list_length;
-        quint8 *list_pointer = ((quint8 *)c);
         while (remainder_length > 0) {
             struct qefi_device_path_header *dp_header =
                 (struct qefi_device_path_header *)list_pointer;
@@ -1273,16 +1270,16 @@ int qefi_loadopt_description_length(const QByteArray &data)
     if (tempLength < 0) return -1;
     quint16 dpListLength = (quint16)(tempLength & 0xFFFF);
 
-    quint16 *c = (quint16*)(data.data() + sizeof(struct qefi_load_option_header));
+    quint8 *c = (quint8*)(data.data() + sizeof(struct qefi_load_option_header));
     bool isDescValid = false;
     tempLength = 0;
     while (size > 0) {
         // Find the end of description
-        if (*c == 0) {
+        if (qefi_read_le<quint16>(c) == 0) {
             isDescValid = true;
             break;
         }
-        size -= 2, c++, tempLength += 2;
+        size -= 2, c += 2, tempLength += 2;
     }
     if (!isDescValid) return -1;
 

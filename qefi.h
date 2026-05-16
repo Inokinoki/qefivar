@@ -582,7 +582,7 @@ protected:
     QList<quint16> m_serialNumber;  // TODO: Clarify the SN length
 public:
     QEFIDevicePathMessageUSBWWID(quint16 vendorId, quint16 productId,
-        quint16 *sn);
+        QList<quint16> sn);
     quint16 vendorId() const;
     quint16 productId() const;
     QList<quint16> serialNumber() const;
