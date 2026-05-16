@@ -23,13 +23,21 @@ QEFI_EXPORT QByteArray qefi_get_variable(QUuid uuid, QString name);
 QEFI_EXPORT void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value);
 QEFI_EXPORT void qefi_set_variable(QUuid uuid, QString name, QByteArray value);
 
+// Load option free functions — prefer QEFILoadOption class for new code
+Q_DECL_DEPRECATED_X("Use QEFILoadOption::name()")
 QEFI_EXPORT QString qefi_extract_name(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption::path()")
 QEFI_EXPORT QString qefi_extract_path(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption::optionalData()")
 QEFI_EXPORT QByteArray qefi_extract_optional_data(const QByteArray &data);
 
+Q_DECL_DEPRECATED_X("Use QEFILoadOption helpers instead")
 QEFI_EXPORT int qefi_loadopt_description_length(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption helpers instead")
 QEFI_EXPORT int qefi_loadopt_dp_list_length(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption helpers instead")
 QEFI_EXPORT int qefi_loadopt_optional_data_length(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption::isValid()")
 QEFI_EXPORT bool qefi_loadopt_is_valid(const QByteArray &data);
 
 QEFI_EXPORT QUuid qefi_format_guid(const quint8 *data);
@@ -214,6 +222,8 @@ protected:
     QString m_shortPath;
     QList<QSharedPointer<QEFIDevicePath> > m_devicePathList;
     QByteArray m_optionalData;
+    QString m_errorString;
+    QString m_lastError;
 public:
     // Default constructor - creates empty load option
     QEFILoadOption();
@@ -226,8 +236,16 @@ public:
     // Format to binary data
     QByteArray format();
 
+    // Error handling for format()
+    bool hasError() const;
+    QString lastError() const;
+    void clearError();
+
     // Check if parsing was successful (renamed from isValidated)
     bool isValid() const;
+
+    // Last error message from parse() or format()
+    QString errorString() const;
 
     // Getters
     QString name() const;

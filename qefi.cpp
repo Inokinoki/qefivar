@@ -1594,8 +1594,28 @@ QByteArray QEFILoadOption::format()
     loadOptionData.append(m_optionalData);
 
     // Never return invalidated data
-    if (!qefi_loadopt_is_valid(loadOptionData)) return QByteArray();
+    if (!qefi_loadopt_is_valid(loadOptionData)) {
+        m_lastError = "Formatted data validation failed";
+        return QByteArray();
+    }
+
+    clearError();
     return loadOptionData;
+}
+
+bool QEFILoadOption::hasError() const
+{
+    return !m_lastError.isEmpty();
+}
+
+QString QEFILoadOption::lastError() const
+{
+    return m_lastError;
+}
+
+void QEFILoadOption::clearError()
+{
+    m_lastError.clear();
 }
 
 QEFILoadOption::~QEFILoadOption()
