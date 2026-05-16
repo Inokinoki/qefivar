@@ -215,27 +215,49 @@ protected:
     QList<QSharedPointer<QEFIDevicePath> > m_devicePathList;
     QByteArray m_optionalData;
 public:
-    QEFILoadOption(QByteArray &bootData);
-    QEFILoadOption(const QByteArray &bootData);
+    // Default constructor - creates empty load option
+    QEFILoadOption();
+    // Constructor from binary data - automatically parses
+    explicit QEFILoadOption(const QByteArray &bootData);
     virtual ~QEFILoadOption();
 
+    // Parse binary data - clears old state first
     bool parse(const QByteArray &bootData);
+    // Format to binary data
     QByteArray format();
 
-    bool isValidated() const;
+    // Check if parsing was successful (renamed from isValidated)
+    bool isValid() const;
 
+    // Getters
     QString name() const;
     bool isVisible() const;
     QString path() const;
     QByteArray optionalData() const;
     QList<QSharedPointer<QEFIDevicePath> > devicePathList() const;
+    quint32 attributes() const;
 
+    // Setters
     void setName(const QString &name);
     void setIsVisible(bool isVisible);
     void setOptionalData(const QByteArray &optionalData);
+    void setAttributes(quint32 attributes);
 
-    void addDevicePath(QEFIDevicePath *dp); // Ownership is ours
+    // Convenience methods for attribute flags
+    bool isActive() const;
+    bool isHidden() const;
+    bool isForceReconnect() const;
+    quint8 category() const;
+
+    void setActive(bool active);
+    void setHidden(bool hidden);
+    void setForceReconnect(bool forceReconnect);
+    void setCategory(quint8 category);
+
+    // Device path management - now takes shared pointer
+    void addDevicePath(QSharedPointer<QEFIDevicePath> dp);
     void removeDevicePathAt(int index);
+    void clearDevicePaths();
 };
 
 // Subclasses for hardware

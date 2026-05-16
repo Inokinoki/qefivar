@@ -58,7 +58,7 @@ int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer, int ma
     int size = 0;
     int count = qefi_dp_count(dp_header_pointer, max_dp_size);
     if (count < 0) return -1;
-    for (int i = 0; i < count, size < max_dp_size; i++) {
+    for (int i = 0; i < count && size < max_dp_size; i++) {
         int tempLength = qefi_dp_length(dp_header_pointer);
         if (tempLength <= 0) return tempLength;
 
@@ -1359,7 +1359,7 @@ bool qefi_loadopt_is_valid(const QByteArray &data)
     return true;
 }
 
-bool QEFILoadOption::isValidated() const
+bool QEFILoadOption::isValid() const
 {
     return m_isValidated;
 }
@@ -1389,16 +1389,34 @@ QList<QSharedPointer<QEFIDevicePath> > QEFILoadOption::devicePathList() const
     return m_devicePathList;
 }
 
-void QEFILoadOption::addDevicePath(QEFIDevicePath *dp)
+quint32 QEFILoadOption::attributes() const
 {
-    m_devicePathList.append(QSharedPointer<QEFIDevicePath>(dp));
+    return m_attribute;
 }
 
-void QEFILoadOption::removeDevicePathAt(int index)
+bool QEFILoadOption::isActive() const
 {
-    if (index >= 0 && index < m_devicePathList.size()) {
-        m_devicePathList.removeAt(index);
-    }
+    return m_attribute & QEFI_LOAD_OPTION_ACTIVE;
+}
+
+bool QEFILoadOption::isHidden() const
+{
+    return m_attribute & QEFI_LOAD_OPTION_HIDDEN;
+}
+
+bool QEFILoadOption::isForceReconnect() const
+{
+    return m_attribute & QEFI_LOAD_OPTION_FORCE_RECONNECT;
+}
+
+quint8 QEFILoadOption::category() const
+{
+    return static_cast<quint8>(m_attribute & QEFI_LOAD_OPTION_CATEGORY_MASK);
+}
+
+void QEFILoadOption::setName(const QString &name)
+{
+    m_name = name;
 }
 
 void QEFILoadOption::setIsVisible(bool isVisible)
@@ -1408,30 +1426,78 @@ void QEFILoadOption::setIsVisible(bool isVisible)
     else m_attribute |= QEFI_LOAD_OPTION_ACTIVE;
 }
 
+void QEFILoadOption::setAttributes(quint32 attributes)
+{
+    m_attribute = attributes;
+    m_isVisible = attributes & QEFI_LOAD_OPTION_ACTIVE;
+}
+
+void QEFILoadOption::setActive(bool active)
+{
+    if (active) m_attribute |= QEFI_LOAD_OPTION_ACTIVE;
+    else m_attribute &= ~QEFI_LOAD_OPTION_ACTIVE;
+    m_isVisible = active;
+}
+
+void QEFILoadOption::setHidden(bool hidden)
+{
+    if (hidden) m_attribute |= QEFI_LOAD_OPTION_HIDDEN;
+    else m_attribute &= ~QEFI_LOAD_OPTION_HIDDEN;
+}
+
+void QEFILoadOption::setForceReconnect(bool forceReconnect)
+{
+    if (forceReconnect) m_attribute |= QEFI_LOAD_OPTION_FORCE_RECONNECT;
+    else m_attribute &= ~QEFI_LOAD_OPTION_FORCE_RECONNECT;
+}
+
+void QEFILoadOption::setCategory(quint8 category)
+{
+    m_attribute = (m_attribute & ~QEFI_LOAD_OPTION_CATEGORY_MASK) | (category & QEFI_LOAD_OPTION_CATEGORY_MASK);
+}
+
 void QEFILoadOption::setOptionalData(const QByteArray &optionalData)
 {
     m_optionalData = optionalData;
 }
 
-void QEFILoadOption::setName(const QString &name)
+void QEFILoadOption::addDevicePath(QSharedPointer<QEFIDevicePath> dp)
 {
-    m_name = name;
+    if (dp) {
+        m_devicePathList.append(dp);
+    }
+}
+
+void QEFILoadOption::clearDevicePaths()
+{
+    m_devicePathList.clear();
+}
+
+void QEFILoadOption::removeDevicePathAt(int index)
+{
+    if (index >= 0 && index < m_devicePathList.size()) {
+        m_devicePathList.removeAt(index);
+    }
+}
+
+QEFILoadOption::QEFILoadOption()
+    : m_isValidated(false), m_isVisible(false), m_attribute(0)
+{
 }
 
 QEFILoadOption::QEFILoadOption(const QByteArray &bootData)
-    : m_isValidated(false)
-{
-    parse(bootData);
-}
-
-QEFILoadOption::QEFILoadOption(QByteArray &bootData)
-    : m_isValidated(false)
+    : m_isValidated(false), m_isVisible(false), m_attribute(0)
 {
     parse(bootData);
 }
 
 bool QEFILoadOption::parse(const QByteArray &bootData)
 {
+    // Clear old state first
+    m_devicePathList.clear();
+    m_optionalData.clear();
+    m_shortPath.clear();
+
     m_isValidated = false;
     if (qefi_loadopt_is_valid(bootData)) {
         struct qefi_load_option_header *header =
