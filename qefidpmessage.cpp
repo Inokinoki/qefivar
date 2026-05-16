@@ -448,7 +448,7 @@ QEFIDevicePath *qefi_parse_dp_message_sata(
 
     // Check size
     if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint16) + sizeof(quint16) + sizeof(quint8))
+        sizeof(quint16) + sizeof(quint16) + sizeof(quint16))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -458,7 +458,8 @@ QEFIDevicePath *qefi_parse_dp_message_sata(
     quint16 portMultiplierPort =
         qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
-    quint8 lun = *dp_inner_pointer;
+    quint16 lun =
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageSATA(hbaPort, portMultiplierPort, lun);
 }
 
@@ -2366,7 +2367,7 @@ quint16 QEFIDevicePathMessageSATA::lun() const
 }
 
 QEFIDevicePathMessageSATA::QEFIDevicePathMessageSATA(
-        quint16 hbaPort, quint16 portMultiplierPort, quint8 lun)
+        quint16 hbaPort, quint16 portMultiplierPort, quint16 lun)
     : QEFIDevicePathMessage(MSG_SATA), m_hbaPort(hbaPort),
     m_portMultiplierPort(portMultiplierPort), m_lun(lun) {}
 

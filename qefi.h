@@ -391,7 +391,7 @@ protected:
     quint16 m_target;
     quint16 m_lun;
 public:
-    QEFIDevicePathMessageSCSI(quint16 m_target, quint16 lun);
+    QEFIDevicePathMessageSCSI(quint16 target, quint16 lun);
     quint16 target() const;
     quint16 lun() const;
 };
@@ -603,7 +603,7 @@ protected:
     quint16 m_lun;
 public:
     QEFIDevicePathMessageSATA(quint16 hbaPort,
-        quint16 portMultiplierPor, quint8 lun);
+        quint16 portMultiplierPort, quint16 lun);
     quint16 hbaPort() const;
     quint16 portMultiplierPort() const;
     quint16 lun() const;
