@@ -1,0 +1,64 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux Qt5
+          - os: ubuntu-latest
+            qtpackage: qtbase5-dev
+            qt_install_cmd: sudo apt update -y && sudo apt install -y libefivar-dev libefiboot-dev qtbase5-dev
+          # Linux Qt6
+          - os: ubuntu-latest
+            qtpackage: qt6-base-dev
+            qt_install_cmd: sudo apt update -y && sudo apt install -y libefivar-dev libefiboot-dev qt6-base-dev
+          # Windows Qt5
+          - os: windows-latest
+            qt_version: 5.15.2
+            cmake_prefix: Qt5_DIR
+          # Windows Qt6
+          - os: windows-latest
+            qt_version: 6.8.3
+            cmake_prefix: Qt6_DIR
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    # Qt installation (platform-specific)
+    - name: Install Qt (Windows)
+      if: runner.os == 'Windows'
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ matrix.qt_version }}
+        cache: true
+
+    - name: Install dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: ${{ matrix.qt_install_cmd }}
+
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v2
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTING=YES
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure

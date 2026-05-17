@@ -1,0 +1,29 @@
+name: Build on FreeBSD
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+env:
+  BUILD_TYPE: Release
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+         submodules: true
+
+    - uses: vmactions/freebsd-vm@v1
+      with:
+        release: "14.2"
+        usesh: true
+        prepare: |
+          pkg upgrade -y
+          pkg install -y cmake qt5
+        run: |
+          uname -a
+          export QT_QPA_PLATFORM=offscreen
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_TESTING=YES
+          cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          cd ${{github.workspace}}/build && ctest -C ${{env.BUILD_TYPE}} --output-on-failure
