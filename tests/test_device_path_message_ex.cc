@@ -1,6 +1,8 @@
 
 #include <QtTest/QtTest>
 #include <QSharedPointer>
+#include <vector>
+#include <cstdio>
 
 #include "test_data.h"
 #include "../qefi.h"
@@ -336,10 +338,27 @@ void TestDevicePathMessageEx::test_qefi_parse_dp_generic_message_nvme()
 
 int main(int argc, char *argv[])
 {
-    setvbuf(stdout, NULL, _IONBF, 0);
-    setvbuf(stderr, NULL, _IONBF, 0);
     TestDevicePathMessageEx tc;
-    return QTest::qExec(&tc, argc, argv);
+    // Redirect QTest output to file, then print to stderr for ctest capture
+    std::vector<char*> args;
+    args.push_back(argv[0]);
+    args.push_back(const_cast<char*>("-o"));
+    args.push_back(const_cast<char*>("test_message_ex_output.txt,txt"));
+    for (int i = 1; i < argc; i++) args.push_back(argv[i]);
+    args.push_back(nullptr);
+    int result = QTest::qExec(&tc, static_cast<int>(args.size()) - 1, args.data());
+    // Print output file to stderr
+    FILE *f = fopen("test_message_ex_output.txt", "r");
+    if (f) {
+        char buf[1024];
+        while (fgets(buf, sizeof(buf), f)) {
+            fprintf(stderr, "%s", buf);
+        }
+        fclose(f);
+    } else {
+        fprintf(stderr, "ERROR: Could not open test output file\n");
+    }
+    return result;
 }
 
 #include "test_device_path_message_ex.moc"
