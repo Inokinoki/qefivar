@@ -69,7 +69,7 @@ private slots:
     void test_raw_binary_pci();
     void test_raw_binary_acpi();
     void test_raw_binary_truncated_header();
-    void test_raw_binary_truncated_data();
+    void test_raw_binary_truncated_payload();
     void test_raw_binary_invalid_type();
 };
 
@@ -1196,13 +1196,13 @@ void TestDevicePathComprehensive::test_raw_binary_truncated_header()
     QVERIFY(p == nullptr);
 }
 
-// Truncated data: header OK but not enough payload
-void TestDevicePathComprehensive::test_raw_binary_truncated_data()
+// Truncated payload: header OK but not enough payload
+void TestDevicePathComprehensive::test_raw_binary_truncated_payload()
 {
     QByteArray raw;
     raw.append((char)0x01); // type: Hardware
     raw.append((char)0x01); // subtype: PCI
-    raw.append((char)0x06); // length LE low (6) — expects 2 bytes of payload
+    raw.append((char)0x06); // length LE low (6) - expects 2 bytes of payload
     raw.append((char)0x00); // length LE high
     // Missing function and device bytes
 
