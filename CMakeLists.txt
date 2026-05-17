@@ -17,6 +17,12 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# MSVC defaults to the system codepage for source file encoding.
+# Our sources use UTF-8 (e.g. Chinese SSID test strings), so force UTF-8.
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 set(QEFIVAR_LIB)
 set(QEFIVAR_INCLUDE)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
