@@ -1208,6 +1208,6 @@ void TestDevicePathMessage::test_qefi_parse_dp_generic_message_nvme()
     QVERIFY(subP->namespaceID() == 0x00000042);
 }
 
-QTEST_MAIN(TestDevicePathMessage)
+QTEST_APPLESS_MAIN(TestDevicePathMessage)
 
 #include "test_device_path_message.moc"
