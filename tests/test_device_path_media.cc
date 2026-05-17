@@ -18,6 +18,12 @@ private slots:
     void test_qefi_dp_media_fv();
     void test_qefi_dp_media_relative_offset();
     void test_qefi_dp_media_ramdisk();
+    void test_qefi_dp_media_hdd_mbr_format();
+    void test_qefi_dp_media_hdd_gpt_format();
+    void test_qefi_dp_media_file_empty_path();
+    void test_qefi_dp_media_file_long_path();
+    void test_qefi_dp_media_ramdisk_boundary();
+    void test_qefi_parse_dp_generic_media_file();
 };
 
 /* EFI device path header */
@@ -59,6 +65,9 @@ QByteArray qefi_format_dp_media_firmware_file(QEFIDevicePath *dp);
 QByteArray qefi_format_dp_media_fv(QEFIDevicePath *dp);
 QByteArray qefi_format_dp_media_relative_offset(QEFIDevicePath *dp);
 QByteArray qefi_format_dp_media_ramdisk(QEFIDevicePath *dp);
+
+QByteArray qefi_format_dp(QEFIDevicePath *dp);
+QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size);
 
 void TestDevicePathMedia::test_qefi_dp_media_file()
 {
@@ -298,6 +307,159 @@ void TestDevicePathMedia::test_qefi_dp_media_ramdisk()
     QVERIFY(subP->endAddress() == dp.endAddress());
     QVERIFY(subP->diskTypeGuid() == dp.diskTypeGuid());
     QVERIFY(subP->instanceNumber() == dp.instanceNumber());
+}
+
+void TestDevicePathMedia::test_qefi_dp_media_hdd_mbr_format()
+{
+    quint8 mbrSignature[16] = {0};
+    mbrSignature[0] = 0x01;
+    mbrSignature[1] = 0x02;
+    mbrSignature[2] = 0x03;
+    mbrSignature[3] = 0x04;
+
+    QEFIDevicePathMediaHD dp(
+        /* partitionNumber */ 1,
+        /* start */ 2048,
+        /* size */ 1024 * 1024 * 100,
+        /* signature */ mbrSignature,
+        /* format */ QEFIDevicePathMediaHD::PCAT,
+        /* signatureType */ QEFIDevicePathMediaHD::MBR);
+
+    QByteArray data = qefi_format_dp_media_hdd((QEFIDevicePath *)&dp);
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp_media_hdd(dp_header, data.length()));
+    QEFIDevicePathMediaHD *subP =
+        dynamic_cast<QEFIDevicePathMediaHD *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->format() == QEFIDevicePathMediaHD::PCAT);
+    QVERIFY(subP->signatureType() == QEFIDevicePathMediaHD::MBR);
+    QVERIFY(subP->mbrSignature() == 0x04030201);
+}
+
+void TestDevicePathMedia::test_qefi_dp_media_hdd_gpt_format()
+{
+    QByteArray guid = qefi_rfc4122_to_guid(
+        QUuid("12345678-1234-1234-1234-123456789ABC").toRfc4122());
+
+    QEFIDevicePathMediaHD dp(
+        /* partitionNumber */ 2,
+        /* start */ 4096,
+        /* size */ 1024 * 1024 * 200,
+        /* signature */ (quint8 *)guid.data(),
+        /* format */ QEFIDevicePathMediaHD::GPT,
+        /* signatureType */ QEFIDevicePathMediaHD::GUID);
+
+    QByteArray data = qefi_format_dp_media_hdd((QEFIDevicePath *)&dp);
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp_media_hdd(dp_header, data.length()));
+    QEFIDevicePathMediaHD *subP =
+        dynamic_cast<QEFIDevicePathMediaHD *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->format() == QEFIDevicePathMediaHD::GPT);
+    QVERIFY(subP->signatureType() == QEFIDevicePathMediaHD::GUID);
+    QVERIFY(subP->partitionNumber() == 2);
+}
+
+void TestDevicePathMedia::test_qefi_dp_media_file_empty_path()
+{
+    QEFIDevicePathMediaFile dp("");
+    QByteArray data = qefi_format_dp_media_file((QEFIDevicePath *)&dp);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp_media_file(dp_header, data.length()));
+    QEFIDevicePathMediaFile *subP =
+        dynamic_cast<QEFIDevicePathMediaFile *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->name().isEmpty());
+}
+
+void TestDevicePathMedia::test_qefi_dp_media_file_long_path()
+{
+    QString longPath = "\\EFI\\Boot\\bootx64.efi";
+    QEFIDevicePathMediaFile dp(longPath);
+    QByteArray data = qefi_format_dp_media_file((QEFIDevicePath *)&dp);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp_media_file(dp_header, data.length()));
+    QEFIDevicePathMediaFile *subP =
+        dynamic_cast<QEFIDevicePathMediaFile *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->name() == longPath);
+}
+
+void TestDevicePathMedia::test_qefi_dp_media_ramdisk_boundary()
+{
+    {
+        QEFIDevicePathMediaRAMDisk dp(
+            /* startAddress */ 0x10000000,
+            /* endAddress */ 0x1FFFFFFF,
+            /* diskTypeGuid */ QUuid("12345678-1234-1234-1234-123456789ABC"),
+            /* instanceNumber */ 0x0000);
+
+        QByteArray data = qefi_format_dp_media_ramdisk((QEFIDevicePath *)&dp);
+        struct qefi_device_path_header *dp_header =
+            (struct qefi_device_path_header *)data.data();
+
+        QSharedPointer<QEFIDevicePath> p(
+            qefi_parse_dp_media_ramdisk(dp_header, data.length()));
+        QEFIDevicePathMediaRAMDisk *subP =
+            dynamic_cast<QEFIDevicePathMediaRAMDisk *>(p.get());
+        QVERIFY(subP != nullptr);
+        QVERIFY(subP->startAddress() == 0x10000000);
+        QVERIFY(subP->endAddress() == 0x1FFFFFFF);
+        QVERIFY(subP->instanceNumber() == 0x0000);
+    }
+
+    {
+        QEFIDevicePathMediaRAMDisk dp(
+            /* startAddress */ 0x0,
+            /* endAddress */ 0xFFFFFFFFFFFFFFFF,
+            /* diskTypeGuid */ QUuid("87654321-4321-4321-4321-CBA987654321"),
+            /* instanceNumber */ 0xFFFF);
+
+        QByteArray data = qefi_format_dp_media_ramdisk((QEFIDevicePath *)&dp);
+        struct qefi_device_path_header *dp_header =
+            (struct qefi_device_path_header *)data.data();
+
+        QSharedPointer<QEFIDevicePath> p(
+            qefi_parse_dp_media_ramdisk(dp_header, data.length()));
+        QEFIDevicePathMediaRAMDisk *subP =
+            dynamic_cast<QEFIDevicePathMediaRAMDisk *>(p.get());
+        QVERIFY(subP != nullptr);
+        QVERIFY(subP->startAddress() == 0x0);
+        QVERIFY(subP->endAddress() == 0xFFFFFFFFFFFFFFFF);
+        QVERIFY(subP->instanceNumber() == 0xFFFF);
+    }
+}
+
+void TestDevicePathMedia::test_qefi_parse_dp_generic_media_file()
+{
+    QEFIDevicePathMediaFile dp(QStringLiteral("\\EFI\\Boot\\bootx64.efi"));
+    QByteArray data = qefi_format_dp((QEFIDevicePath *)&dp);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp(dp_header, data.length()));
+    QVERIFY(p != nullptr);
+    QVERIFY(p->type() == QEFIDevicePathType::DP_Media);
+    QVERIFY(p->subType() == QEFIDevicePathMediaSubType::MEDIA_File);
+    QEFIDevicePathMediaFile *subP =
+        dynamic_cast<QEFIDevicePathMediaFile *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->name() == "\\EFI\\Boot\\bootx64.efi");
 }
 
 QTEST_MAIN(TestDevicePathMedia)
