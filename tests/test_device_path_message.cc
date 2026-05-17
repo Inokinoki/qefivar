@@ -514,10 +514,11 @@ void TestDevicePathMessage::test_qefi_dp_message_usb_class()
 
 void TestDevicePathMessage::test_qefi_dp_message_usb_wwid()
 {
-    // TODO: Serial number
+    // Test with serial number data
     QList<quint16> serialNumber;
+    serialNumber << 0x1234 << 0x5678;
     QEFIDevicePathMessageUSBWWID dp(
-        /* vendorId */0x55AA, /* productId */0xAA55, {});
+        /* vendorId */0x55AA, /* productId */0xAA55, serialNumber);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
 
     struct qefi_device_path_header *dp_header =
@@ -537,6 +538,7 @@ void TestDevicePathMessage::test_qefi_dp_message_usb_wwid()
     QVERIFY(subP != nullptr);
     QVERIFY(subP->vendorId() == dp.vendorId());
     QVERIFY(subP->productId() == dp.productId());
+    QVERIFY(subP->serialNumber() == serialNumber);
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_lun()
