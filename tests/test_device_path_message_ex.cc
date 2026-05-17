@@ -336,14 +336,10 @@ void TestDevicePathMessageEx::test_qefi_parse_dp_generic_message_nvme()
 
 int main(int argc, char *argv[])
 {
-    fprintf(stderr, "DEBUG: main() reached\n");
-    fflush(stderr);
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
     TestDevicePathMessageEx tc;
-    fprintf(stderr, "DEBUG: test object created\n");
-    fflush(stderr);
-    int result = QTest::qExec(&tc, argc, argv);
-    fprintf(stderr, "DEBUG: tests finished with %d\n", result);
-    return result;
+    return QTest::qExec(&tc, argc, argv);
 }
 
 #include "test_device_path_message_ex.moc"
