@@ -46,6 +46,11 @@ target_link_libraries(test_device_path_acpi ${test_libraries})
 target_link_libraries(test_device_path_biosboot ${test_libraries})
 target_link_libraries(test_device_path_media ${test_libraries})
 target_link_libraries(test_device_path_message ${test_libraries})
+# Increase stack size for MessageDevicePathTest on Windows (MSVC default 1MB
+# is insufficient for the large moc-generated static meta-object with 46 test slots)
+if(MSVC)
+    target_link_options(test_device_path_message PRIVATE /STACK:8388608)
+endif()
 target_link_libraries(test_device_path_chain ${test_libraries})
 
 if (APP_DATA_DUMMY_BACKEND)
