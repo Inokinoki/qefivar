@@ -661,8 +661,9 @@ QEFIDevicePath *qefi_parse_dp_message_wifi(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     int ssid_len = length - sizeof(struct qefi_device_path_header);
-    QString ssid(QByteArray((const char *)dp_inner_pointer,
-        ssid_len < 32 ? ssid_len : 32));
+    int ssid_buf_len = ssid_len < 32 ? ssid_len : 32;
+    QString ssid = QString::fromUtf8((const char *)dp_inner_pointer,
+        ssid_buf_len);
     return new QEFIDevicePathMessageWiFi(ssid);
 }
 
