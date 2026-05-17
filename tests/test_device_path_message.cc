@@ -922,25 +922,25 @@ void TestDevicePathMessage::test_qefi_dp_message_btle()
 
 void TestDevicePathMessage::test_qefi_dp_message_dns()
 {
-    // TODO: DNS tests
-    // QEFIDevicePathMessageDNS dp;
-    // QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
+    // DNS has minimal fields currently (isIPv6 flag + TODO addresses)
+    // Build raw binary with isIPv6=0 byte after header
+    QByteArray raw;
+    raw.append((char)QEFIDevicePathType::DP_Message);
+    raw.append((char)QEFIDevicePathMessageSubType::MSG_DNS);
+    raw.append((char)5); // length LE low
+    raw.append((char)0); // length LE high
+    raw.append((char)0); // isIPv6 = false
 
-    // struct qefi_device_path_header *dp_header =
-    //     (struct qefi_device_path_header *)data.data();
-    // // Test format
-    // QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    // QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_DNS);
-    // QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-
-    // // Test parse
-    // QSharedPointer<QEFIDevicePath> p(
-    //     qefi_parse_dp_message_dns(dp_header, data.length()));
-    // QVERIFY(p->type() == dp.type());
-    // QVERIFY(p->subType() == dp.subType());
-    // QEFIDevicePathMessageDNS *subP =
-    //     dynamic_cast<QEFIDevicePathMessageDNS *>(p.get());
-    // QVERIFY(subP != nullptr);
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)raw.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp_message_dns(dp_header, raw.length()));
+    QVERIFY(p != nullptr);
+    QVERIFY(p->type() == QEFIDevicePathType::DP_Message);
+    QVERIFY(p->subType() == QEFIDevicePathMessageSubType::MSG_DNS);
+    QEFIDevicePathMessageDNS *subP =
+        dynamic_cast<QEFIDevicePathMessageDNS *>(p.get());
+    QVERIFY(subP != nullptr);
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_nvdimm()

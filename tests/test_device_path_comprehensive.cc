@@ -51,6 +51,26 @@ private slots:
     // BIOSBoot edge cases
     void test_qefi_dp_biosboot_with_description();
     void test_qefi_dp_biosboot_boundary_values();
+
+    // Generic dispatcher tests (qefi_parse_dp / qefi_format_dp)
+    void test_qefi_parse_dp_generic_pci();
+    void test_qefi_parse_dp_generic_acpi_hid();
+    void test_qefi_parse_dp_generic_message_nvme();
+    void test_qefi_parse_dp_generic_media_file();
+    void test_qefi_parse_dp_generic_biosboot();
+    void test_qefi_parse_dp_generic_end();
+
+    // Multi-device-path chain tests
+    void test_chain_acpi_pci_hd_file();
+    void test_chain_message_media();
+    void test_chain_parse_format_roundtrip();
+
+    // Raw binary parsing tests
+    void test_raw_binary_pci();
+    void test_raw_binary_acpi();
+    void test_raw_binary_truncated_header();
+    void test_raw_binary_truncated_data();
+    void test_raw_binary_invalid_type();
 };
 
 /* EFI device path header */
@@ -850,6 +870,361 @@ void TestDevicePathComprehensive::test_qefi_dp_biosboot_boundary_values()
         QVERIFY(subP->deviceType() == 0xFFFF);
         QVERIFY(subP->status() == 0xFFFF);
     }
+}
+
+// Generic dispatcher tests - parse via qefi_parse_dp instead of type-specific parser
+void TestDevicePathComprehensive::test_qefi_parse_dp_generic_pci()
+{
+    QEFIDevicePathHardwarePCI dp(0x03, 0x00);
+    QByteArray data = qefi_format_dp((QEFIDevicePath *)&dp);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp(dp_header, data.length()));
+    QVERIFY(p != nullptr);
+    QVERIFY(p->type() == QEFIDevicePathType::DP_Hardware);
+    QVERIFY(p->subType() == QEFIDevicePathHardwareSubType::HW_PCI);
+    QEFIDevicePathHardwarePCI *subP =
+        dynamic_cast<QEFIDevicePathHardwarePCI *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->function() == 0x03);
+    QVERIFY(subP->device() == 0x00);
+}
+
+void TestDevicePathComprehensive::test_qefi_parse_dp_generic_acpi_hid()
+{
+    QEFIDevicePathACPIHID dp(0x0a0341d0, 0x00000001);
+    QByteArray data = qefi_format_dp((QEFIDevicePath *)&dp);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp(dp_header, data.length()));
+    QVERIFY(p != nullptr);
+    QVERIFY(p->type() == QEFIDevicePathType::DP_ACPI);
+    QVERIFY(p->subType() == QEFIDevicePathACPISubType::ACPI_HID);
+    QEFIDevicePathACPIHID *subP =
+        dynamic_cast<QEFIDevicePathACPIHID *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->hid() == 0x0a0341d0);
+    QVERIFY(subP->uid() == 0x00000001);
+}
+
+void TestDevicePathComprehensive::test_qefi_parse_dp_generic_message_nvme()
+{
+    QEFIDevicePathMessageEUI64 eui { .eui = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11} };
+    QEFIDevicePathMessageNVME dp(0x00000042, eui.eui);
+    QByteArray data = qefi_format_dp((QEFIDevicePath *)&dp);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp(dp_header, data.length()));
+    QVERIFY(p != nullptr);
+    QVERIFY(p->type() == QEFIDevicePathType::DP_Message);
+    QVERIFY(p->subType() == QEFIDevicePathMessageSubType::MSG_NVME);
+    QEFIDevicePathMessageNVME *subP =
+        dynamic_cast<QEFIDevicePathMessageNVME *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->namespaceID() == 0x00000042);
+}
+
+void TestDevicePathComprehensive::test_qefi_parse_dp_generic_media_file()
+{
+    QEFIDevicePathMediaFile dp(QStringLiteral("\\EFI\\Boot\\bootx64.efi"));
+    QByteArray data = qefi_format_dp((QEFIDevicePath *)&dp);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp(dp_header, data.length()));
+    QVERIFY(p != nullptr);
+    QVERIFY(p->type() == QEFIDevicePathType::DP_Media);
+    QVERIFY(p->subType() == QEFIDevicePathMediaSubType::MEDIA_File);
+    QEFIDevicePathMediaFile *subP =
+        dynamic_cast<QEFIDevicePathMediaFile *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->name() == "\\EFI\\Boot\\bootx64.efi");
+}
+
+void TestDevicePathComprehensive::test_qefi_parse_dp_generic_biosboot()
+{
+    QEFIDevicePathBIOSBoot dp(0x0101, 0x0000, QByteArray());
+    QByteArray data = qefi_format_dp((QEFIDevicePath *)&dp);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)data.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp(dp_header, data.length()));
+    QVERIFY(p != nullptr);
+    QVERIFY(p->type() == QEFIDevicePathType::DP_BIOSBoot);
+    QEFIDevicePathBIOSBoot *subP =
+        dynamic_cast<QEFIDevicePathBIOSBoot *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->deviceType() == 0x0101);
+}
+
+void TestDevicePathComprehensive::test_qefi_parse_dp_generic_end()
+{
+    // End of device path instance (type=0x7F, subtype=0xFF)
+    QByteArray raw;
+    raw.append((char)0x7F); // type: End
+    raw.append((char)0xFF); // subtype: End Entire
+    raw.append((char)0x04); // length LE low
+    raw.append((char)0x00); // length LE high
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)raw.data();
+    // End device paths return nullptr from qefi_parse_dp (no object to create)
+    QEFIDevicePath *p = qefi_parse_dp(dp_header, raw.length());
+    QVERIFY(p == nullptr);
+}
+
+// Multi-device-path chain: build and parse a realistic UEFI boot path
+// ACPI(HID) -> PCI(0,0) -> HD(GPT) -> File(\EFI\Boot\bootx64.efi)
+void TestDevicePathComprehensive::test_chain_acpi_pci_hd_file()
+{
+    // Build each device path and concatenate
+    QEFIDevicePathACPIHID acpi(0x0a0341d0, 0x00000000);
+    QEFIDevicePathHardwarePCI pci(0x00, 0x1F);
+
+    quint8 zeroSignature[16] = {0};
+    QEFIDevicePathMediaHD hd(
+        /* partitionNumber */ 1,
+        /* start */ 2048,
+        /* size */ 104857600,
+        /* signature */ zeroSignature,
+        /* format */ QEFIDevicePathMediaHD::GPT,
+        /* signatureType */ QEFIDevicePathMediaHD::GUID);
+
+    QEFIDevicePathMediaFile file(QStringLiteral("\\EFI\\Boot\\bootx64.efi"));
+
+    // Format each individually and concatenate
+    QByteArray chain;
+    chain.append(qefi_format_dp((QEFIDevicePath *)&acpi));
+    chain.append(qefi_format_dp((QEFIDevicePath *)&pci));
+    chain.append(qefi_format_dp((QEFIDevicePath *)&hd));
+    chain.append(qefi_format_dp((QEFIDevicePath *)&file));
+    // End of device path
+    chain.append((char)0x7F);
+    chain.append((char)0xFF);
+    chain.append((char)0x04);
+    chain.append((char)0x00);
+
+    // Parse chain
+    QList<QSharedPointer<QEFIDevicePath>> parsed;
+    quint8 *ptr = (quint8 *)chain.data();
+    int remaining = chain.length();
+    while (remaining > 4) {
+        struct qefi_device_path_header *hdr =
+            (struct qefi_device_path_header *)ptr;
+        int len = qFromLittleEndian<quint16>(hdr->length);
+        if (len < 4 || len > remaining) break;
+        if (hdr->type == 0x7F) break; // End
+
+        QEFIDevicePath *dp = qefi_parse_dp(hdr, len);
+        if (dp) parsed.append(QSharedPointer<QEFIDevicePath>(dp));
+        ptr += len;
+        remaining -= len;
+    }
+
+    QVERIFY(parsed.size() == 4);
+
+    // Verify ACPI
+    QEFIDevicePathACPIHID *p0 = dynamic_cast<QEFIDevicePathACPIHID *>(parsed[0].get());
+    QVERIFY(p0 != nullptr);
+    QVERIFY(p0->hid() == 0x0a0341d0);
+
+    // Verify PCI
+    QEFIDevicePathHardwarePCI *p1 = dynamic_cast<QEFIDevicePathHardwarePCI *>(parsed[1].get());
+    QVERIFY(p1 != nullptr);
+    QVERIFY(p1->device() == 0x1F);
+
+    // Verify HD
+    QEFIDevicePathMediaHD *p2 = dynamic_cast<QEFIDevicePathMediaHD *>(parsed[2].get());
+    QVERIFY(p2 != nullptr);
+    QVERIFY(p2->partitionNumber() == 1);
+
+    // Verify File
+    QEFIDevicePathMediaFile *p3 = dynamic_cast<QEFIDevicePathMediaFile *>(parsed[3].get());
+    QVERIFY(p3 != nullptr);
+    QVERIFY(p3->name() == "\\EFI\\Boot\\bootx64.efi");
+}
+
+// Chain: SATA -> File (typical NVMe/SATA boot)
+void TestDevicePathComprehensive::test_chain_message_media()
+{
+    QEFIDevicePathMessageSATA sata(0x0000, 0x0000, 0x0000);
+    QEFIDevicePathMediaFile file(QStringLiteral("\\EFI\\Microsoft\\Boot\\bootmgfw.efi"));
+
+    QByteArray chain;
+    chain.append(qefi_format_dp((QEFIDevicePath *)&sata));
+    chain.append(qefi_format_dp((QEFIDevicePath *)&file));
+    chain.append((char)0x7F); // End
+    chain.append((char)0xFF);
+    chain.append((char)0x04);
+    chain.append((char)0x00);
+
+    QList<QSharedPointer<QEFIDevicePath>> parsed;
+    quint8 *ptr = (quint8 *)chain.data();
+    int remaining = chain.length();
+    while (remaining > 4) {
+        struct qefi_device_path_header *hdr =
+            (struct qefi_device_path_header *)ptr;
+        int len = qFromLittleEndian<quint16>(hdr->length);
+        if (len < 4 || len > remaining) break;
+        if (hdr->type == 0x7F) break;
+
+        QEFIDevicePath *dp = qefi_parse_dp(hdr, len);
+        if (dp) parsed.append(QSharedPointer<QEFIDevicePath>(dp));
+        ptr += len;
+        remaining -= len;
+    }
+
+    QVERIFY(parsed.size() == 2);
+
+    QEFIDevicePathMessageSATA *p0 = dynamic_cast<QEFIDevicePathMessageSATA *>(parsed[0].get());
+    QVERIFY(p0 != nullptr);
+    QVERIFY(p0->hbaPort() == 0x0000);
+
+    QEFIDevicePathMediaFile *p1 = dynamic_cast<QEFIDevicePathMediaFile *>(parsed[1].get());
+    QVERIFY(p1 != nullptr);
+    QVERIFY(p1->name() == "\\EFI\\Microsoft\\Boot\\bootmgfw.efi");
+}
+
+// Full chain round-trip: create objects -> format to chain -> parse back -> re-format -> compare
+void TestDevicePathComprehensive::test_chain_parse_format_roundtrip()
+{
+    QEFIDevicePathACPIHID acpi(0x0a0341d0, 0x00000001);
+    QEFIDevicePathHardwarePCI pci(0x02, 0x00);
+
+    QByteArray chainOriginal;
+    chainOriginal.append(qefi_format_dp((QEFIDevicePath *)&acpi));
+    chainOriginal.append(qefi_format_dp((QEFIDevicePath *)&pci));
+
+    // Parse each from the chain
+    QByteArray chainReformatted;
+    quint8 *ptr = (quint8 *)chainOriginal.data();
+    int remaining = chainOriginal.length();
+    while (remaining > 4) {
+        struct qefi_device_path_header *hdr =
+            (struct qefi_device_path_header *)ptr;
+        int len = qFromLittleEndian<quint16>(hdr->length);
+        if (len < 4 || len > remaining) break;
+
+        QEFIDevicePath *dp = qefi_parse_dp(hdr, len);
+        if (dp) {
+            chainReformatted.append(qefi_format_dp(dp));
+            delete dp;
+        }
+        ptr += len;
+        remaining -= len;
+    }
+
+    // Original chain and re-formatted chain must be identical
+    QVERIFY(chainOriginal == chainReformatted);
+}
+
+// Raw binary parsing: construct PCI device path from raw bytes
+void TestDevicePathComprehensive::test_raw_binary_pci()
+{
+    // PCI: type=1, subtype=1, length=6, function=0x05, device=0x1C
+    QByteArray raw;
+    raw.append((char)0x01); // type: Hardware
+    raw.append((char)0x01); // subtype: PCI
+    raw.append((char)0x06); // length LE low (6)
+    raw.append((char)0x00); // length LE high
+    raw.append((char)0x05); // function
+    raw.append((char)0x1C); // device
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)raw.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp(dp_header, raw.length()));
+    QVERIFY(p != nullptr);
+    QEFIDevicePathHardwarePCI *subP =
+        dynamic_cast<QEFIDevicePathHardwarePCI *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->function() == 0x05);
+    QVERIFY(subP->device() == 0x1C);
+
+    // Re-format should produce same bytes
+    QByteArray refmt = qefi_format_dp(p.data());
+    QVERIFY(refmt == raw);
+}
+
+// Raw binary: ACPI HID from raw bytes
+void TestDevicePathComprehensive::test_raw_binary_acpi()
+{
+    // ACPI HID: type=2, subtype=1, length=12, HID=0x0a0341d0, UID=0x00000001
+    QByteArray raw;
+    raw.append((char)0x02); // type: ACPI
+    raw.append((char)0x01); // subtype: HID
+    raw.append((char)0x0C); // length LE low (12)
+    raw.append((char)0x00); // length LE high
+    // HID in LE
+    raw.append((char)0xD0); raw.append((char)0x41);
+    raw.append((char)0x03); raw.append((char)0x0A);
+    // UID in LE
+    raw.append((char)0x01); raw.append((char)0x00);
+    raw.append((char)0x00); raw.append((char)0x00);
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)raw.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp(dp_header, raw.length()));
+    QVERIFY(p != nullptr);
+    QEFIDevicePathACPIHID *subP =
+        dynamic_cast<QEFIDevicePathACPIHID *>(p.get());
+    QVERIFY(subP != nullptr);
+    QVERIFY(subP->hid() == 0x0a0341d0);
+    QVERIFY(subP->uid() == 0x00000001);
+}
+
+// Truncated header: too short for any device path
+void TestDevicePathComprehensive::test_raw_binary_truncated_header()
+{
+    QByteArray raw;
+    raw.append((char)0x01); // type
+    raw.append((char)0x01); // subtype
+    // Missing length bytes
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)raw.data();
+    QEFIDevicePath *p = qefi_parse_dp(dp_header, raw.length());
+    QVERIFY(p == nullptr);
+}
+
+// Truncated data: header OK but not enough payload
+void TestDevicePathComprehensive::test_raw_binary_truncated_data()
+{
+    QByteArray raw;
+    raw.append((char)0x01); // type: Hardware
+    raw.append((char)0x01); // subtype: PCI
+    raw.append((char)0x06); // length LE low (6) — expects 2 bytes of payload
+    raw.append((char)0x00); // length LE high
+    // Missing function and device bytes
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)raw.data();
+    QEFIDevicePath *p = qefi_parse_dp(dp_header, raw.length());
+    QVERIFY(p == nullptr);
+}
+
+// Invalid type: unknown device path type
+void TestDevicePathComprehensive::test_raw_binary_invalid_type()
+{
+    QByteArray raw;
+    raw.append((char)0xFE); // type: invalid
+    raw.append((char)0x01); // subtype
+    raw.append((char)0x04); // length LE low
+    raw.append((char)0x00); // length LE high
+
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)raw.data();
+    QEFIDevicePath *p = qefi_parse_dp(dp_header, raw.length());
+    QVERIFY(p == nullptr);
 }
 
 QTEST_MAIN(TestDevicePathComprehensive)
