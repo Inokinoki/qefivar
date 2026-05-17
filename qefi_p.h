@@ -8,6 +8,8 @@
 #include <QLoggingCategory>
 #include <cstring>
 
+#include "qefi.h"
+
 // Qt5/Qt6 compatibility macros
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     // Qt6: Prefer C++17 [[deprecated]] when available
@@ -66,5 +68,132 @@ bool qefi_validate_load_option(const QByteArray &data);
 int qefi_internal_description_length(const QByteArray &data);
 int qefi_internal_dp_list_length(const QByteArray &data);
 int qefi_internal_optional_data_length(const QByteArray &data);
+
+// Generic device path dispatcher functions
+QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size);
+QByteArray qefi_format_dp(QEFIDevicePath *dp);
+
+// Hardware device path parse/format functions
+QEFIDevicePath *qefi_parse_dp_hardware_pci(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_pccard(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_mmio(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_vendor(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_controller(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_hardware_bmc(
+    struct qefi_device_path_header *dp, int dp_size);
+QByteArray qefi_format_dp_hardware_pci(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_hardware_pccard(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_hardware_mmio(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_hardware_vendor(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_hardware_controller(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_hardware_bmc(QEFIDevicePath *dp);
+
+// ACPI device path parse/format functions
+QEFIDevicePath *qefi_parse_dp_acpi_hid(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_acpi_hidex(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_acpi_adr(
+    struct qefi_device_path_header *dp, int dp_size);
+QByteArray qefi_format_dp_acpi_hid(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_acpi_hidex(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_acpi_adr(QEFIDevicePath *dp);
+
+// Message device path parse/format functions
+QEFIDevicePath *qefi_parse_dp_message_atapi(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_scsi(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_fibre_chan(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_1394(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_usb(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_i2o(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_infiniband(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_vendor(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_mac_addr(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_ipv4(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_ipv6(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_uart(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_usb_class(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_usb_wwid(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_lun(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_sata(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_iscsi(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_vlan(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_sas_ex(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_nvme(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_uri(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_ufs(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_sd(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_bt(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_wifi(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_emmc(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_btle(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_dns(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_message_nvdimm(
+    struct qefi_device_path_header *dp, int dp_size);
+QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp);
+
+// Media device path parse/format functions
+QEFIDevicePath *qefi_parse_dp_media_file(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_hdd(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_cdrom(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_vendor(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_protocol(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_firmware_file(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_fv(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_relative_offset(
+    struct qefi_device_path_header *dp, int dp_size);
+QEFIDevicePath *qefi_parse_dp_media_ramdisk(
+    struct qefi_device_path_header *dp, int dp_size);
+QByteArray qefi_format_dp_media_hdd(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_media_file(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_media_cdrom(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_media_vendor(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_media_protocol(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_media_firmware_file(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_media_fv(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_media_relative_offset(QEFIDevicePath *dp);
+QByteArray qefi_format_dp_media_ramdisk(QEFIDevicePath *dp);
 
 #endif // QEFI_P_H

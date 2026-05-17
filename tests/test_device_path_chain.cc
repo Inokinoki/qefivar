@@ -4,6 +4,7 @@
 
 #include "test_data.h"
 #include "../qefi.h"
+#include "../qefi_p.h"
 
 class TestDevicePathChain: public QObject
 {
@@ -23,17 +24,6 @@ private slots:
     void test_raw_binary_invalid_type();
 };
 
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-QByteArray qefi_format_dp(QEFIDevicePath *dp);
-QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size);
 
 // Multi-device-path chain: ACPI(HID) -> PCI(0,0) -> HD(GPT) -> File
 void TestDevicePathChain::test_chain_acpi_pci_hd_file()

@@ -3,7 +3,7 @@
 #include <QSharedPointer>
 
 #include "test_data.h"
-#include "../qefi.h"
+#include "../qefi_p.h"
 
 class TestDevicePathMedia: public QObject
 {
@@ -25,49 +25,6 @@ private slots:
     void test_qefi_dp_media_ramdisk_boundary();
     void test_qefi_parse_dp_generic_media_file();
 };
-
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-// Hardware parsing
-QEFIDevicePath *qefi_parse_dp_media_file(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_media_hdd(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_media_cdrom(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_media_vendor(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_media_protocol(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_media_firmware_file(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_media_fv(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_media_relative_offset(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_media_ramdisk(
-    struct qefi_device_path_header *dp, int dp_size);
-
-// Format Media
-QByteArray qefi_format_dp_media_hdd(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_media_file(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_media_cdrom(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_media_vendor(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_media_protocol(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_media_firmware_file(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_media_fv(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_media_relative_offset(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_media_ramdisk(QEFIDevicePath *dp);
-
-QByteArray qefi_format_dp(QEFIDevicePath *dp);
-QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size);
 
 void TestDevicePathMedia::test_qefi_dp_media_file()
 {

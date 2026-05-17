@@ -4,6 +4,7 @@
 
 #include "test_data.h"
 #include "../qefi.h"
+#include "../qefi_p.h"
 
 class TestDevicePathMessage: public QObject
 {
@@ -57,82 +58,6 @@ private slots:
     void test_qefi_parse_dp_generic_message_nvme();
 };
 
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-// Message parsing
-QEFIDevicePath *qefi_parse_dp_message_atapi(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_scsi(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_fibre_chan(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_1394(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_usb(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_i2o(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_infiniband(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_vendor(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_mac_addr(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_ipv4(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_ipv6(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_uart(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_usb_class(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_usb_wwid(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_lun(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_sata(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_iscsi(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_vlan(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_sas_ex(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_nvme(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_uri(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_ufs(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_sd(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_bt(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_wifi(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_emmc(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_btle(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_dns(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_nvdimm(
-    struct qefi_device_path_header *dp, int dp_size);
-
-// Format Message
-QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp);
-
-QByteArray qefi_format_dp(QEFIDevicePath *dp);
-QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size);
 
 void TestDevicePathMessage::test_qefi_dp_message_atapi()
 {

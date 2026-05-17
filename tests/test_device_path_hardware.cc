@@ -3,7 +3,7 @@
 #include <QSharedPointer>
 
 #include "test_data.h"
-#include "../qefi.h"
+#include "../qefi_p.h"
 
 class TestDevicePathHardware: public QObject
 {
@@ -25,40 +25,6 @@ private slots:
     void test_raw_binary_pci();
     void test_qefi_parse_dp_generic_pci();
 };
-
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-// Hardware parsing
-QEFIDevicePath *qefi_parse_dp_hardware_pci(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_hardware_pccard(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_hardware_mmio(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_hardware_vendor(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_hardware_controller(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_hardware_bmc(
-    struct qefi_device_path_header *dp, int dp_size);
-
-// Format Hardware
-QByteArray qefi_format_dp_hardware_pci(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_hardware_pccard(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_hardware_mmio(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_hardware_vendor(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_hardware_controller(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_hardware_bmc(QEFIDevicePath *dp);
-
-QByteArray qefi_format_dp(QEFIDevicePath *dp);
-QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size);
 
 void TestDevicePathHardware::test_qefi_dp_hardware_pci()
 {

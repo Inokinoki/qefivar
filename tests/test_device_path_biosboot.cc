@@ -4,6 +4,7 @@
 
 #include "test_data.h"
 #include "../qefi.h"
+#include "../qefi_p.h"
 
 class TestDevicePathBIOSBoot: public QObject
 {
@@ -15,17 +16,6 @@ private slots:
     void test_qefi_parse_dp_generic_biosboot();
 };
 
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-QByteArray qefi_format_dp(QEFIDevicePath *dp);
-QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size);
 
 void TestDevicePathBIOSBoot::test_qefi_dp_biosboot()
 {

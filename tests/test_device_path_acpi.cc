@@ -4,6 +4,7 @@
 
 #include "test_data.h"
 #include "../qefi.h"
+#include "../qefi_p.h"
 
 class TestDevicePathACPI: public QObject
 {
@@ -19,31 +20,6 @@ private slots:
     void test_raw_binary_acpi();
     void test_qefi_parse_dp_generic_acpi_hid();
 };
-
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-// ACPI parsing
-QEFIDevicePath *qefi_parse_dp_acpi_hid(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_acpi_hidex(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_acpi_adr(
-    struct qefi_device_path_header *dp, int dp_size);
-
-// Format ACPI
-QByteArray qefi_format_dp_acpi_hid(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_acpi_hidex(QEFIDevicePath *dp);
-QByteArray qefi_format_dp_acpi_adr(QEFIDevicePath *dp);
-
-QByteArray qefi_format_dp(QEFIDevicePath *dp);
-QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size);
 
 
 void TestDevicePathACPI::test_qefi_dp_acpi_hid()
