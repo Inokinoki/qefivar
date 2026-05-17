@@ -29,11 +29,10 @@ QEFIDevicePath *qefi_parse_dp_media_hdd(
         return nullptr;
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
-    
+
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64) + sizeof(quint64) +
-        sizeof(quint8) * 16 + sizeof(quint8) + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64) + sizeof(quint64) +
+        sizeof(quint8) * 16 + sizeof(quint8) + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
@@ -67,8 +66,7 @@ QEFIDevicePath *qefi_parse_dp_media_cdrom(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64) + sizeof(quint64))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64) + sizeof(quint64)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -94,8 +92,7 @@ QEFIDevicePath *qefi_parse_dp_media_vendor(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 16)
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 16))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -116,8 +113,7 @@ QEFIDevicePath *qefi_parse_dp_media_protocol(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 16)
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 16))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -168,8 +164,7 @@ QEFIDevicePath *qefi_parse_dp_media_relative_offset(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64) + sizeof(quint64))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64) + sizeof(quint64)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -195,9 +190,8 @@ QEFIDevicePath *qefi_parse_dp_media_ramdisk(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint64) + sizeof(quint64) +
-        sizeof(quint8) * 16 + sizeof(quint16))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint64) + sizeof(quint64) +
+        sizeof(quint8) * 16 + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -245,8 +239,8 @@ QByteArray qefi_format_dp_media_hdd(QEFIDevicePath *dp)
     buffer.append((const char *)&size, sizeof(quint64));
     const quint8 *signature = dp_instance->rawSignature();
     buffer.append((const char *)signature, sizeof(quint8) * 16);
-    buffer.append((const char)(dp_instance->format()));
-    buffer.append((const char)(dp_instance->signatureType()));
+    buffer.append((char)(dp_instance->format()));
+    buffer.append((char)(dp_instance->signatureType()));
 
     // Fix the length
     quint16 len = (buffer.size() & 0xFFFF);

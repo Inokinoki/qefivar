@@ -8,6 +8,19 @@
 #include <QLoggingCategory>
 #include <cstring>
 
+// Qt5/Qt6 compatibility macros
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    // Qt6: Prefer C++17 [[deprecated]] when available
+    #if __cplusplus >= 201703L
+        #define QEFI_DEPRECATED_X(text) [[deprecated(text)]]
+    #else
+        #define QEFI_DEPRECATED_X(text) Q_DECL_DEPRECATED_X(text)
+    #endif
+#else
+    // Qt5: Use Q_DECL_DEPRECATED_X
+    #define QEFI_DEPRECATED_X(text) Q_DECL_DEPRECATED_X(text)
+#endif
+
 Q_DECLARE_LOGGING_CATEGORY(QEFI_LOG)
 
 #pragma pack(push, 1)
@@ -47,5 +60,11 @@ int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer, int max_dp_
 int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer, int max_dp_size);
 QString qefi_parse_ucs2_string(quint8 *data, int max_size);
 QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd);
+
+// Internal validation helpers (avoid deprecation warnings)
+bool qefi_validate_load_option(const QByteArray &data);
+int qefi_internal_description_length(const QByteArray &data);
+int qefi_internal_dp_list_length(const QByteArray &data);
+int qefi_internal_optional_data_length(const QByteArray &data);
 
 #endif // QEFI_P_H

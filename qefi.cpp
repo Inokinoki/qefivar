@@ -884,7 +884,7 @@ static int qefivar_efivarfs_get_variable(QUuid &guid, QString &name, uint8_t **d
         return ret;
     }
 
-    if (file.read((char *)*data, *size) != *size)
+    if (file.read((char *)*data, *size) != (qint64)*size)
     {
         qCritical() << "read(" << path << ") failed";
         free(*data);
@@ -923,8 +923,6 @@ qefivar_efivarfs_set_variable(const QUuid &guid, const QString &name, uint8_t *d
     __typeof__(errno) errno_value;
     int ret = -1;
     int fd = -1;
-    int flags = 0;
-    char *flagstr;
     int rc;
 
     if (name.size() > 1024) {
@@ -1196,8 +1194,8 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 QString qefi_extract_name(const QByteArray &data)
 {
     QString entry_name;
-    if (qefi_loadopt_is_valid(data)) {
-        int desc_length = qefi_loadopt_description_length(data);
+    if (qefi_validate_load_option(data)) {
+        int desc_length = qefi_internal_description_length(data);
         if (desc_length < 0) return entry_name;
 
         return qefi_parse_ucs2_string((quint8 *)(data.data() +
@@ -1209,12 +1207,12 @@ QString qefi_extract_name(const QByteArray &data)
 QString qefi_extract_path(const QByteArray &data)
 {
     QString path;
-    if (qefi_loadopt_is_valid(data)) {
-        int desc_length = qefi_loadopt_description_length(data);
+    if (qefi_validate_load_option(data)) {
+        int desc_length = qefi_internal_description_length(data);
         if (desc_length < 0) return path;
         desc_length += 2;
 
-        int dp_list_length = qefi_loadopt_dp_list_length(data);
+        int dp_list_length = qefi_internal_dp_list_length(data);
         if (dp_list_length < 0) return path;
 
         quint8 *list_pointer = (quint8*)(data.data() +
@@ -1228,7 +1226,8 @@ QString qefi_extract_path(const QByteArray &data)
             int length = qefi_dp_length(dp_header);
             if (length < 0) return path;
 
-            if (dp_header->type == DP_Media && dp_header->subtype == MEDIA_File) {
+            if (dp_header->type == QEFIDevicePathType::DP_Media &&
+                dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_File) {
                 // Media File
                 QScopedPointer<QEFIDevicePath> dp(
                     qefi_parse_dp_media_file(dp_header, length));
@@ -1238,7 +1237,7 @@ QString qefi_extract_path(const QByteArray &data)
                 if (media_file_dp == nullptr) continue;
                 path.append(media_file_dp->name());
                 break;
-            } else if (dp_header->type == DP_End) {
+            } else if (dp_header->type == 0xFF && dp_header->subtype == 0xFF) {
                 // End
                 break;
             }
@@ -1251,7 +1250,7 @@ QString qefi_extract_path(const QByteArray &data)
 
 QByteArray qefi_extract_optional_data(const QByteArray &data)
 {
-    int optional_data_len = qefi_loadopt_optional_data_length(data);
+    int optional_data_len = qefi_internal_optional_data_length(data);
     if (optional_data_len > 0 && optional_data_len < data.size()) {
         // The optional data lays on the tail of load option
         return QByteArray(data.constData() +
@@ -1260,15 +1259,70 @@ QByteArray qefi_extract_optional_data(const QByteArray &data)
     return QByteArray();
 }
 
+// Internal validation helpers (avoid deprecation warnings)
+int qefi_internal_dp_list_length(const QByteArray &data)
+{
+    int size = data.size();
+    if (size < (int)sizeof(struct qefi_load_option_header)) return -1;
+    struct qefi_load_option_header *header =
+        (struct qefi_load_option_header *)data.data();
+    return qFromLittleEndian<quint16>(header->path_list_length);
+}
+
+int qefi_internal_description_length(const QByteArray &data)
+{
+    int size = data.size();
+    if (size < (int)sizeof(struct qefi_load_option_header)) return -1;
+
+    int dpListLength = qefi_internal_dp_list_length(data);
+    if (dpListLength < 0) return -1;
+
+    quint8 *c = (quint8*)(data.data() + sizeof(struct qefi_load_option_header));
+    bool isDescValid = false;
+    int tempLength = 0;
+    while (size > 0) {
+        if (qefi_read_le<quint16>(c) == 0) {
+            isDescValid = true;
+            break;
+        }
+        size -= 2, c += 2, tempLength += 2;
+    }
+    return isDescValid ? tempLength : -1;
+}
+
+int qefi_internal_optional_data_length(const QByteArray &data)
+{
+    int size = data.size();
+    if (size < (int)sizeof(struct qefi_load_option_header)) return -1;
+    size -= sizeof(struct qefi_load_option_header);
+
+    int dpListLength = qefi_internal_dp_list_length(data);
+    if (dpListLength < 0) return -1;
+    if (size < dpListLength) return -1;
+    size -= dpListLength;
+
+    int descLength = qefi_internal_description_length(data);
+    if (descLength < 0) return -1;
+    size -= descLength;
+    size -= 2;
+    return size;
+}
+
+bool qefi_validate_load_option(const QByteArray &data)
+{
+    return qefi_internal_optional_data_length(data) >= 0;
+}
+
+// Deprecated functions - now implemented as wrappers
 int qefi_loadopt_description_length(const QByteArray &data)
 {
     int size = data.size();
     int tempLength;
 
     // Check header
-    if (size < sizeof(struct qefi_load_option_header)) return -1;
+    if (size < (int)sizeof(struct qefi_load_option_header)) return -1;
 
-    tempLength = qefi_loadopt_dp_list_length(data);
+    tempLength = qefi_internal_dp_list_length(data);
     if (tempLength < 0) return -1;
     quint16 dpListLength = (quint16)(tempLength & 0xFFFF);
 
@@ -1290,57 +1344,17 @@ int qefi_loadopt_description_length(const QByteArray &data)
 
 int qefi_loadopt_dp_list_length(const QByteArray &data)
 {
-    int size = data.size();
-
-    // Check header
-    if (size < sizeof(struct qefi_load_option_header)) return -1;
-
-    struct qefi_load_option_header *header =
-        (struct qefi_load_option_header *)data.data();
-    return qFromLittleEndian<quint16>(header->path_list_length);
+    return qefi_internal_dp_list_length(data);
 }
 
 int qefi_loadopt_optional_data_length(const QByteArray &data)
 {
-    int size = data.size();
-    int tempLength;
-
-    // Check header
-    if (size < sizeof(struct qefi_load_option_header)) return -1;
-    size -= sizeof(struct qefi_load_option_header);
-
-    // Check device path list length
-    tempLength = qefi_loadopt_dp_list_length(data);
-    if (tempLength < 0) return -1;
-    quint16 dpListLength = (quint16)(tempLength & 0xFFFF);
-    if (size < dpListLength) return -1;
-
-    size -= dpListLength;
-
-    // Check description length
-    tempLength = qefi_loadopt_description_length(data);
-    if (tempLength < 0) return -1;
-    size -= tempLength;
-    size -= 2;  // Assume 0x00 0x00 after
-
-    // The remainder is the optional data size
-    return size;
+    return qefi_internal_optional_data_length(data);
 }
 
 bool qefi_loadopt_is_valid(const QByteArray &data)
 {
-    int size = data.size();
-
-    // Check optional data length, it will check:
-    //  - the header
-    //  - the device path list
-    //  - the description
-    int optionalSize = qefi_loadopt_optional_data_length(data);
-    if (optionalSize < 0) return false;
-
-    // TODO: Check device path
-
-    return true;
+    return qefi_validate_load_option(data);
 }
 
 bool QEFILoadOption::isValid() const
@@ -1487,19 +1501,56 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
 
     m_isValidated = false;
     m_lastError.clear();
-    if (qefi_loadopt_is_valid(bootData)) {
+    if (qefi_validate_load_option(bootData)) {
         struct qefi_load_option_header *header =
             (struct qefi_load_option_header *)bootData.data();
         m_attribute = qFromLittleEndian<quint32>(header->attributes);
         m_isVisible = (m_attribute & QEFI_LOAD_OPTION_ACTIVE);
-        m_name = qefi_extract_name(bootData);
-        m_shortPath = qefi_extract_path(bootData);
+
+        // Extract name (inline to avoid deprecated call)
+        int descLength = qefi_internal_description_length(bootData);
+        if (descLength >= 0) {
+            m_name = qefi_parse_ucs2_string(
+                ((quint8 *)header) + sizeof(struct qefi_load_option_header),
+                descLength);
+        }
+
+        // Extract short path (inline to avoid deprecated call)
+        int dpListLength = qefi_internal_dp_list_length(bootData);
+        if (dpListLength >= 0) {
+            quint8 *list_pointer = ((quint8 *)header) +
+                sizeof(struct qefi_load_option_header) + descLength + 2;
+            qint32 remainder_length = dpListLength;
+            while (remainder_length > 0) {
+                struct qefi_device_path_header *dp_header =
+                    (struct qefi_device_path_header *)list_pointer;
+                int length = qefi_dp_length(dp_header);
+                if (length < 0) break;
+
+                if (dp_header->type == QEFIDevicePathType::DP_Media &&
+                    dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_File) {
+                    // Media File - extract short path
+                    QScopedPointer<QEFIDevicePath> dp(
+                        qefi_parse_dp_media_file(dp_header, length));
+                    QEFIDevicePathMediaFile *media_file_dp =
+                        dynamic_cast<QEFIDevicePathMediaFile *>(dp.get());
+                    if (media_file_dp != nullptr) {
+                        m_shortPath = media_file_dp->name();
+                    }
+                    break;
+                } else if (dp_header->type == 0xFF && dp_header->subtype == 0xFF) {
+                    // End
+                    break;
+                }
+                list_pointer += length;
+                remainder_length -= length;
+            }
+        }
 
         m_isValidated = true;
 
         // Parse the device path if exists
-        int dp_list_length = qefi_loadopt_dp_list_length(bootData);
-        if (dp_list_length >= 0) {
+        if (dpListLength >= 0) {
             int dp_infered_length = bootData.size() -     // Optional + DP
                 sizeof(struct qefi_load_option_header) -    // Header
                 (m_name.length() + 1) * 2;                  // Description
@@ -1510,8 +1561,8 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
                     sizeof(struct qefi_load_option_header) +
                     (m_name.length() + 1) * 2);
             int dp_list_count = qefi_dp_count(dp_header_pointer,
-                dp_list_length < dp_infered_length ?
-                dp_list_length : dp_infered_length);
+                dpListLength < dp_infered_length ?
+                dpListLength : dp_infered_length);
             for (int i = 0; i < dp_list_count; i++) {
                 int tempLength = qefi_dp_length(dp_header_pointer);
                 if (tempLength < 0) break;
@@ -1530,11 +1581,11 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
 
         // Optional data
         int optionalDataBegin = sizeof(struct qefi_load_option_header) +
-            (m_name.length() + 1) * 2 + dp_list_length;
+            (m_name.length() + 1) * 2 + dpListLength;
         if (optionalDataBegin < bootData.size()) {
             m_optionalData = QByteArray(((const char *)header) +
                 sizeof(struct qefi_load_option_header) +
-                (m_name.length() + 1) * 2 + dp_list_length,
+                (m_name.length() + 1) * 2 + dpListLength,
                 bootData.size() - optionalDataBegin);
         }
     } else {
@@ -1581,7 +1632,7 @@ QByteArray QEFILoadOption::format()
     loadOptionData.append(m_optionalData);
 
     // Never return invalidated data
-    if (!qefi_loadopt_is_valid(loadOptionData)) {
+    if (!qefi_validate_load_option(loadOptionData)) {
         m_lastError = "Formatted data validation failed";
         return QByteArray();
     }

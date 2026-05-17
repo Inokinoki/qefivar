@@ -16,8 +16,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_pci(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
@@ -39,8 +38,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_pccard(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
@@ -60,8 +58,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_mmio(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64) + sizeof(quint64))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64) + sizeof(quint64)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
@@ -90,8 +87,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_vendor(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 16)
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 16))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
@@ -113,8 +109,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_controller(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
@@ -135,8 +130,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_bmc(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) + sizeof(quint64))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) + sizeof(quint64)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +

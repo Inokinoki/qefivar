@@ -17,8 +17,7 @@ QEFIDevicePath *qefi_parse_dp_acpi_hid(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint32))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint32)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
@@ -43,8 +42,7 @@ QEFIDevicePath *qefi_parse_dp_acpi_hidex(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint32) + sizeof(quint32))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint32) + sizeof(quint32)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
