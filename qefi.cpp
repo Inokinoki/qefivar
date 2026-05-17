@@ -1055,26 +1055,20 @@ const uint32_t default_write_attribute = EFI_VARIABLE_NON_VOLATILE |
 
 void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
 {
-    int return_code;
-
     uint8_t buffer[2];
     qefi_write_le<quint16>(buffer, value);
-    return_code = qefivar_set_variable(uuid, name, buffer, 2,
+    (void)qefivar_set_variable(uuid, name, buffer, 2,
                                              default_write_attribute,
                                              0644);
-
-    // TODO: Detect return code
+    // TODO: Handle return code
 }
 
 void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 {
-    int return_code;
-
-    return_code = qefivar_set_variable(uuid, name, (uint8_t *)value.data(), value.size(),
+    (void)qefivar_set_variable(uuid, name, (uint8_t *)value.data(), value.size(),
                                              default_write_attribute,
                                              0644);
-
-    // TODO: Detect return code
+    // TODO: Handle return code
 }
 #endif
 #else   // APP Data based backend
@@ -1324,7 +1318,6 @@ int qefi_loadopt_description_length(const QByteArray &data)
 
     tempLength = qefi_internal_dp_list_length(data);
     if (tempLength < 0) return -1;
-    quint16 dpListLength = (quint16)(tempLength & 0xFFFF);
 
     quint8 *c = (quint8*)(data.data() + sizeof(struct qefi_load_option_header));
     bool isDescValid = false;

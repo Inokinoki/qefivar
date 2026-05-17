@@ -12,6 +12,9 @@ private slots:
     void testParseEmptyData();
 };
 
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+
 void TestParseBootOptionalData::testParseTestBootData()
 {
     QByteArray data((const char *)test_boot_data, TEST_BOOT_DATA_LENGTH);
@@ -32,6 +35,8 @@ void TestParseBootOptionalData::testParseEmptyData()
     QByteArray optionalData = qefi_extract_optional_data(data);
     QVERIFY(optionalData.size() == 0);
 }
+
+QT_WARNING_POP
 
 QTEST_MAIN(TestParseBootOptionalData)
 

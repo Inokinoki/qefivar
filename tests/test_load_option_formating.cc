@@ -19,7 +19,7 @@ void TestLoadOptionFormating::testReformatTestBootData()
     QVERIFY(formatted.size() == TEST_BOOT_DATA_LENGTH);
 
     // Attribute: only support visibility
-    QVERIFY(formatted[0] & QEFI_LOAD_OPTION_ACTIVE == (char)0x01);
+    QVERIFY((formatted[0] & QEFI_LOAD_OPTION_ACTIVE) == (char)0x01);
 
     // Verify device path length
     QVERIFY(formatted[4] == (char)test_boot_data[4]);
@@ -45,7 +45,7 @@ void TestLoadOptionFormating::testReformatTestBootData2()
     QVERIFY(formatted.size() == TEST_BOOT_DATA2_LENGTH);
 
     // Attribute: only support visibility
-    QVERIFY(formatted[0] & QEFI_LOAD_OPTION_ACTIVE == (char)0x01);
+    QVERIFY((formatted[0] & QEFI_LOAD_OPTION_ACTIVE) == (char)0x01);
 
     // Verify device path length
     QVERIFY(formatted[4] == (char)test_boot_data2[4]);

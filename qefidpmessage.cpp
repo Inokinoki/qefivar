@@ -541,7 +541,6 @@ QEFIDevicePath *qefi_parse_dp_message_sas_ex(
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
-    dp_inner_pointer += sizeof(quint16); // Skip SAS Protocol Layer field
     quint8 *sasAddress = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 8;
     quint8 *lun = dp_inner_pointer;

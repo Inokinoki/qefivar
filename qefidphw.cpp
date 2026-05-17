@@ -63,8 +63,7 @@ QEFIDevicePath *qefi_parse_dp_hardware_mmio(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
-    QUuid vendorGuid = qefi_format_guid(dp_inner_pointer);
-    quint32 memoryType = 
+    quint32 memoryType =
         qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 startingAddress =
