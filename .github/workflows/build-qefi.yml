@@ -24,8 +24,8 @@ jobs:
           - os: ubuntu-latest
             qtpackage: qt6-base-dev
             qt_install_cmd: sudo apt update -y && sudo apt install -y libefivar-dev libefiboot-dev qt6-base-dev
-          # Windows Qt5
-          - os: windows-latest
+          # Windows Qt5 (pin to windows-2022 for MSVC compat)
+          - os: windows-2022
             qt_version: 5.15.2
             cmake_prefix: Qt5_DIR
           # Windows Qt6
