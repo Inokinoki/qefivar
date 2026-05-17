@@ -166,6 +166,8 @@ QEFIDevicePath *qefi_parse_dp_message_dns(
 QEFIDevicePath *qefi_parse_dp_message_nvdimm(
     struct qefi_device_path_header *dp, int dp_size);
 QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp);
+QEFIDevicePath *qefi_private_parse_message_subtype(
+    struct qefi_device_path_header *dp, int dp_size);
 
 // Media device path parse/format functions
 QEFIDevicePath *qefi_parse_dp_media_file(
