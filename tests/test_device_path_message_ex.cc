@@ -334,6 +334,16 @@ void TestDevicePathMessageEx::test_qefi_parse_dp_generic_message_nvme()
     QVERIFY(subP->namespaceID() == 0x00000042);
 }
 
-QTEST_APPLESS_MAIN(TestDevicePathMessageEx)
+int main(int argc, char *argv[])
+{
+    fprintf(stderr, "DEBUG: main() reached\n");
+    fflush(stderr);
+    TestDevicePathMessageEx tc;
+    fprintf(stderr, "DEBUG: test object created\n");
+    fflush(stderr);
+    int result = QTest::qExec(&tc, argc, argv);
+    fprintf(stderr, "DEBUG: tests finished with %d\n", result);
+    return result;
+}
 
 #include "test_device_path_message_ex.moc"
