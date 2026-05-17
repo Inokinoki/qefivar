@@ -271,13 +271,12 @@ void TestDevicePathMessage::test_qefi_dp_message_vendor()
 
 void TestDevicePathMessage::test_qefi_dp_message_mac_addr()
 {
-    struct QEFIDevicePathMessageMACAddress addr {
-        .address = { 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
-            0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
-            0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
-            0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99
-        }
-    };
+    struct QEFIDevicePathMessageMACAddress addr {{
+        0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+        0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+        0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+        0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99
+    }};
     QEFIDevicePathMessageMACAddr dp(addr.address, /* interfaceType */0xAA);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
 
@@ -305,18 +304,10 @@ void TestDevicePathMessage::test_qefi_dp_message_mac_addr()
 
 void TestDevicePathMessage::test_qefi_dp_message_ipv4()
 {
-    struct QEFIIPv4Address localIPv4Address {
-        .address { 192, 168, 0, 1}
-    };
-    struct QEFIIPv4Address remoteIPv4Address {
-        .address { 192, 168, 0, 100}
-    };
-    struct QEFIIPv4Address gateway {
-        .address { 192, 168, 0, 254}
-    };
-    struct QEFIIPv4Address netmask {
-        .address { 255, 255, 255, 0}
-    };
+    struct QEFIIPv4Address localIPv4Address {{ 192, 168, 0, 1}};
+    struct QEFIIPv4Address remoteIPv4Address {{ 192, 168, 0, 100}};
+    struct QEFIIPv4Address gateway {{ 192, 168, 0, 254}};
+    struct QEFIIPv4Address netmask {{ 255, 255, 255, 0}};
     QEFIDevicePathMessageIPv4Addr dp(localIPv4Address.address,
         remoteIPv4Address.address, /* localPort */ 114, /* remotePort */ 514,
         /* protocol */ 0x55AA, /* staticIPAddress */ 1, gateway.address, netmask.address);
@@ -355,14 +346,14 @@ void TestDevicePathMessage::test_qefi_dp_message_ipv4()
 
 void TestDevicePathMessage::test_qefi_dp_message_ipv6()
 {
-    struct QEFIIPv6Address localIPv6Address {
-        .address { 0xff, 0xee, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-            0x44, 0x55, 0x66, 0x77, 0x44, 0x55, 0x66, 0x77 }
-    };
-    struct QEFIIPv6Address remoteIPv6Address {
-        .address { 0xff, 0xee, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-            0x22, 0x33, 0x44, 0x55, 0x22, 0x33, 0x44, 0x55 }
-    };
+    struct QEFIIPv6Address localIPv6Address {{
+        0xff, 0xee, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+        0x44, 0x55, 0x66, 0x77, 0x44, 0x55, 0x66, 0x77
+    }};
+    struct QEFIIPv6Address remoteIPv6Address {{
+        0xff, 0xee, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+        0x22, 0x33, 0x44, 0x55, 0x22, 0x33, 0x44, 0x55
+    }};
     QEFIDevicePathMessageIPv6Addr dp(localIPv6Address.address,
         remoteIPv6Address.address, /* localPort */ 114, /* remotePort */ 514,
         /* protocol */ 0x55AA, /* ipAddressOrigin */ 0x55,
@@ -536,9 +527,9 @@ void TestDevicePathMessage::test_qefi_dp_message_sata()
 
 void TestDevicePathMessage::test_qefi_dp_message_iscsi()
 {
-    QEFIDevicePathMessageLun lun {
-        .data { 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00}
-    };
+    QEFIDevicePathMessageLun lun {{
+        0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00
+    }};
     QEFIDevicePathMessageISCSI dp(/* protocol */0x55AA,
         /* options */0xAA55, /* lun */lun.data, /* tpgt */0x55AA,
         QStringLiteral("TestISCSITarget"));
@@ -593,12 +584,12 @@ void TestDevicePathMessage::test_qefi_dp_message_vlan()
 
 void TestDevicePathMessage::test_qefi_dp_message_fibre_chan_ex()
 {
-    QEFIDevicePathMessageLun wwn {
-        .data { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77}
-    };
-    QEFIDevicePathMessageLun lun {
-        .data { 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00}
-    };
+    QEFIDevicePathMessageLun wwn {{
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77
+    }};
+    QEFIDevicePathMessageLun lun {{
+        0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00
+    }};
     QEFIDevicePathMessageFibreChanEx dp(/* reserved */0x0,
         /* portMultiplier */wwn.data, /* lun */lun.data);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
@@ -626,12 +617,12 @@ void TestDevicePathMessage::test_qefi_dp_message_fibre_chan_ex()
 
 void TestDevicePathMessage::test_qefi_dp_message_sas_ex()
 {
-    QEFIDevicePathMessageSASAddress sasAddress {
-        .address { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77}
-    };
-    QEFIDevicePathMessageLun lun {
-        .data { 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00}
-    };
+    QEFIDevicePathMessageSASAddress sasAddress {{
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77
+    }};
+    QEFIDevicePathMessageLun lun {{
+        0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00
+    }};
     QEFIDevicePathMessageSASEx dp(/* address */sasAddress.address,
         /* lun */lun.data, /* deviceTopologyInfo */0x55,
         /* driveBayID */0xAA, /* rtp */0x55AA);
@@ -664,9 +655,9 @@ void TestDevicePathMessage::test_qefi_dp_message_sas_ex()
 
 void TestDevicePathMessage::test_qefi_dp_message_nvme()
 {
-    QEFIDevicePathMessageEUI64 eui {
-        .eui { 0x22, 0x33, 0x22, 0x33, 0x22, 0x11, 0x45, 0x14 }
-    };
+    QEFIDevicePathMessageEUI64 eui {{
+        0x22, 0x33, 0x22, 0x33, 0x22, 0x11, 0x45, 0x14
+    }};
     QEFIDevicePathMessageNVME dp(/* namespaceID */0x55,
         /* EUI */eui.eui);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
@@ -763,9 +754,9 @@ void TestDevicePathMessage::test_qefi_dp_message_sd()
 
 void TestDevicePathMessage::test_qefi_dp_message_bt()
 {
-    struct QEFIDevicePathMessageBTAddress address {
-        .address { 0xff, 0xee, 0x22, 0x33, 0x44, 0x55 }
-    };
+    struct QEFIDevicePathMessageBTAddress address {{
+        0xff, 0xee, 0x22, 0x33, 0x44, 0x55
+    }};
     QEFIDevicePathMessageBT dp(address.address);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
 
@@ -838,9 +829,9 @@ void TestDevicePathMessage::test_qefi_dp_message_emmc()
 
 void TestDevicePathMessage::test_qefi_dp_message_btle()
 {
-    struct QEFIDevicePathMessageBTAddress address {
-        .address { 0xff, 0xee, 0x22, 0x33, 0x44, 0x55 }
-    };
+    struct QEFIDevicePathMessageBTAddress address {{
+        0xff, 0xee, 0x22, 0x33, 0x44, 0x55
+    }};
     QEFIDevicePathMessageBTLE dp(address.address, /* addressType */ 0xAA);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
 
@@ -951,9 +942,9 @@ void TestDevicePathMessage::test_qefi_dp_message_iscsi_with_long_target()
                          "for-testing-purposes-with-maximum-allowed-length-"
                          "that-should-still-work-correctly-without-issues";
 
-    QEFIDevicePathMessageLun lun {
-        .data { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07 }
-    };
+    QEFIDevicePathMessageLun lun {{
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
+    }};
     QEFIDevicePathMessageISCSI dp(0x0000, 0x0000, lun.data, 0x0001, longTarget);
 
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
@@ -971,8 +962,8 @@ void TestDevicePathMessage::test_qefi_dp_message_iscsi_with_long_target()
 void TestDevicePathMessage::test_qefi_dp_message_nvme_boundary()
 {
     {
-        QEFIDevicePathMessageEUI64 eui { .eui = {0x00, 0x01, 0x02, 0x03,
-                                                   0x04, 0x05, 0x06, 0x07} };
+        QEFIDevicePathMessageEUI64 eui {{0x00, 0x01, 0x02, 0x03,
+                                               0x04, 0x05, 0x06, 0x07}};
         QEFIDevicePathMessageNVME dp(0x00000000, eui.eui);
         QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
         struct qefi_device_path_header *dp_header =
@@ -987,8 +978,8 @@ void TestDevicePathMessage::test_qefi_dp_message_nvme_boundary()
     }
 
     {
-        QEFIDevicePathMessageEUI64 eui { .eui = {0xFF, 0xEE, 0xDD, 0xCC,
-                                                   0xBB, 0xAA, 0x99, 0x88} };
+        QEFIDevicePathMessageEUI64 eui {{0xFF, 0xEE, 0xDD, 0xCC,
+                                               0xBB, 0xAA, 0x99, 0x88}};
         QEFIDevicePathMessageNVME dp(0xFFFFFFFF, eui.eui);
         QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
         struct qefi_device_path_header *dp_header =
@@ -1200,7 +1191,7 @@ void TestDevicePathMessage::test_qefi_dp_message_mac_addr_broadcast()
 
 void TestDevicePathMessage::test_qefi_parse_dp_generic_message_nvme()
 {
-    QEFIDevicePathMessageEUI64 eui { .eui = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11} };
+    QEFIDevicePathMessageEUI64 eui {{0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11}};
     QEFIDevicePathMessageNVME dp(0x00000042, eui.eui);
     QByteArray data = qefi_format_dp((QEFIDevicePath *)&dp);
 

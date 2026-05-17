@@ -3,10 +3,14 @@
 
 #include <QtCore/qglobal.h>
 
-#if defined(QEFI_LIBRARY)
-#  define QEFI_EXPORT Q_DECL_EXPORT
+#if defined(QEFI_SHARED)
+#  if defined(QEFI_LIBRARY)
+#    define QEFI_EXPORT Q_DECL_EXPORT
+#  else
+#    define QEFI_EXPORT Q_DECL_IMPORT
+#  endif
 #else
-#  define QEFI_EXPORT Q_DECL_IMPORT
+#  define QEFI_EXPORT
 #endif
 
 #include <QUrl>
