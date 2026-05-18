@@ -32,6 +32,10 @@ jobs:
           - os: windows-latest
             qt_version: 6.8.3
             cmake_prefix: Qt6_DIR
+          # Windows Qt6 newer
+          - os: windows-latest
+            qt_version: 6.10.3
+            cmake_prefix: Qt6_DIR
 
     steps:
     - uses: actions/checkout@v4
