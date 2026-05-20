@@ -42,8 +42,8 @@ void TestDevicePathMessageEx::test_qefi_dp_message_scsi_boundary_values()
         QEFIDevicePathMessageSCSI *subP =
             dynamic_cast<QEFIDevicePathMessageSCSI *>(p.get());
         QVERIFY(subP != nullptr);
-        QVERIFY(subP->target() == 0x0000);
-        QVERIFY(subP->lun() == 0x0000);
+        QCOMPARE(subP->target(), (quint16)0x0000);
+        QCOMPARE(subP->lun(), (quint16)0x0000);
     }
 
     {
@@ -57,8 +57,8 @@ void TestDevicePathMessageEx::test_qefi_dp_message_scsi_boundary_values()
         QEFIDevicePathMessageSCSI *subP =
             dynamic_cast<QEFIDevicePathMessageSCSI *>(p.get());
         QVERIFY(subP != nullptr);
-        QVERIFY(subP->target() == 0xFFFF);
-        QVERIFY(subP->lun() == 0xFFFF);
+        QCOMPARE(subP->target(), (quint16)0xFFFF);
+        QCOMPARE(subP->lun(), (quint16)0xFFFF);
     }
 }
 
@@ -82,7 +82,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_iscsi_with_long_target()
     QEFIDevicePathMessageISCSI *subP =
         dynamic_cast<QEFIDevicePathMessageISCSI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->targetName() == longTarget);
+    QCOMPARE(subP->targetName(), longTarget);
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_nvme_boundary()
@@ -100,7 +100,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_nvme_boundary()
         QEFIDevicePathMessageNVME *subP =
             dynamic_cast<QEFIDevicePathMessageNVME *>(p.get());
         QVERIFY(subP != nullptr);
-        QVERIFY(subP->namespaceID() == 0x00000000);
+        QCOMPARE(subP->namespaceID(), (quint32)0x00000000);
     }
 
     {
@@ -116,7 +116,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_nvme_boundary()
         QEFIDevicePathMessageNVME *subP =
             dynamic_cast<QEFIDevicePathMessageNVME *>(p.get());
         QVERIFY(subP != nullptr);
-        QVERIFY(subP->namespaceID() == 0xFFFFFFFF);
+        QCOMPARE(subP->namespaceID(), (quint32)0xFFFFFFFF);
     }
 }
 
@@ -132,7 +132,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_uri_http()
     QEFIDevicePathMessageURI *subP =
         dynamic_cast<QEFIDevicePathMessageURI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->uri().toString() == "http://example.com/path/to/resource");
+    QCOMPARE(subP->uri().toString(), QString("http://example.com/path/to/resource"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_uri_https()
@@ -147,7 +147,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_uri_https()
     QEFIDevicePathMessageURI *subP =
         dynamic_cast<QEFIDevicePathMessageURI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->uri().toString() == "https://secure.example.com:443/api");
+    QCOMPARE(subP->uri().toString(), QString("https://secure.example.com:443/api"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_uri_ftp()
@@ -162,7 +162,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_uri_ftp()
     QEFIDevicePathMessageURI *subP =
         dynamic_cast<QEFIDevicePathMessageURI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->uri().toString() == "ftp://ftp.example.com/files/document.pdf");
+    QCOMPARE(subP->uri().toString(), QString("ftp://ftp.example.com/files/document.pdf"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_uri_tftp()
@@ -177,7 +177,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_uri_tftp()
     QEFIDevicePathMessageURI *subP =
         dynamic_cast<QEFIDevicePathMessageURI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->uri().toString() == "tftp://192.168.1.1/bootimage");
+    QCOMPARE(subP->uri().toString(), QString("tftp://192.168.1.1/bootimage"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_uri_file()
@@ -207,7 +207,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_wifi_basic()
     QEFIDevicePathMessageWiFi *subP =
         dynamic_cast<QEFIDevicePathMessageWiFi *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->ssid() == "MyNetwork");
+    QCOMPARE(subP->ssid(), QString("MyNetwork"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_wifi_special_chars()
@@ -222,7 +222,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_wifi_special_chars()
     QEFIDevicePathMessageWiFi *subP =
         dynamic_cast<QEFIDevicePathMessageWiFi *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->ssid() == "Test_Network-5G");
+    QCOMPARE(subP->ssid(), QString("Test_Network-5G"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_wifi_spaces()
@@ -237,7 +237,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_wifi_spaces()
     QEFIDevicePathMessageWiFi *subP =
         dynamic_cast<QEFIDevicePathMessageWiFi *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->ssid() == "network with spaces");
+    QCOMPARE(subP->ssid(), QString("network with spaces"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_wifi_unicode()
@@ -252,7 +252,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_wifi_unicode()
     QEFIDevicePathMessageWiFi *subP =
         dynamic_cast<QEFIDevicePathMessageWiFi *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->ssid() == "中文网络");
+    QCOMPARE(subP->ssid(), QString("中文网络"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_wifi_special()
@@ -267,7 +267,7 @@ void TestDevicePathMessageEx::test_qefi_dp_message_wifi_special()
     QEFIDevicePathMessageWiFi *subP =
         dynamic_cast<QEFIDevicePathMessageWiFi *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->ssid() == "Test@Network!");
+    QCOMPARE(subP->ssid(), QString("Test@Network!"));
 }
 
 void TestDevicePathMessageEx::test_qefi_dp_message_mac_addr_all_zeros()
@@ -284,10 +284,10 @@ void TestDevicePathMessageEx::test_qefi_dp_message_mac_addr_all_zeros()
     QEFIDevicePathMessageMACAddr *subP =
         dynamic_cast<QEFIDevicePathMessageMACAddr *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->interfaceType() == 0x01);
+    QCOMPARE(subP->interfaceType(), (quint8)0x01);
     QEFIDevicePathMessageMACAddress mac = subP->macAddress();
     for (int i = 0; i < 32; i++) {
-        QVERIFY(mac.address[i] == 0);
+        QCOMPARE(mac.address[i], (quint8)0);
     }
 }
 
@@ -305,14 +305,14 @@ void TestDevicePathMessageEx::test_qefi_dp_message_mac_addr_broadcast()
     QEFIDevicePathMessageMACAddr *subP =
         dynamic_cast<QEFIDevicePathMessageMACAddr *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->interfaceType() == 0x01);
+    QCOMPARE(subP->interfaceType(), (quint8)0x01);
     QEFIDevicePathMessageMACAddress mac = subP->macAddress();
-    QVERIFY(mac.address[0] == 0xFF);
-    QVERIFY(mac.address[1] == 0xFF);
-    QVERIFY(mac.address[2] == 0xFF);
-    QVERIFY(mac.address[3] == 0xFF);
-    QVERIFY(mac.address[4] == 0xFF);
-    QVERIFY(mac.address[5] == 0xFF);
+    QCOMPARE(mac.address[0], (quint8)0xFF);
+    QCOMPARE(mac.address[1], (quint8)0xFF);
+    QCOMPARE(mac.address[2], (quint8)0xFF);
+    QCOMPARE(mac.address[3], (quint8)0xFF);
+    QCOMPARE(mac.address[4], (quint8)0xFF);
+    QCOMPARE(mac.address[5], (quint8)0xFF);
 }
 
 void TestDevicePathMessageEx::test_qefi_parse_dp_generic_message_nvme()
@@ -326,12 +326,12 @@ void TestDevicePathMessageEx::test_qefi_parse_dp_generic_message_nvme()
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp(dp_header, data.length()));
     QVERIFY(p != nullptr);
-    QVERIFY(p->type() == QEFIDevicePathType::DP_Message);
-    QVERIFY(p->subType() == QEFIDevicePathMessageSubType::MSG_NVME);
+    QCOMPARE(p->type(), QEFIDevicePathType::DP_Message);
+    QCOMPARE(p->subType(), QEFIDevicePathMessageSubType::MSG_NVME);
     QEFIDevicePathMessageNVME *subP =
         dynamic_cast<QEFIDevicePathMessageNVME *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->namespaceID() == 0x00000042);
+    QCOMPARE(subP->namespaceID(), (quint32)0x00000042);
 }
 
 QTEST_APPLESS_MAIN(TestDevicePathMessageEx)

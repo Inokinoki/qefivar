@@ -26,22 +26,22 @@ void TestDevicePathBIOSBoot::test_qefi_dp_biosboot()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_BIOSBoot);
-    QVERIFY(dp_header->subtype == QEFIDevicePathBIOSBootSubType::BIOS_BIOSBoot);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_BIOSBoot);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathBIOSBootSubType::BIOS_BIOSBoot);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp(dp_header, data.length()));
     QVERIFY(!p.isNull());
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathBIOSBoot *subP =
         dynamic_cast<QEFIDevicePathBIOSBoot *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->deviceType() == dp.deviceType());
-    QVERIFY(subP->status() == dp.status());
-    // TODO: Test description
+    QCOMPARE(subP->deviceType(), dp.deviceType());
+    QCOMPARE(subP->status(), dp.status());
+    QVERIFY(subP->description().isEmpty());
 }
 
 void TestDevicePathBIOSBoot::test_qefi_dp_biosboot_with_description()
@@ -58,8 +58,11 @@ void TestDevicePathBIOSBoot::test_qefi_dp_biosboot_with_description()
     QEFIDevicePathBIOSBoot *subP =
         dynamic_cast<QEFIDevicePathBIOSBoot *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->deviceType() == 0x0101);
-    QVERIFY(subP->status() == 0x0000);
+    QCOMPARE(subP->deviceType(), (quint16)0x0101);
+    QCOMPARE(subP->status(), (quint16)0x0000);
+    // Description roundtrip: parser does not yet deserialize BIOS Boot description
+    QEXPECT_FAIL("", "BIOS Boot description parsing not yet implemented", Continue);
+    QCOMPARE(subP->description(), description);
 }
 
 void TestDevicePathBIOSBoot::test_qefi_dp_biosboot_boundary_values()
@@ -75,8 +78,8 @@ void TestDevicePathBIOSBoot::test_qefi_dp_biosboot_boundary_values()
         QEFIDevicePathBIOSBoot *subP =
             dynamic_cast<QEFIDevicePathBIOSBoot *>(p.get());
         QVERIFY(subP != nullptr);
-        QVERIFY(subP->deviceType() == 0x0000);
-        QVERIFY(subP->status() == 0x0000);
+        QCOMPARE(subP->deviceType(), (quint16)0x0000);
+        QCOMPARE(subP->status(), (quint16)0x0000);
     }
 
     {
@@ -90,8 +93,8 @@ void TestDevicePathBIOSBoot::test_qefi_dp_biosboot_boundary_values()
         QEFIDevicePathBIOSBoot *subP =
             dynamic_cast<QEFIDevicePathBIOSBoot *>(p.get());
         QVERIFY(subP != nullptr);
-        QVERIFY(subP->deviceType() == 0xFFFF);
-        QVERIFY(subP->status() == 0xFFFF);
+        QCOMPARE(subP->deviceType(), (quint16)0xFFFF);
+        QCOMPARE(subP->status(), (quint16)0xFFFF);
     }
 }
 
@@ -105,11 +108,11 @@ void TestDevicePathBIOSBoot::test_qefi_parse_dp_generic_biosboot()
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp(dp_header, data.length()));
     QVERIFY(p != nullptr);
-    QVERIFY(p->type() == QEFIDevicePathType::DP_BIOSBoot);
+    QCOMPARE(p->type(), QEFIDevicePathType::DP_BIOSBoot);
     QEFIDevicePathBIOSBoot *subP =
         dynamic_cast<QEFIDevicePathBIOSBoot *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->deviceType() == 0x0101);
+    QCOMPARE(subP->deviceType(), (quint16)0x0101);
 }
 
 QTEST_MAIN(TestDevicePathBIOSBoot)

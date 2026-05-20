@@ -329,7 +329,7 @@ QEFIDevicePath *qefi_parse_dp_message_uart(
         qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 baudRate =
-        qefi_read_le<quint64>(dp_inner_pointer);;
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint8 dataBits = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -457,9 +457,9 @@ QEFIDevicePath *qefi_parse_dp_message_iscsi(
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // Check size
+    // Check size: protocol(2) + options(2) + LUN(8) + TPGT(2) per UEFI spec
     if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint16) + sizeof(quint16) +
-        sizeof(quint8) * 16 + sizeof(quint16)))
+        sizeof(quint8) * 8 + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -662,6 +662,9 @@ QEFIDevicePath *qefi_parse_dp_message_wifi(
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     int ssid_len = length - sizeof(struct qefi_device_path_header);
     int ssid_buf_len = ssid_len < 32 ? ssid_len : 32;
+    // Note: UEFI spec says SSID is raw octets (1-32 bytes, no fixed encoding).
+    // fromUtf8 handles the common case (ASCII/UTF-8 SSIDs) but will replace
+    // invalid sequences for non-UTF-8 binary SSIDs (extremely rare in practice).
     QString ssid = QString::fromUtf8((const char *)dp_inner_pointer,
         ssid_buf_len);
     return new QEFIDevicePathMessageWiFi(ssid);
@@ -1866,98 +1869,98 @@ QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp)
 
     switch (subtype) {
         case QEFIDevicePathMessageSubType::MSG_ATAPI:
-            qCDebug(QEFI_LOG) << "Formating DP message ATAPI";
+            qCDebug(QEFI_LOG) << "Formatting DP message ATAPI";
             return qefi_format_dp_message_atapi(dp);
         case QEFIDevicePathMessageSubType::MSG_SCSI:
-            qCDebug(QEFI_LOG) << "Formating DP message SCSI";
+            qCDebug(QEFI_LOG) << "Formatting DP message SCSI";
             return qefi_format_dp_message_scsi(dp);
         case QEFIDevicePathMessageSubType::MSG_FibreChan:
-            qCDebug(QEFI_LOG) << "Formating DP message FibreChan";
+            qCDebug(QEFI_LOG) << "Formatting DP message FibreChan";
             return qefi_format_dp_message_fibre_chan(dp);
         case QEFIDevicePathMessageSubType::MSG_1394:
-            qCDebug(QEFI_LOG) << "Formating DP message 1394";
+            qCDebug(QEFI_LOG) << "Formatting DP message 1394";
             return qefi_format_dp_message_1394(dp);
         case QEFIDevicePathMessageSubType::MSG_USB:
-            qCDebug(QEFI_LOG) << "Formating DP message USB";
+            qCDebug(QEFI_LOG) << "Formatting DP message USB";
             return qefi_format_dp_message_usb(dp);
         case QEFIDevicePathMessageSubType::MSG_I2O:
-            qCDebug(QEFI_LOG) << "Formating DP message I2O";
+            qCDebug(QEFI_LOG) << "Formatting DP message I2O";
             return qefi_format_dp_message_i2o(dp);
         case QEFIDevicePathMessageSubType::MSG_InfiniBand:
-            qCDebug(QEFI_LOG) << "Formating DP message InfiniBand";
+            qCDebug(QEFI_LOG) << "Formatting DP message InfiniBand";
             return qefi_format_dp_message_infiniband(dp);
         case QEFIDevicePathMessageSubType::MSG_Vendor:
-            qCDebug(QEFI_LOG) << "Formating DP message Vendor";
+            qCDebug(QEFI_LOG) << "Formatting DP message Vendor";
             return qefi_format_dp_message_vendor(dp);
         case QEFIDevicePathMessageSubType::MSG_MACAddr:
-            qCDebug(QEFI_LOG) << "Formating DP message Mac Address";
+            qCDebug(QEFI_LOG) << "Formatting DP message Mac Address";
             return qefi_format_dp_message_mac_addr(dp);
         case QEFIDevicePathMessageSubType::MSG_IPv4:
-            qCDebug(QEFI_LOG) << "Formating DP message IPv4";
+            qCDebug(QEFI_LOG) << "Formatting DP message IPv4";
             return qefi_format_dp_message_ipv4(dp);
         case QEFIDevicePathMessageSubType::MSG_IPv6:
-            qCDebug(QEFI_LOG) << "Formating DP message IPv6";
+            qCDebug(QEFI_LOG) << "Formatting DP message IPv6";
             return qefi_format_dp_message_ipv6(dp);
         case QEFIDevicePathMessageSubType::MSG_UART:
-            qCDebug(QEFI_LOG) << "Formating DP message UART";
+            qCDebug(QEFI_LOG) << "Formatting DP message UART";
             return qefi_format_dp_message_uart(dp);
         case QEFIDevicePathMessageSubType::MSG_USBClass:
-            qCDebug(QEFI_LOG) << "Formating DP message USB Class";
+            qCDebug(QEFI_LOG) << "Formatting DP message USB Class";
             return qefi_format_dp_message_usb_class(dp);
 
         case QEFIDevicePathMessageSubType::MSG_USBWWID:
-            qCDebug(QEFI_LOG) << "Formating DP message USBWWID";
+            qCDebug(QEFI_LOG) << "Formatting DP message USBWWID";
             return qefi_format_dp_message_usb_wwid(dp);
 
         case QEFIDevicePathMessageSubType::MSG_LUN:
-            qCDebug(QEFI_LOG) << "Formating DP message LUN";
+            qCDebug(QEFI_LOG) << "Formatting DP message LUN";
             return qefi_format_dp_message_lun(dp);
         case QEFIDevicePathMessageSubType::MSG_SATA:
-            qCDebug(QEFI_LOG) << "Formating DP message SATA";
+            qCDebug(QEFI_LOG) << "Formatting DP message SATA";
             return qefi_format_dp_message_sata(dp);
         case QEFIDevicePathMessageSubType::MSG_ISCSI:
-            qCDebug(QEFI_LOG) << "Formating DP message ISCSI";
+            qCDebug(QEFI_LOG) << "Formatting DP message ISCSI";
             return qefi_format_dp_message_iscsi(dp);
         case QEFIDevicePathMessageSubType::MSG_VLAN:
-            qCDebug(QEFI_LOG) << "Formating DP message VLAN";
+            qCDebug(QEFI_LOG) << "Formatting DP message VLAN";
             return qefi_format_dp_message_vlan(dp);
 
         case QEFIDevicePathMessageSubType::MSG_FibreChanEx:
-            qCDebug(QEFI_LOG) << "Formating DP message FibreChanEx";
+            qCDebug(QEFI_LOG) << "Formatting DP message FibreChanEx";
             return qefi_format_dp_message_fibre_chan_ex(dp);
         case QEFIDevicePathMessageSubType::MSG_SASEX:
-            qCDebug(QEFI_LOG) << "Formating DP message SASEX";
+            qCDebug(QEFI_LOG) << "Formatting DP message SASEX";
             return qefi_format_dp_message_sas_ex(dp);
 
         case QEFIDevicePathMessageSubType::MSG_NVME:
-            qCDebug(QEFI_LOG) << "Formating DP message NVME";
+            qCDebug(QEFI_LOG) << "Formatting DP message NVME";
             return qefi_format_dp_message_nvme(dp);
         case QEFIDevicePathMessageSubType::MSG_URI:
-            qCDebug(QEFI_LOG) << "Formating DP message URI";
+            qCDebug(QEFI_LOG) << "Formatting DP message URI";
             return qefi_format_dp_message_uri(dp);
         case QEFIDevicePathMessageSubType::MSG_UFS:
-            qCDebug(QEFI_LOG) << "Formating DP message UFS";
+            qCDebug(QEFI_LOG) << "Formatting DP message UFS";
             return qefi_format_dp_message_ufs(dp);
         case QEFIDevicePathMessageSubType::MSG_SD:
-            qCDebug(QEFI_LOG) << "Formating DP message SD";
+            qCDebug(QEFI_LOG) << "Formatting DP message SD";
             return qefi_format_dp_message_sd(dp);
         case QEFIDevicePathMessageSubType::MSG_BT:
-            qCDebug(QEFI_LOG) << "Formating DP message Bluetooth";
+            qCDebug(QEFI_LOG) << "Formatting DP message Bluetooth";
             return qefi_format_dp_message_bt(dp);
         case QEFIDevicePathMessageSubType::MSG_WiFi:
-            qCDebug(QEFI_LOG) << "Formating DP message WiFi";
+            qCDebug(QEFI_LOG) << "Formatting DP message WiFi";
             return qefi_format_dp_message_wifi(dp);
         case QEFIDevicePathMessageSubType::MSG_EMMC:
-            qCDebug(QEFI_LOG) << "Formating DP message EMMC";
+            qCDebug(QEFI_LOG) << "Formatting DP message EMMC";
             return qefi_format_dp_message_emmc(dp);
         case QEFIDevicePathMessageSubType::MSG_BTLE:
-            qCDebug(QEFI_LOG) << "Formating DP message BTLE";
+            qCDebug(QEFI_LOG) << "Formatting DP message BTLE";
             return qefi_format_dp_message_btle(dp);
         case QEFIDevicePathMessageSubType::MSG_DNS:
-            qCDebug(QEFI_LOG) << "Formating DP message DNS";
+            qCDebug(QEFI_LOG) << "Formatting DP message DNS";
             return qefi_format_dp_message_dns(dp);
         case QEFIDevicePathMessageSubType::MSG_NVDIMM:
-            qCDebug(QEFI_LOG) << "Formating DP message NVDIMM";
+            qCDebug(QEFI_LOG) << "Formatting DP message NVDIMM";
             return qefi_format_dp_message_nvdimm(dp);
     }
     return QByteArray();

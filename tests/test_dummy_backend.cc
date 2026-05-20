@@ -47,14 +47,14 @@ void TestDummyBackend::test_qefi_data_read_write()
     data.append((char)0x20);
     qefi_set_variable(QUuid(), QStringLiteral("BootOrder"), data);
     QByteArray res = qefi_get_variable(QUuid(), QStringLiteral("BootOrder"));
-    QVERIFY(res == data);
+    QCOMPARE(res, data);
 }
 
 void TestDummyBackend::test_qefi_uint16_read_write()
 {
     qefi_set_variable_uint16(QUuid(), QStringLiteral("BootNext"), 0xFFEE);
     quint16 res = qefi_get_variable_uint16(QUuid(), QStringLiteral("BootNext"));
-    QVERIFY(res == 0xFFEE);
+    QCOMPARE(res, (quint16)0xFFEE);
 }
 
 QTEST_MAIN(TestDummyBackend)

@@ -69,23 +69,23 @@ void TestDevicePathChain::test_chain_acpi_pci_hd_file()
         remaining -= len;
     }
 
-    QVERIFY(parsed.size() == 4);
+    QCOMPARE(parsed.size(), 4);
 
     QEFIDevicePathACPIHID *p0 = dynamic_cast<QEFIDevicePathACPIHID *>(parsed[0].get());
     QVERIFY(p0 != nullptr);
-    QVERIFY(p0->hid() == 0x0a0341d0);
+    QCOMPARE(p0->hid(), (quint32)0x0a0341d0);
 
     QEFIDevicePathHardwarePCI *p1 = dynamic_cast<QEFIDevicePathHardwarePCI *>(parsed[1].get());
     QVERIFY(p1 != nullptr);
-    QVERIFY(p1->device() == 0x1F);
+    QCOMPARE(p1->device(), (quint8)0x1F);
 
     QEFIDevicePathMediaHD *p2 = dynamic_cast<QEFIDevicePathMediaHD *>(parsed[2].get());
     QVERIFY(p2 != nullptr);
-    QVERIFY(p2->partitionNumber() == 1);
+    QCOMPARE(p2->partitionNumber(), (quint32)1);
 
     QEFIDevicePathMediaFile *p3 = dynamic_cast<QEFIDevicePathMediaFile *>(parsed[3].get());
     QVERIFY(p3 != nullptr);
-    QVERIFY(p3->name() == "\\EFI\\Boot\\bootx64.efi");
+    QCOMPARE(p3->name(), QString("\\EFI\\Boot\\bootx64.efi"));
 }
 
 // Chain: SATA -> File
@@ -118,15 +118,15 @@ void TestDevicePathChain::test_chain_message_media()
         remaining -= len;
     }
 
-    QVERIFY(parsed.size() == 2);
+    QCOMPARE(parsed.size(), 2);
 
     QEFIDevicePathMessageSATA *p0 = dynamic_cast<QEFIDevicePathMessageSATA *>(parsed[0].get());
     QVERIFY(p0 != nullptr);
-    QVERIFY(p0->hbaPort() == 0x0000);
+    QCOMPARE(p0->hbaPort(), (quint16)0x0000);
 
     QEFIDevicePathMediaFile *p1 = dynamic_cast<QEFIDevicePathMediaFile *>(parsed[1].get());
     QVERIFY(p1 != nullptr);
-    QVERIFY(p1->name() == "\\EFI\\Microsoft\\Boot\\bootmgfw.efi");
+    QCOMPARE(p1->name(), QString("\\EFI\\Microsoft\\Boot\\bootmgfw.efi"));
 }
 
 // Full chain round-trip: create -> format -> parse -> re-format -> compare
@@ -150,14 +150,14 @@ void TestDevicePathChain::test_chain_parse_format_roundtrip()
 
         QEFIDevicePath *dp = qefi_parse_dp(hdr, len);
         if (dp) {
-            chainReformatted.append(qefi_format_dp(dp));
-            delete dp;
+            QSharedPointer<QEFIDevicePath> dpPtr(dp);
+            chainReformatted.append(qefi_format_dp(dpPtr.data()));
         }
         ptr += len;
         remaining -= len;
     }
 
-    QVERIFY(chainOriginal == chainReformatted);
+    QCOMPARE(chainOriginal, chainReformatted);
 }
 
 void TestDevicePathChain::test_qefi_parse_dp_generic_end()

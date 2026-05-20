@@ -19,21 +19,21 @@ void TestParseBootOptionalData::testParseTestBootData()
 {
     QByteArray data((const char *)test_boot_data, TEST_BOOT_DATA_LENGTH);
     QByteArray optionalData = qefi_extract_optional_data(data);
-    QVERIFY(optionalData.size() == 0);
+    QCOMPARE(optionalData.size(), 0);
 }
 
 void TestParseBootOptionalData::testParseTestBootData2()
 {
     QByteArray data((const char *)test_boot_data2, TEST_BOOT_DATA2_LENGTH);
     QByteArray optionalData = qefi_extract_optional_data(data);
-    QVERIFY(optionalData.size() == 136);
+    QCOMPARE(optionalData.size(), 136);
 }
 
 void TestParseBootOptionalData::testParseEmptyData()
 {
     QByteArray data;
     QByteArray optionalData = qefi_extract_optional_data(data);
-    QVERIFY(optionalData.size() == 0);
+    QCOMPARE(optionalData.size(), 0);
 }
 
 QT_WARNING_POP

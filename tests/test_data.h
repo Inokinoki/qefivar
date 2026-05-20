@@ -1,4 +1,7 @@
 
+#ifndef QEFI_TEST_DATA_H
+#define QEFI_TEST_DATA_H
+
 #define TEST_BOOT_DATA_LENGTH 150
 const unsigned char test_boot_data[TEST_BOOT_DATA_LENGTH] = {
     0x01, 0x00, 0x00, 0x00,     // Attribute
@@ -105,3 +108,5 @@ const unsigned char test_boot_data2[TEST_BOOT_DATA2_LENGTH] = {
 
 const char* test_boot_name2 = "Windows Boot Manager";
 const char* test_boot_path2 = "\\EFI\\Microsoft\\Boot\\bootmgfw.efi";
+
+#endif  // QEFI_TEST_DATA_H

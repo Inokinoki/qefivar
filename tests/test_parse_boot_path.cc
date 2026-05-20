@@ -19,21 +19,21 @@ void TestParseBootPath::testParseTestBootData()
 {
     QByteArray data((const char *)test_boot_data, TEST_BOOT_DATA_LENGTH);
     QString path = qefi_extract_path(data);
-    QVERIFY(path == QString(test_boot_path));
+    QCOMPARE(path, QString(test_boot_path));
 }
 
 void TestParseBootPath::testParseTestBootData2()
 {
     QByteArray data((const char *)test_boot_data2, TEST_BOOT_DATA2_LENGTH);
     QString path = qefi_extract_path(data);
-    QVERIFY(path == QString(test_boot_path2));
+    QCOMPARE(path, QString(test_boot_path2));
 }
 
 void TestParseBootPath::testParseEmptyData()
 {
     QByteArray data;
     QString path = qefi_extract_path(data);
-    QVERIFY(path.size() == 0);
+    QCOMPARE(path.size(), 0);
 }
 
 QT_WARNING_POP

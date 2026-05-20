@@ -35,19 +35,19 @@ void TestDevicePathMedia::test_qefi_dp_media_file()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_File);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_File);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_file(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaFile *subP =
         dynamic_cast<QEFIDevicePathMediaFile *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->name() == dp.name());
+    QCOMPARE(subP->name(), dp.name());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_hdd()
@@ -65,24 +65,24 @@ void TestDevicePathMedia::test_qefi_dp_media_hdd()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_HD);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_HD);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_hdd(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaHD *subP =
         dynamic_cast<QEFIDevicePathMediaHD *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->partitionNumber() == dp.partitionNumber());
-    QVERIFY(subP->start() == dp.start());
-    QVERIFY(subP->size() == dp.size());
-    QVERIFY(subP->gptGuid() == dp.gptGuid());
-    QVERIFY(subP->format() == dp.format());
-    QVERIFY(subP->signatureType() == dp.signatureType());
+    QCOMPARE(subP->partitionNumber(), dp.partitionNumber());
+    QCOMPARE(subP->start(), dp.start());
+    QCOMPARE(subP->size(), dp.size());
+    QCOMPARE(subP->gptGuid(), dp.gptGuid());
+    QCOMPARE(subP->format(), dp.format());
+    QCOMPARE(subP->signatureType(), dp.signatureType());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_cdrom()
@@ -95,21 +95,21 @@ void TestDevicePathMedia::test_qefi_dp_media_cdrom()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_CDROM);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_CDROM);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_cdrom(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaCDROM *subP =
         dynamic_cast<QEFIDevicePathMediaCDROM *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->bootCatalogEntry() == dp.bootCatalogEntry());
-    QVERIFY(subP->partitionRba() == dp.partitionRba());
-    QVERIFY(subP->sectors() == dp.sectors());
+    QCOMPARE(subP->bootCatalogEntry(), dp.bootCatalogEntry());
+    QCOMPARE(subP->partitionRba(), dp.partitionRba());
+    QCOMPARE(subP->sectors(), dp.sectors());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_vendor()
@@ -122,20 +122,20 @@ void TestDevicePathMedia::test_qefi_dp_media_vendor()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_Vendor);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_Vendor);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_vendor(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaVendor *subP =
         dynamic_cast<QEFIDevicePathMediaVendor *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->vendorGuid() == dp.vendorGuid());
-    QVERIFY(subP->vendorData() == dp.vendorData());
+    QCOMPARE(subP->vendorGuid(), dp.vendorGuid());
+    QCOMPARE(subP->vendorData(), dp.vendorData());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_protocol()
@@ -147,19 +147,19 @@ void TestDevicePathMedia::test_qefi_dp_media_protocol()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_Protocol);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_Protocol);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_protocol(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaProtocol *subP =
         dynamic_cast<QEFIDevicePathMediaProtocol *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->protocolGuid() == dp.protocolGuid());
+    QCOMPARE(subP->protocolGuid(), dp.protocolGuid());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_firmware_file()
@@ -171,19 +171,19 @@ void TestDevicePathMedia::test_qefi_dp_media_firmware_file()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_FirmwareFile);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_FirmwareFile);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_firmware_file(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaFirmwareFile *subP =
         dynamic_cast<QEFIDevicePathMediaFirmwareFile *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->piInfo() == dp.piInfo());
+    QCOMPARE(subP->piInfo(), dp.piInfo());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_fv()
@@ -195,19 +195,19 @@ void TestDevicePathMedia::test_qefi_dp_media_fv()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_fv(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaFirmwareVolume *subP =
         dynamic_cast<QEFIDevicePathMediaFirmwareVolume *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->piInfo() == dp.piInfo());
+    QCOMPARE(subP->piInfo(), dp.piInfo());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_relative_offset()
@@ -220,20 +220,20 @@ void TestDevicePathMedia::test_qefi_dp_media_relative_offset()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_RelativeOffset);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_RelativeOffset);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_relative_offset(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaRelativeOffset *subP =
         dynamic_cast<QEFIDevicePathMediaRelativeOffset *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->firstByte() == dp.firstByte());
-    QVERIFY(subP->lastByte() == dp.lastByte());
+    QCOMPARE(subP->firstByte(), dp.firstByte());
+    QCOMPARE(subP->lastByte(), dp.lastByte());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_ramdisk()
@@ -248,22 +248,22 @@ void TestDevicePathMedia::test_qefi_dp_media_ramdisk()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Media);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMediaSubType::MEDIA_RamDisk);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Media);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMediaSubType::MEDIA_RamDisk);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_media_ramdisk(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMediaRAMDisk *subP =
         dynamic_cast<QEFIDevicePathMediaRAMDisk *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->startAddress() == dp.startAddress());
-    QVERIFY(subP->endAddress() == dp.endAddress());
-    QVERIFY(subP->diskTypeGuid() == dp.diskTypeGuid());
-    QVERIFY(subP->instanceNumber() == dp.instanceNumber());
+    QCOMPARE(subP->startAddress(), dp.startAddress());
+    QCOMPARE(subP->endAddress(), dp.endAddress());
+    QCOMPARE(subP->diskTypeGuid(), dp.diskTypeGuid());
+    QCOMPARE(subP->instanceNumber(), dp.instanceNumber());
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_hdd_mbr_format()
@@ -291,9 +291,9 @@ void TestDevicePathMedia::test_qefi_dp_media_hdd_mbr_format()
     QEFIDevicePathMediaHD *subP =
         dynamic_cast<QEFIDevicePathMediaHD *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->format() == QEFIDevicePathMediaHD::PCAT);
-    QVERIFY(subP->signatureType() == QEFIDevicePathMediaHD::MBR);
-    QVERIFY(subP->mbrSignature() == 0x04030201);
+    QCOMPARE(subP->format(), QEFIDevicePathMediaHD::PCAT);
+    QCOMPARE(subP->signatureType(), QEFIDevicePathMediaHD::MBR);
+    QCOMPARE(subP->mbrSignature(), (quint32)0x04030201);
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_hdd_gpt_format()
@@ -318,9 +318,9 @@ void TestDevicePathMedia::test_qefi_dp_media_hdd_gpt_format()
     QEFIDevicePathMediaHD *subP =
         dynamic_cast<QEFIDevicePathMediaHD *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->format() == QEFIDevicePathMediaHD::GPT);
-    QVERIFY(subP->signatureType() == QEFIDevicePathMediaHD::GUID);
-    QVERIFY(subP->partitionNumber() == 2);
+    QCOMPARE(subP->format(), QEFIDevicePathMediaHD::GPT);
+    QCOMPARE(subP->signatureType(), QEFIDevicePathMediaHD::GUID);
+    QCOMPARE(subP->partitionNumber(), (quint32)2);
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_file_empty_path()
@@ -353,7 +353,7 @@ void TestDevicePathMedia::test_qefi_dp_media_file_long_path()
     QEFIDevicePathMediaFile *subP =
         dynamic_cast<QEFIDevicePathMediaFile *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->name() == longPath);
+    QCOMPARE(subP->name(), longPath);
 }
 
 void TestDevicePathMedia::test_qefi_dp_media_ramdisk_boundary()
@@ -374,9 +374,9 @@ void TestDevicePathMedia::test_qefi_dp_media_ramdisk_boundary()
         QEFIDevicePathMediaRAMDisk *subP =
             dynamic_cast<QEFIDevicePathMediaRAMDisk *>(p.get());
         QVERIFY(subP != nullptr);
-        QVERIFY(subP->startAddress() == 0x10000000);
-        QVERIFY(subP->endAddress() == 0x1FFFFFFF);
-        QVERIFY(subP->instanceNumber() == 0x0000);
+        QCOMPARE(subP->startAddress(), (quint64)0x10000000);
+        QCOMPARE(subP->endAddress(), (quint64)0x1FFFFFFF);
+        QCOMPARE(subP->instanceNumber(), (quint16)0x0000);
     }
 
     {
@@ -395,9 +395,9 @@ void TestDevicePathMedia::test_qefi_dp_media_ramdisk_boundary()
         QEFIDevicePathMediaRAMDisk *subP =
             dynamic_cast<QEFIDevicePathMediaRAMDisk *>(p.get());
         QVERIFY(subP != nullptr);
-        QVERIFY(subP->startAddress() == 0x0);
-        QVERIFY(subP->endAddress() == 0xFFFFFFFFFFFFFFFF);
-        QVERIFY(subP->instanceNumber() == 0xFFFF);
+        QCOMPARE(subP->startAddress(), (quint64)0x0);
+        QCOMPARE(subP->endAddress(), (quint64)0xFFFFFFFFFFFFFFFF);
+        QCOMPARE(subP->instanceNumber(), (quint16)0xFFFF);
     }
 }
 
@@ -411,12 +411,12 @@ void TestDevicePathMedia::test_qefi_parse_dp_generic_media_file()
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp(dp_header, data.length()));
     QVERIFY(p != nullptr);
-    QVERIFY(p->type() == QEFIDevicePathType::DP_Media);
-    QVERIFY(p->subType() == QEFIDevicePathMediaSubType::MEDIA_File);
+    QCOMPARE(p->type(), QEFIDevicePathType::DP_Media);
+    QCOMPARE(p->subType(), QEFIDevicePathMediaSubType::MEDIA_File);
     QEFIDevicePathMediaFile *subP =
         dynamic_cast<QEFIDevicePathMediaFile *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->name() == "\\EFI\\Boot\\bootx64.efi");
+    QCOMPARE(subP->name(), QString("\\EFI\\Boot\\bootx64.efi"));
 }
 
 QTEST_MAIN(TestDevicePathMedia)

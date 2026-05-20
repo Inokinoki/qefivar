@@ -206,41 +206,41 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
 {
     QEFIDevicePathType type = dp->type();
     quint8 subtype = dp->subType();
-    qCDebug(QEFI_LOG) << "Formating DP: type" << type << "subtype" << subtype;
+    qCDebug(QEFI_LOG) << "Formatting DP: type" << type << "subtype" << subtype;
 
     if (type == QEFIDevicePathType::DP_Hardware) {
         // Format hardware
         switch (subtype) {
             case QEFIDevicePathHardwareSubType::HW_PCI:
-                qCDebug(QEFI_LOG) << "Formating DP hardware PCI";
+                qCDebug(QEFI_LOG) << "Formatting DP hardware PCI";
                 return qefi_format_dp_hardware_pci(dp);
             case QEFIDevicePathHardwareSubType::HW_PCCard:
-                qCDebug(QEFI_LOG) << "Formating DP hardware PCCard";
+                qCDebug(QEFI_LOG) << "Formatting DP hardware PCCard";
                 return qefi_format_dp_hardware_pccard(dp);
             case QEFIDevicePathHardwareSubType::HW_MMIO:
-                qCDebug(QEFI_LOG) << "Formating DP hardware MMIO";
+                qCDebug(QEFI_LOG) << "Formatting DP hardware MMIO";
                 return qefi_format_dp_hardware_mmio(dp);
             case QEFIDevicePathHardwareSubType::HW_Vendor:
-                qCDebug(QEFI_LOG) << "Formating DP hardware Vendor";
+                qCDebug(QEFI_LOG) << "Formatting DP hardware Vendor";
                 return qefi_format_dp_hardware_vendor(dp);
             case QEFIDevicePathHardwareSubType::HW_Controller:
-                qCDebug(QEFI_LOG) << "Formating DP hardware Controller";
+                qCDebug(QEFI_LOG) << "Formatting DP hardware Controller";
                 return qefi_format_dp_hardware_controller(dp);
             case QEFIDevicePathHardwareSubType::HW_BMC:
-                qCDebug(QEFI_LOG) << "Formating DP hardware BMC";
+                qCDebug(QEFI_LOG) << "Formatting DP hardware BMC";
                 return qefi_format_dp_hardware_bmc(dp);
         }
     } else if (type == QEFIDevicePathType::DP_ACPI) {
         // Format DP_ACPI
         switch (subtype) {
             case QEFIDevicePathACPISubType::ACPI_HID:
-                qCDebug(QEFI_LOG) << "Formating DP ACPI HID";
+                qCDebug(QEFI_LOG) << "Formatting DP ACPI HID";
                 return qefi_format_dp_acpi_hid(dp);
             case QEFIDevicePathACPISubType::ACPI_HIDEX:
-                qCDebug(QEFI_LOG) << "Formating DP ACPI HIDEX";
+                qCDebug(QEFI_LOG) << "Formatting DP ACPI HIDEX";
                 return qefi_format_dp_acpi_hidex(dp);
             case QEFIDevicePathACPISubType::ACPI_ADR:
-                qCDebug(QEFI_LOG) << "Formating DP ACPI ADR";
+                qCDebug(QEFI_LOG) << "Formatting DP ACPI ADR";
                 return qefi_format_dp_acpi_adr(dp);
         }
     } else if (type == QEFIDevicePathType::DP_Message) {
@@ -250,31 +250,31 @@ QByteArray qefi_format_dp(QEFIDevicePath *dp)
         // Format Media
         switch (subtype) {
             case QEFIDevicePathMediaSubType::MEDIA_HD:
-                qCDebug(QEFI_LOG) << "Formating DP media HD";
+                qCDebug(QEFI_LOG) << "Formatting DP media HD";
                 return qefi_format_dp_media_hdd(dp);
             case QEFIDevicePathMediaSubType::MEDIA_File:
-                qCDebug(QEFI_LOG) << "Formating DP media file";
+                qCDebug(QEFI_LOG) << "Formatting DP media file";
                 return qefi_format_dp_media_file(dp);
             case QEFIDevicePathMediaSubType::MEDIA_CDROM:
-                qCDebug(QEFI_LOG) << "Formating DP media CDROM";
+                qCDebug(QEFI_LOG) << "Formatting DP media CDROM";
                 return qefi_format_dp_media_cdrom(dp);
             case QEFIDevicePathMediaSubType::MEDIA_Vendor:
-                qCDebug(QEFI_LOG) << "Formating DP media vendor";
+                qCDebug(QEFI_LOG) << "Formatting DP media vendor";
                 return qefi_format_dp_media_vendor(dp);
             case QEFIDevicePathMediaSubType::MEDIA_Protocol:
-                qCDebug(QEFI_LOG) << "Formating DP media protocol";
+                qCDebug(QEFI_LOG) << "Formatting DP media protocol";
                 return qefi_format_dp_media_protocol(dp);
             case QEFIDevicePathMediaSubType::MEDIA_FirmwareFile:
-                qCDebug(QEFI_LOG) << "Formating DP media firmware file";
+                qCDebug(QEFI_LOG) << "Formatting DP media firmware file";
                 return qefi_format_dp_media_firmware_file(dp);
             case QEFIDevicePathMediaSubType::MEDIA_FirmwareVolume:
-                qCDebug(QEFI_LOG) << "Formating DP media FV";
+                qCDebug(QEFI_LOG) << "Formatting DP media FV";
                 return qefi_format_dp_media_fv(dp);
             case QEFIDevicePathMediaSubType::MEDIA_RelativeOffset:
-                qCDebug(QEFI_LOG) << "Formating DP media relative offset";
+                qCDebug(QEFI_LOG) << "Formatting DP media relative offset";
                 return qefi_format_dp_media_relative_offset(dp);
             case QEFIDevicePathMediaSubType::MEDIA_RamDisk:
-                qCDebug(QEFI_LOG) << "Formating DP media ramdisk";
+                qCDebug(QEFI_LOG) << "Formatting DP media ramdisk";
                 return qefi_format_dp_media_ramdisk(dp);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
@@ -1077,15 +1077,17 @@ int qefi_internal_description_length(const QByteArray &data)
     int dpListLength = qefi_internal_dp_list_length(data);
     if (dpListLength < 0) return -1;
 
+    // Skip the header; remaining bytes are description + dp list + optional data
+    int remaining = size - sizeof(struct qefi_load_option_header);
     quint8 *c = (quint8*)(data.data() + sizeof(struct qefi_load_option_header));
     bool isDescValid = false;
     int tempLength = 0;
-    while (size > 0) {
+    while (remaining >= 2) {
         if (qefi_read_le<quint16>(c) == 0) {
             isDescValid = true;
             break;
         }
-        size -= 2, c += 2, tempLength += 2;
+        remaining -= 2, c += 2, tempLength += 2;
     }
     return isDescValid ? tempLength : -1;
 }
@@ -1208,7 +1210,7 @@ bool QEFILoadOption::isForceReconnect() const
 
 quint8 QEFILoadOption::category() const
 {
-    return static_cast<quint8>(m_attribute & QEFI_LOAD_OPTION_CATEGORY_MASK);
+    return static_cast<quint8>((m_attribute & QEFI_LOAD_OPTION_CATEGORY_MASK) >> 8);
 }
 
 void QEFILoadOption::setName(const QString &name)
@@ -1250,7 +1252,8 @@ void QEFILoadOption::setForceReconnect(bool forceReconnect)
 
 void QEFILoadOption::setCategory(quint8 category)
 {
-    m_attribute = (m_attribute & ~QEFI_LOAD_OPTION_CATEGORY_MASK) | (category & QEFI_LOAD_OPTION_CATEGORY_MASK);
+    m_attribute = (m_attribute & ~QEFI_LOAD_OPTION_CATEGORY_MASK)
+        | ((quint32)(category & 0x1F) << 8);
 }
 
 void QEFILoadOption::setOptionalData(const QByteArray &optionalData)
@@ -1316,7 +1319,7 @@ bool QEFILoadOption::parse(const QByteArray &bootData)
 
         // Extract short path (inline to avoid deprecated call)
         int dpListLength = qefi_internal_dp_list_length(bootData);
-        if (dpListLength >= 0) {
+        if (dpListLength >= 0 && descLength >= 0) {
             quint8 *list_pointer = ((quint8 *)header) +
                 sizeof(struct qefi_load_option_header) + descLength + 2;
             qint32 remainder_length = dpListLength;
