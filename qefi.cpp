@@ -73,34 +73,20 @@ QString qefi_parse_ucs2_string(quint8 *data, int max_size)
     return str;
 }
 
-// TODO: Test it
 QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd)
 {
-    QByteArray utf8 = str.toUtf8();
+    // Use QString::utf16() for proper UTF-16 conversion including surrogate pairs
+    const ushort *utf16 = str.utf16();
+    int len = str.length();
     QByteArray ucs2;
 
-    for (int i = 0, j = 0; i < utf8.size() && utf8[i] != '\0'; j++) {
-        quint16 val16;
-        quint32 val = 0;
-
-        if ((utf8[i] & 0xe0) == 0xe0 && !(utf8[i] & 0x10)) {
-            val = ((utf8[i+0] & 0x0f) << 10)
-                | ((utf8[i+1] & 0x3f) << 6)
-                | ((utf8[i+2] & 0x3f) << 0);
-            i += 3;
-        } else if ((utf8[i] & 0xc0) == 0xc0 && !(utf8[i] & 0x20)) {
-            val = ((utf8[i+0] & 0x1f) << 6) | ((utf8[i+1] & 0x3f) << 0);
-            i += 2;
-        } else {
-            val = utf8[i] & 0x7f;
-            i += 1;
-        }
-        val16 = (val & 0xFFFF);
-
+    for (int i = 0; i < len; i++) {
+        quint16 ch = utf16[i];
+        if (ch == 0) break;
         // Append L8
-        ucs2.append((char)(val16 & 0xFF));
+        ucs2.append((char)(ch & 0xFF));
         // Append H8
-        ucs2.append((char)((val16 >> 8) & 0xFF));
+        ucs2.append((char)((ch >> 8) & 0xFF));
     }
     if (isEnd) {
         // Append \0 terminator
@@ -189,7 +175,9 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
                 return qefi_parse_dp_media_ramdisk(dp, length);
         }
     } else if (type == QEFIDevicePathType::DP_BIOSBoot) {
-        // Parse BIOSBoot
+        // Parse BIOSBoot: deviceType(2) + status(2) + description(UCS-2, null-terminated)
+        if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint16) * 2))
+            return nullptr;
         quint8 *dp_inner_pointer = (quint8 *)dp + sizeof(struct qefi_device_path_header);
         quint16 deviceType =
             qefi_read_le<quint16>(dp_inner_pointer);
@@ -197,7 +185,11 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
         quint16 status =
             qefi_read_le<quint16>(dp_inner_pointer);
         dp_inner_pointer += sizeof(quint16);
-        QByteArray description; // TODO: Parse it
+        int descBytes = dp_size - QEFI_DEVICE_PATH_HEADER_SIZE - sizeof(quint16) * 2;
+        QByteArray description;
+        if (descBytes > 0) {
+            description = QByteArray(reinterpret_cast<const char *>(dp_inner_pointer), descBytes);
+        }
         return new QEFIDevicePathBIOSBoot(deviceType, status, description);
     }
     return nullptr;
@@ -1457,7 +1449,8 @@ QUuid qefi_format_guid(const quint8 *data)
 
 QByteArray qefi_rfc4122_to_guid(const QByteArray data)
 {
-    if (data.length() < 8) return data;
+    // GUID is always 16 bytes
+    if (data.length() < 16) return data;
 
     QByteArray res(data);
     quint8 temp;
