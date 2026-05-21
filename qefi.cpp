@@ -112,6 +112,7 @@ QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd)
 
 QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
 {
+    if (!dp) return nullptr;
     quint8 type = dp->type, subtype = dp->subtype;
     int length = qefi_dp_length(dp);
     qCDebug(QEFI_LOG) << "Parsing DP: length " << length << " " <<
@@ -1118,29 +1119,7 @@ bool qefi_validate_load_option(const QByteArray &data)
 // Deprecated functions - now implemented as wrappers
 int qefi_loadopt_description_length(const QByteArray &data)
 {
-    int size = data.size();
-    int tempLength;
-
-    // Check header
-    if (size < (int)sizeof(struct qefi_load_option_header)) return -1;
-
-    tempLength = qefi_internal_dp_list_length(data);
-    if (tempLength < 0) return -1;
-
-    quint8 *c = (quint8*)(data.data() + sizeof(struct qefi_load_option_header));
-    bool isDescValid = false;
-    tempLength = 0;
-    while (size > 0) {
-        // Find the end of description
-        if (qefi_read_le<quint16>(c) == 0) {
-            isDescValid = true;
-            break;
-        }
-        size -= 2, c += 2, tempLength += 2;
-    }
-    if (!isDescValid) return -1;
-
-    return tempLength;
+    return qefi_internal_description_length(data);
 }
 
 int qefi_loadopt_dp_list_length(const QByteArray &data)
