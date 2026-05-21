@@ -60,8 +60,6 @@ void TestDevicePathBIOSBoot::test_qefi_dp_biosboot_with_description()
     QVERIFY(subP != nullptr);
     QCOMPARE(subP->deviceType(), (quint16)0x0101);
     QCOMPARE(subP->status(), (quint16)0x0000);
-    // Description roundtrip: parser does not yet deserialize BIOS Boot description
-    QEXPECT_FAIL("", "BIOS Boot description parsing not yet implemented", Continue);
     QCOMPARE(subP->description(), description);
 }
 
