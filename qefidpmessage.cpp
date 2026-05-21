@@ -1,31 +1,8 @@
 #include "qefi.h"
+#include "qefi_p.h"
 
 #include <QtEndian>
 #include <QDebug>
-
-#pragma pack(push, 1)
-struct qefi_load_option_header {
-    quint32 attributes;
-    quint16 path_list_length;
-};
-#pragma pack(pop)
-
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-// Utilities in qefi.cpp
-int qefi_dp_length(const struct qefi_device_path_header *dp_header);
-int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer,
-    int max_dp_size);
-int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer,
-    int max_dp_size);
-QString qefi_parse_ucs2_string(quint8 *data, int max_size);
 
 // Message parsing
 QEFIDevicePath *qefi_parse_dp_message_atapi(
@@ -39,8 +16,7 @@ QEFIDevicePath *qefi_parse_dp_message_atapi(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) + sizeof(quint8) + sizeof(quint16))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) + sizeof(quint8) + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -49,7 +25,7 @@ QEFIDevicePath *qefi_parse_dp_message_atapi(
     quint8 slave = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
     quint16 lun =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageATAPI(primary, slave, lun);
 }
 
@@ -64,16 +40,15 @@ QEFIDevicePath *qefi_parse_dp_message_scsi(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint16) + sizeof(quint16))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint16) + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 target =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 lun =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageSCSI(target, lun);
 }
 
@@ -88,19 +63,18 @@ QEFIDevicePath *qefi_parse_dp_message_fibre_chan(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64) + sizeof(quint64))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64) + sizeof(quint64)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 wwn =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 lun =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     return new QEFIDevicePathMessageFibreChan(reserved, wwn, lun);
 }
 
@@ -115,16 +89,15 @@ QEFIDevicePath *qefi_parse_dp_message_1394(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reversed =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 guid =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     return new QEFIDevicePathMessage1394(reversed, guid);
 }
 
@@ -139,8 +112,7 @@ QEFIDevicePath *qefi_parse_dp_message_usb(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -161,13 +133,12 @@ QEFIDevicePath *qefi_parse_dp_message_i2o(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 target =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     return new QEFIDevicePathMessageI2O(target);
 }
 
@@ -182,29 +153,28 @@ QEFIDevicePath *qefi_parse_dp_message_infiniband(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64) + sizeof(quint64) +
-        sizeof(quint64) + sizeof(quint64) + sizeof(quint64))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64) + sizeof(quint64) +
+        sizeof(quint64) + sizeof(quint64) + sizeof(quint64)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 resourceFlags =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 portGID1 =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 portGID2 =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 sharedField =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 targetPortID =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint64 deviceID =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));
+        qefi_read_le<quint64>(dp_inner_pointer);
     return new QEFIDevicePathMessageInfiniBand(resourceFlags,
         portGID1, portGID2, sharedField,
         targetPortID, deviceID);
@@ -221,8 +191,7 @@ QEFIDevicePath *qefi_parse_dp_message_vendor(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 16)
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 16))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -244,8 +213,7 @@ QEFIDevicePath *qefi_parse_dp_message_mac_addr(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 32 + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 32 + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -266,11 +234,10 @@ QEFIDevicePath *qefi_parse_dp_message_ipv4(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 4 + sizeof(quint8) * 4 +
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 4 + sizeof(quint8) * 4 +
         sizeof(quint16) + sizeof(quint16) +
         sizeof(quint16) + sizeof(quint8) +
-        sizeof(quint8) * 4 + sizeof(quint8) * 4)
+        sizeof(quint8) * 4 + sizeof(quint8) * 4))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -279,13 +246,13 @@ QEFIDevicePath *qefi_parse_dp_message_ipv4(
     quint8 *remoteIPv4Addr = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 4;
     quint16 localPort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 remotePort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 protocol =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 staticIPAddr = *dp_inner_pointer;    // A bool value
     dp_inner_pointer += sizeof(quint8);
@@ -311,10 +278,9 @@ QEFIDevicePath *qefi_parse_dp_message_ipv6(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 16 + sizeof(quint8) * 16 +
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 16 + sizeof(quint8) * 16 +
         sizeof(quint16) + sizeof(quint16) + sizeof(quint16) +
-        sizeof(quint8) + sizeof(quint8) + sizeof(quint8))
+        sizeof(quint8) + sizeof(quint8) + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -323,13 +289,13 @@ QEFIDevicePath *qefi_parse_dp_message_ipv6(
     quint8 *remoteIPv6Addr = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 16;
     quint16 localPort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 remotePort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 protocol =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 ipAddrOrigin = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -354,17 +320,16 @@ QEFIDevicePath *qefi_parse_dp_message_uart(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64) +
-        sizeof(quint8) + sizeof(quint8) + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64) +
+        sizeof(quint8) + sizeof(quint8) + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint64 baudRate =
-        qFromLittleEndian<quint64>(*((quint64 *)dp_inner_pointer));;
+        qefi_read_le<quint64>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint64);
     quint8 dataBits = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -386,17 +351,16 @@ QEFIDevicePath *qefi_parse_dp_message_usb_class(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint16) + sizeof(quint16) +
-        sizeof(quint8) + sizeof(quint8) + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint16) + sizeof(quint16) +
+        sizeof(quint8) + sizeof(quint8) + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vendorId =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 productId =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 deviceClass = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
@@ -419,19 +383,22 @@ QEFIDevicePath *qefi_parse_dp_message_usb_wwid(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint16) + sizeof(quint16))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint16) + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vendorId =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 productId =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
-    // TODO: Parse sn
-    quint16 *sn = (quint16 *)dp_inner_pointer;
+    // Parse serial number from remaining bytes
+    int sn_bytes = length - (dp_inner_pointer - (quint8 *)dp);
+    QList<quint16> sn;
+    for (int i = 0; i + 1 < sn_bytes; i += 2) {
+        sn << qefi_read_le<quint16>(dp_inner_pointer + i);
+    }
     return new QEFIDevicePathMessageUSBWWID(vendorId, productId, sn);
 }
 
@@ -446,8 +413,7 @@ QEFIDevicePath *qefi_parse_dp_message_lun(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -466,18 +432,18 @@ QEFIDevicePath *qefi_parse_dp_message_sata(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint16) + sizeof(quint16) + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint16) + sizeof(quint16) + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 hbaPort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 portMultiplierPort =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
-    quint8 lun = *dp_inner_pointer;
+    quint16 lun =
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageSATA(hbaPort, portMultiplierPort, lun);
 }
 
@@ -491,23 +457,22 @@ QEFIDevicePath *qefi_parse_dp_message_iscsi(
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint16) + sizeof(quint16) +
-        sizeof(quint8) * 16 + sizeof(quint16))
+    // Check size: protocol(2) + options(2) + LUN(8) + TPGT(2) per UEFI spec
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint16) + sizeof(quint16) +
+        sizeof(quint8) * 8 + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 protocol =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint16 options =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     quint8 *lun = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 8;
     quint16 tpgt =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint16);
     QString targetName(QByteArray((const char *)dp_inner_pointer,
         length - (dp_inner_pointer - (quint8 *)dp)));
@@ -526,13 +491,12 @@ QEFIDevicePath *qefi_parse_dp_message_vlan(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint16))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint16 vlanID =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageVLAN(vlanID);
 }
 
@@ -547,14 +511,13 @@ QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint8) * 8 +
-        sizeof(quint8) * 8)
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint8) * 8 +
+        sizeof(quint8) * 8))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 reserved =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint8 *wwn = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 8;
@@ -573,15 +536,11 @@ QEFIDevicePath *qefi_parse_dp_message_sas_ex(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 8 + sizeof(quint8) * 8 +
-        sizeof(quint8) +
-        sizeof(quint8) + sizeof(quint16))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 8 + sizeof(quint8) * 8 +
+        sizeof(quint8) + sizeof(quint16)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
-    quint16 vlanID =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
     quint8 *sasAddress = dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8) * 8;
     quint8 *lun = dp_inner_pointer;
@@ -591,7 +550,7 @@ QEFIDevicePath *qefi_parse_dp_message_sas_ex(
     quint8 driveBayID = *dp_inner_pointer;
     dp_inner_pointer += sizeof(quint8);
     quint16 rtp =
-        qFromLittleEndian<quint16>(*((quint16 *)dp_inner_pointer));
+        qefi_read_le<quint16>(dp_inner_pointer);
     return new QEFIDevicePathMessageSASEx(sasAddress, lun,
         deviceTopologyInfo, driveBayID, rtp);
 }
@@ -607,13 +566,12 @@ QEFIDevicePath *qefi_parse_dp_message_nvme(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint64))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint64)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     quint32 nid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     return new QEFIDevicePathMessageNVME(nid, dp_inner_pointer);
 }
@@ -645,8 +603,7 @@ QEFIDevicePath *qefi_parse_dp_message_ufs(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -667,8 +624,7 @@ QEFIDevicePath *qefi_parse_dp_message_sd(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -686,8 +642,7 @@ QEFIDevicePath *qefi_parse_dp_message_bt(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 6)
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 6))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -706,8 +661,12 @@ QEFIDevicePath *qefi_parse_dp_message_wifi(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     int ssid_len = length - sizeof(struct qefi_device_path_header);
-    QString ssid(QByteArray((const char *)dp_inner_pointer,
-        ssid_len < 32 ? ssid_len : 32));
+    int ssid_buf_len = qMax(0, ssid_len < 32 ? ssid_len : 32);
+    // Note: UEFI spec says SSID is raw octets (1-32 bytes, no fixed encoding).
+    // fromUtf8 handles the common case (ASCII/UTF-8 SSIDs) but will replace
+    // invalid sequences for non-UTF-8 binary SSIDs (extremely rare in practice).
+    QString ssid = QString::fromUtf8((const char *)dp_inner_pointer,
+        ssid_buf_len);
     return new QEFIDevicePathMessageWiFi(ssid);
 }
 
@@ -722,8 +681,7 @@ QEFIDevicePath *qefi_parse_dp_message_emmc(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -741,8 +699,7 @@ QEFIDevicePath *qefi_parse_dp_message_btle(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 6 + sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 6 + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -763,13 +720,13 @@ QEFIDevicePath *qefi_parse_dp_message_dns(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
-    quint8 is_ipv6 = *dp_inner_pointer;
+    bool isIPv6 = (*dp_inner_pointer != 0);
     dp_inner_pointer += sizeof(quint8);
+    Q_UNUSED(isIPv6)
     // TODO: Parse addresses
     return new QEFIDevicePathMessageDNS();
 }
@@ -784,9 +741,8 @@ QEFIDevicePath *qefi_parse_dp_message_nvdimm(
     int length = qefi_dp_length(dp);
     if (length != dp_size || length <= 0) return nullptr;
 
-    // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint8) * 8)
+    // Check size - need 16 bytes for GUID
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint8) * 16))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
@@ -803,98 +759,98 @@ QEFIDevicePath *qefi_private_parse_message_subtype(struct qefi_device_path_heade
 
     switch (subtype) {
         case QEFIDevicePathMessageSubType::MSG_ATAPI:
-            qDebug() << "Parsing DP message ATAPI";
+            qCDebug(QEFI_LOG) << "Parsing DP message ATAPI";
             return qefi_parse_dp_message_atapi(dp, length);
         case QEFIDevicePathMessageSubType::MSG_SCSI:
-            qDebug() << "Parsing DP message SCSI";
+            qCDebug(QEFI_LOG) << "Parsing DP message SCSI";
             return qefi_parse_dp_message_scsi(dp, length);
         case QEFIDevicePathMessageSubType::MSG_FibreChan:
-            qDebug() << "Parsing DP message FibreChan";
+            qCDebug(QEFI_LOG) << "Parsing DP message FibreChan";
             return qefi_parse_dp_message_fibre_chan(dp, length);
         case QEFIDevicePathMessageSubType::MSG_1394:
-            qDebug() << "Parsing DP message 1394";
+            qCDebug(QEFI_LOG) << "Parsing DP message 1394";
             return qefi_parse_dp_message_1394(dp, length);
         case QEFIDevicePathMessageSubType::MSG_USB:
-            qDebug() << "Parsing DP message USB";
+            qCDebug(QEFI_LOG) << "Parsing DP message USB";
             return qefi_parse_dp_message_usb(dp, length);
         case QEFIDevicePathMessageSubType::MSG_I2O:
-            qDebug() << "Parsing DP message I2O";
+            qCDebug(QEFI_LOG) << "Parsing DP message I2O";
             return qefi_parse_dp_message_i2o(dp, length);
         case QEFIDevicePathMessageSubType::MSG_InfiniBand:
-            qDebug() << "Parsing DP message InfiniBand";
+            qCDebug(QEFI_LOG) << "Parsing DP message InfiniBand";
             return qefi_parse_dp_message_infiniband(dp, length);
         case QEFIDevicePathMessageSubType::MSG_Vendor:
-            qDebug() << "Parsing DP message Vendor";
+            qCDebug(QEFI_LOG) << "Parsing DP message Vendor";
             return qefi_parse_dp_message_vendor(dp, length);
         case QEFIDevicePathMessageSubType::MSG_MACAddr:
-            qDebug() << "Parsing DP message Mac Address";
+            qCDebug(QEFI_LOG) << "Parsing DP message Mac Address";
             return qefi_parse_dp_message_mac_addr(dp, length);
         case QEFIDevicePathMessageSubType::MSG_IPv4:
-            qDebug() << "Parsing DP message IPv4";
+            qCDebug(QEFI_LOG) << "Parsing DP message IPv4";
             return qefi_parse_dp_message_ipv4(dp, length);
         case QEFIDevicePathMessageSubType::MSG_IPv6:
-            qDebug() << "Parsing DP message IPv6";
+            qCDebug(QEFI_LOG) << "Parsing DP message IPv6";
             return qefi_parse_dp_message_ipv6(dp, length);
         case QEFIDevicePathMessageSubType::MSG_UART:
-            qDebug() << "Parsing DP message UART";
+            qCDebug(QEFI_LOG) << "Parsing DP message UART";
             return qefi_parse_dp_message_uart(dp, length);
         case QEFIDevicePathMessageSubType::MSG_USBClass:
-            qDebug() << "Parsing DP message USB Class";
+            qCDebug(QEFI_LOG) << "Parsing DP message USB Class";
             return qefi_parse_dp_message_usb_class(dp, length);
 
         case QEFIDevicePathMessageSubType::MSG_USBWWID:
-            qDebug() << "Parsing DP message USBWWID";
+            qCDebug(QEFI_LOG) << "Parsing DP message USBWWID";
             return qefi_parse_dp_message_usb_wwid(dp, length);
 
         case QEFIDevicePathMessageSubType::MSG_LUN:
-            qDebug() << "Parsing DP message LUN";
+            qCDebug(QEFI_LOG) << "Parsing DP message LUN";
             return qefi_parse_dp_message_lun(dp, length);
         case QEFIDevicePathMessageSubType::MSG_SATA:
-            qDebug() << "Parsing DP message SATA";
+            qCDebug(QEFI_LOG) << "Parsing DP message SATA";
             return qefi_parse_dp_message_sata(dp, length);
         case QEFIDevicePathMessageSubType::MSG_ISCSI:
-            qDebug() << "Parsing DP message ISCSI";
+            qCDebug(QEFI_LOG) << "Parsing DP message ISCSI";
             return qefi_parse_dp_message_iscsi(dp, length);
         case QEFIDevicePathMessageSubType::MSG_VLAN:
-            qDebug() << "Parsing DP message VLAN";
+            qCDebug(QEFI_LOG) << "Parsing DP message VLAN";
             return qefi_parse_dp_message_vlan(dp, length);
 
         case QEFIDevicePathMessageSubType::MSG_FibreChanEx:
-            qDebug() << "Parsing DP message FibreChanEx";
+            qCDebug(QEFI_LOG) << "Parsing DP message FibreChanEx";
             return qefi_parse_dp_message_fibre_chan_ex(dp, length);
         case QEFIDevicePathMessageSubType::MSG_SASEX:
-            qDebug() << "Parsing DP message SASEX";
+            qCDebug(QEFI_LOG) << "Parsing DP message SASEX";
             return qefi_parse_dp_message_sas_ex(dp, length);
 
         case QEFIDevicePathMessageSubType::MSG_NVME:
-            qDebug() << "Parsing DP message NVME";
+            qCDebug(QEFI_LOG) << "Parsing DP message NVME";
             return qefi_parse_dp_message_nvme(dp, length);
         case QEFIDevicePathMessageSubType::MSG_URI:
-            qDebug() << "Parsing DP message URI";
+            qCDebug(QEFI_LOG) << "Parsing DP message URI";
             return qefi_parse_dp_message_uri(dp, length);
         case QEFIDevicePathMessageSubType::MSG_UFS:
-            qDebug() << "Parsing DP message UFS";
+            qCDebug(QEFI_LOG) << "Parsing DP message UFS";
             return qefi_parse_dp_message_ufs(dp, length);
         case QEFIDevicePathMessageSubType::MSG_SD:
-            qDebug() << "Parsing DP message SD";
+            qCDebug(QEFI_LOG) << "Parsing DP message SD";
             return qefi_parse_dp_message_sd(dp, length);
         case QEFIDevicePathMessageSubType::MSG_BT:
-            qDebug() << "Parsing DP message Bluetooth";
+            qCDebug(QEFI_LOG) << "Parsing DP message Bluetooth";
             return qefi_parse_dp_message_bt(dp, length);
         case QEFIDevicePathMessageSubType::MSG_WiFi:
-            qDebug() << "Parsing DP message WiFi";
+            qCDebug(QEFI_LOG) << "Parsing DP message WiFi";
             return qefi_parse_dp_message_wifi(dp, length);
         case QEFIDevicePathMessageSubType::MSG_EMMC:
-            qDebug() << "Parsing DP message EMMC";
+            qCDebug(QEFI_LOG) << "Parsing DP message EMMC";
             return qefi_parse_dp_message_emmc(dp, length);
         case QEFIDevicePathMessageSubType::MSG_BTLE:
-            qDebug() << "Parsing DP message BTLE";
+            qCDebug(QEFI_LOG) << "Parsing DP message BTLE";
             return qefi_parse_dp_message_btle(dp, length);
         case QEFIDevicePathMessageSubType::MSG_DNS:
-            qDebug() << "Parsing DP message DNS";
+            qCDebug(QEFI_LOG) << "Parsing DP message DNS";
             return qefi_parse_dp_message_dns(dp, length);
         case QEFIDevicePathMessageSubType::MSG_NVDIMM:
-            qDebug() << "Parsing DP message NVDIMM";
+            qCDebug(QEFI_LOG) << "Parsing DP message NVDIMM";
             return qefi_parse_dp_message_nvdimm(dp, length);
     }
     return nullptr;
@@ -1182,7 +1138,7 @@ QByteArray qefi_format_dp_message_mac_addr(QEFIDevicePath *dp)
         dp_instance->macAddress();
     for (int i = 0; i < 32; i++) {
         // Append Mac Addr
-        buffer.append((const char)address.address[i]);
+        buffer.append((char)address.address[i]);
     }
     buffer.append(dp_instance->interfaceType());
 
@@ -1214,12 +1170,12 @@ QByteArray qefi_format_dp_message_ipv4(QEFIDevicePath *dp)
     QEFIIPv4Address address = dp_instance->localIPv4Address();
     for (int i = 0; i < 4; i++) {
         // Append localIPv4Address
-        buffer.append((const char)address.address[i]);
+        buffer.append((char)address.address[i]);
     }
     address = dp_instance->remoteIPv4Address();
     for (int i = 0; i < 4; i++) {
         // Append remoteIPv4Address
-        buffer.append((const char)address.address[i]);
+        buffer.append((char)address.address[i]);
     }
     quint16 localPort =
         qToLittleEndian<quint16>(dp_instance->localPort());
@@ -1234,12 +1190,12 @@ QByteArray qefi_format_dp_message_ipv4(QEFIDevicePath *dp)
     address = dp_instance->gateway();
     for (int i = 0; i < 4; i++) {
         // Append gateway
-        buffer.append((const char)address.address[i]);
+        buffer.append((char)address.address[i]);
     }
     address = dp_instance->netmask();
     for (int i = 0; i < 4; i++) {
         // Append netmask
-        buffer.append((const char)address.address[i]);
+        buffer.append((char)address.address[i]);
     }
 
     // Fix the length
@@ -1270,12 +1226,12 @@ QByteArray qefi_format_dp_message_ipv6(QEFIDevicePath *dp)
     QEFIIPv6Address address = dp_instance->localIPv6Address();
     for (int i = 0; i < 16; i++) {
         // Append localIPv6Address
-        buffer.append((const char)address.address[i]);
+        buffer.append((char)address.address[i]);
     }
     address = dp_instance->remoteIPv6Address();
     for (int i = 0; i < 16; i++) {
         // Append remoteIPv6Address
-        buffer.append((const char)address.address[i]);
+        buffer.append((char)address.address[i]);
     }
     quint16 localPort =
         qToLittleEndian<quint16>(dp_instance->localPort());
@@ -1391,7 +1347,10 @@ QByteArray qefi_format_dp_message_usb_wwid(QEFIDevicePath *dp)
     quint16 productId =
         qToLittleEndian<quint16>(dp_instance->productId());
     buffer.append((const char *)&productId, sizeof(quint16));
-    // TODO: Append SN
+    for (const auto &sn : dp_instance->serialNumber()) {
+        quint16 sn_le = qToLittleEndian<quint16>(sn);
+        buffer.append((const char *)&sn_le, sizeof(quint16));
+    }
 
     // Fix the length
     quint16 len = (buffer.size() & 0xFFFF);
@@ -1489,7 +1448,7 @@ QByteArray qefi_format_dp_message_iscsi(QEFIDevicePath *dp)
     QEFIDevicePathMessageLun lun = dp_instance->lun();
     for (int i = 0; i < 8; i++) {
         // Append lun
-        buffer.append((const char)lun.data[i]);
+        buffer.append((char)lun.data[i]);
     }
     quint16 tpgt =
         qToLittleEndian<quint16>(dp_instance->tpgt());
@@ -1555,11 +1514,11 @@ QByteArray qefi_format_dp_message_fibre_chan_ex(QEFIDevicePath *dp)
     buffer.append((const char *)&reserved, sizeof(quint32));
     QEFIDevicePathMessageLun wwn = dp_instance->wwn();
     for (int i = 0; i < 8; i++) {
-        buffer.append((const char)wwn.data[i]);
+        buffer.append((char)wwn.data[i]);
     }
     QEFIDevicePathMessageLun lun = dp_instance->lun();
     for (int i = 0; i < 8; i++) {
-        buffer.append((const char)lun.data[i]);
+        buffer.append((char)lun.data[i]);
     }
 
     // Fix the length
@@ -1591,12 +1550,12 @@ QByteArray qefi_format_dp_message_sas_ex(QEFIDevicePath *dp)
         dp_instance->sasAddress();
     for (int i = 0; i < 8; i++) {
         // Append sasAddress
-        buffer.append((const char)address.address[i]);
+        buffer.append((char)address.address[i]);
     }
     QEFIDevicePathMessageLun lun = dp_instance->lun();
     for (int i = 0; i < 8; i++) {
         // Append lun
-        buffer.append((const char)lun.data[i]);
+        buffer.append((char)lun.data[i]);
     }
     buffer.append(dp_instance->deviceTopologyInfo());
     buffer.append(dp_instance->driveBayID());
@@ -1636,7 +1595,7 @@ QByteArray qefi_format_dp_message_nvme(QEFIDevicePath *dp)
     QEFIDevicePathMessageEUI64 eui = dp_instance->ieeeEui64();
     for (int i = 0; i < 8; i++) {
         // Append ieeeEui64
-        buffer.append((const char)eui.eui[i]);
+        buffer.append((char)eui.eui[i]);
     }
 
     // Fix the length
@@ -1750,7 +1709,7 @@ QByteArray qefi_format_dp_message_bt(QEFIDevicePath *dp)
         dp_instance->address();
     for (int i = 0; i < 6; i++) {
         // Get the BT addr
-        buffer.append((const char)addr.address[i]);
+        buffer.append((char)addr.address[i]);
     }
 
     // Fix the length
@@ -1836,7 +1795,7 @@ QByteArray qefi_format_dp_message_btle(QEFIDevicePath *dp)
     QEFIDevicePathMessageBTAddress addr =
         dp_instance->address();
     for (int i = 0; i < 6; i++) {
-        buffer.append((const char)addr.address[i]);
+        buffer.append((char)addr.address[i]);
     }
     buffer.append(dp_instance->addressType());
 
@@ -1910,98 +1869,98 @@ QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp)
 
     switch (subtype) {
         case QEFIDevicePathMessageSubType::MSG_ATAPI:
-            qDebug() << "Formating DP message ATAPI";
+            qCDebug(QEFI_LOG) << "Formatting DP message ATAPI";
             return qefi_format_dp_message_atapi(dp);
         case QEFIDevicePathMessageSubType::MSG_SCSI:
-            qDebug() << "Formating DP message SCSI";
+            qCDebug(QEFI_LOG) << "Formatting DP message SCSI";
             return qefi_format_dp_message_scsi(dp);
         case QEFIDevicePathMessageSubType::MSG_FibreChan:
-            qDebug() << "Formating DP message FibreChan";
+            qCDebug(QEFI_LOG) << "Formatting DP message FibreChan";
             return qefi_format_dp_message_fibre_chan(dp);
         case QEFIDevicePathMessageSubType::MSG_1394:
-            qDebug() << "Formating DP message 1394";
+            qCDebug(QEFI_LOG) << "Formatting DP message 1394";
             return qefi_format_dp_message_1394(dp);
         case QEFIDevicePathMessageSubType::MSG_USB:
-            qDebug() << "Formating DP message USB";
+            qCDebug(QEFI_LOG) << "Formatting DP message USB";
             return qefi_format_dp_message_usb(dp);
         case QEFIDevicePathMessageSubType::MSG_I2O:
-            qDebug() << "Formating DP message I2O";
+            qCDebug(QEFI_LOG) << "Formatting DP message I2O";
             return qefi_format_dp_message_i2o(dp);
         case QEFIDevicePathMessageSubType::MSG_InfiniBand:
-            qDebug() << "Formating DP message InfiniBand";
+            qCDebug(QEFI_LOG) << "Formatting DP message InfiniBand";
             return qefi_format_dp_message_infiniband(dp);
         case QEFIDevicePathMessageSubType::MSG_Vendor:
-            qDebug() << "Formating DP message Vendor";
+            qCDebug(QEFI_LOG) << "Formatting DP message Vendor";
             return qefi_format_dp_message_vendor(dp);
         case QEFIDevicePathMessageSubType::MSG_MACAddr:
-            qDebug() << "Formating DP message Mac Address";
+            qCDebug(QEFI_LOG) << "Formatting DP message Mac Address";
             return qefi_format_dp_message_mac_addr(dp);
         case QEFIDevicePathMessageSubType::MSG_IPv4:
-            qDebug() << "Formating DP message IPv4";
+            qCDebug(QEFI_LOG) << "Formatting DP message IPv4";
             return qefi_format_dp_message_ipv4(dp);
         case QEFIDevicePathMessageSubType::MSG_IPv6:
-            qDebug() << "Formating DP message IPv6";
+            qCDebug(QEFI_LOG) << "Formatting DP message IPv6";
             return qefi_format_dp_message_ipv6(dp);
         case QEFIDevicePathMessageSubType::MSG_UART:
-            qDebug() << "Formating DP message UART";
+            qCDebug(QEFI_LOG) << "Formatting DP message UART";
             return qefi_format_dp_message_uart(dp);
         case QEFIDevicePathMessageSubType::MSG_USBClass:
-            qDebug() << "Formating DP message USB Class";
+            qCDebug(QEFI_LOG) << "Formatting DP message USB Class";
             return qefi_format_dp_message_usb_class(dp);
 
         case QEFIDevicePathMessageSubType::MSG_USBWWID:
-            qDebug() << "Formating DP message USBWWID";
+            qCDebug(QEFI_LOG) << "Formatting DP message USBWWID";
             return qefi_format_dp_message_usb_wwid(dp);
 
         case QEFIDevicePathMessageSubType::MSG_LUN:
-            qDebug() << "Formating DP message LUN";
+            qCDebug(QEFI_LOG) << "Formatting DP message LUN";
             return qefi_format_dp_message_lun(dp);
         case QEFIDevicePathMessageSubType::MSG_SATA:
-            qDebug() << "Formating DP message SATA";
+            qCDebug(QEFI_LOG) << "Formatting DP message SATA";
             return qefi_format_dp_message_sata(dp);
         case QEFIDevicePathMessageSubType::MSG_ISCSI:
-            qDebug() << "Formating DP message ISCSI";
+            qCDebug(QEFI_LOG) << "Formatting DP message ISCSI";
             return qefi_format_dp_message_iscsi(dp);
         case QEFIDevicePathMessageSubType::MSG_VLAN:
-            qDebug() << "Formating DP message VLAN";
+            qCDebug(QEFI_LOG) << "Formatting DP message VLAN";
             return qefi_format_dp_message_vlan(dp);
 
         case QEFIDevicePathMessageSubType::MSG_FibreChanEx:
-            qDebug() << "Formating DP message FibreChanEx";
+            qCDebug(QEFI_LOG) << "Formatting DP message FibreChanEx";
             return qefi_format_dp_message_fibre_chan_ex(dp);
         case QEFIDevicePathMessageSubType::MSG_SASEX:
-            qDebug() << "Formating DP message SASEX";
+            qCDebug(QEFI_LOG) << "Formatting DP message SASEX";
             return qefi_format_dp_message_sas_ex(dp);
 
         case QEFIDevicePathMessageSubType::MSG_NVME:
-            qDebug() << "Formating DP message NVME";
+            qCDebug(QEFI_LOG) << "Formatting DP message NVME";
             return qefi_format_dp_message_nvme(dp);
         case QEFIDevicePathMessageSubType::MSG_URI:
-            qDebug() << "Formating DP message URI";
+            qCDebug(QEFI_LOG) << "Formatting DP message URI";
             return qefi_format_dp_message_uri(dp);
         case QEFIDevicePathMessageSubType::MSG_UFS:
-            qDebug() << "Formating DP message UFS";
+            qCDebug(QEFI_LOG) << "Formatting DP message UFS";
             return qefi_format_dp_message_ufs(dp);
         case QEFIDevicePathMessageSubType::MSG_SD:
-            qDebug() << "Formating DP message SD";
+            qCDebug(QEFI_LOG) << "Formatting DP message SD";
             return qefi_format_dp_message_sd(dp);
         case QEFIDevicePathMessageSubType::MSG_BT:
-            qDebug() << "Formating DP message Bluetooth";
+            qCDebug(QEFI_LOG) << "Formatting DP message Bluetooth";
             return qefi_format_dp_message_bt(dp);
         case QEFIDevicePathMessageSubType::MSG_WiFi:
-            qDebug() << "Formating DP message WiFi";
+            qCDebug(QEFI_LOG) << "Formatting DP message WiFi";
             return qefi_format_dp_message_wifi(dp);
         case QEFIDevicePathMessageSubType::MSG_EMMC:
-            qDebug() << "Formating DP message EMMC";
+            qCDebug(QEFI_LOG) << "Formatting DP message EMMC";
             return qefi_format_dp_message_emmc(dp);
         case QEFIDevicePathMessageSubType::MSG_BTLE:
-            qDebug() << "Formating DP message BTLE";
+            qCDebug(QEFI_LOG) << "Formatting DP message BTLE";
             return qefi_format_dp_message_btle(dp);
         case QEFIDevicePathMessageSubType::MSG_DNS:
-            qDebug() << "Formating DP message DNS";
+            qCDebug(QEFI_LOG) << "Formatting DP message DNS";
             return qefi_format_dp_message_dns(dp);
         case QEFIDevicePathMessageSubType::MSG_NVDIMM:
-            qDebug() << "Formating DP message NVDIMM";
+            qCDebug(QEFI_LOG) << "Formatting DP message NVDIMM";
             return qefi_format_dp_message_nvdimm(dp);
     }
     return QByteArray();
@@ -2352,11 +2311,10 @@ QList<quint16> QEFIDevicePathMessageUSBWWID::serialNumber() const
 }
 
 QEFIDevicePathMessageUSBWWID::QEFIDevicePathMessageUSBWWID(
-        quint16 vendorId, quint16 productId, quint16 *sn)
+        quint16 vendorId, quint16 productId, QList<quint16> sn)
     : QEFIDevicePathMessage(MSG_USBWWID),
-    m_vendorId(vendorId), m_productId(productId)
+    m_vendorId(vendorId), m_productId(productId), m_serialNumber(sn)
 {
-    // TODO: Clarify the SN length
 }
 
 quint8 QEFIDevicePathMessageLUN::lun() const
@@ -2383,7 +2341,7 @@ quint16 QEFIDevicePathMessageSATA::lun() const
 }
 
 QEFIDevicePathMessageSATA::QEFIDevicePathMessageSATA(
-        quint16 hbaPort, quint16 portMultiplierPort, quint8 lun)
+        quint16 hbaPort, quint16 portMultiplierPort, quint16 lun)
     : QEFIDevicePathMessage(MSG_SATA), m_hbaPort(hbaPort),
     m_portMultiplierPort(portMultiplierPort), m_lun(lun) {}
 

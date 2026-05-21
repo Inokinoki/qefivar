@@ -17,6 +17,12 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# MSVC defaults to the system codepage for source file encoding.
+# Our sources use UTF-8 (e.g. Chinese SSID test strings), so force UTF-8.
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 set(QEFIVAR_LIB)
 set(QEFIVAR_INCLUDE)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
@@ -32,7 +38,12 @@ add_library(QEFI
 add_library(QEFI::QEFI ALIAS QEFI)
 set_target_properties(QEFI PROPERTIES PUBLIC_HEADER qefi.h)
 target_link_libraries(QEFI PUBLIC Qt${QT_VERSION_MAJOR}::Core)
-target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY)
+# Export macro: only use dllexport/dllimport for shared library builds
+get_target_property(QEFI_LIBRARY_TYPE QEFI TYPE)
+if(QEFI_LIBRARY_TYPE STREQUAL "SHARED_LIBRARY")
+    target_compile_definitions(QEFI PRIVATE QEFI_LIBRARY QEFI_SHARED)
+    target_compile_definitions(QEFI PUBLIC QEFI_SHARED)
+endif()
 
 if(APP_DATA_DUMMY_BACKEND)
     # Use the directory under QStandardPaths::AppDataLocation for test purpose

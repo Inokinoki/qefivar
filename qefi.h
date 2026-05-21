@@ -3,10 +3,14 @@
 
 #include <QtCore/qglobal.h>
 
-#if defined(QEFI_LIBRARY)
-#  define QEFI_EXPORT Q_DECL_EXPORT
+#if defined(QEFI_SHARED)
+#  if defined(QEFI_LIBRARY)
+#    define QEFI_EXPORT Q_DECL_EXPORT
+#  else
+#    define QEFI_EXPORT Q_DECL_IMPORT
+#  endif
 #else
-#  define QEFI_EXPORT Q_DECL_IMPORT
+#  define QEFI_EXPORT
 #endif
 
 #include <QUrl>
@@ -23,13 +27,21 @@ QEFI_EXPORT QByteArray qefi_get_variable(QUuid uuid, QString name);
 QEFI_EXPORT void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value);
 QEFI_EXPORT void qefi_set_variable(QUuid uuid, QString name, QByteArray value);
 
+// Load option free functions — prefer QEFILoadOption class for new code
+Q_DECL_DEPRECATED_X("Use QEFILoadOption::name()")
 QEFI_EXPORT QString qefi_extract_name(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption::path()")
 QEFI_EXPORT QString qefi_extract_path(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption::optionalData()")
 QEFI_EXPORT QByteArray qefi_extract_optional_data(const QByteArray &data);
 
+Q_DECL_DEPRECATED_X("Use QEFILoadOption helpers instead")
 QEFI_EXPORT int qefi_loadopt_description_length(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption helpers instead")
 QEFI_EXPORT int qefi_loadopt_dp_list_length(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption helpers instead")
 QEFI_EXPORT int qefi_loadopt_optional_data_length(const QByteArray &data);
+Q_DECL_DEPRECATED_X("Use QEFILoadOption::isValid()")
 QEFI_EXPORT bool qefi_loadopt_is_valid(const QByteArray &data);
 
 QEFI_EXPORT QUuid qefi_format_guid(const quint8 *data);
@@ -214,28 +226,62 @@ protected:
     QString m_shortPath;
     QList<QSharedPointer<QEFIDevicePath> > m_devicePathList;
     QByteArray m_optionalData;
+    QString m_lastError;
 public:
-    QEFILoadOption(QByteArray &bootData);
+    // Default constructor - creates empty load option
+    QEFILoadOption();
+    // Constructor from binary data - automatically parses
     QEFILoadOption(const QByteArray &bootData);
     virtual ~QEFILoadOption();
 
+    // Parse binary data - clears old state first
     bool parse(const QByteArray &bootData);
+    // Format to binary data
     QByteArray format();
 
-    bool isValidated() const;
+    // Error handling for parse() and format()
+    bool hasError() const;
+    QString lastError() const;
+    void clearError();
 
+    // Check if parsing was successful (renamed from isValidated)
+    bool isValid() const;
+    // Deprecated alias
+    Q_DECL_DEPRECATED_X("Use isValid()")
+    bool isValidated() const { return isValid(); }
+
+    // Getters
     QString name() const;
     bool isVisible() const;
     QString path() const;
     QByteArray optionalData() const;
     QList<QSharedPointer<QEFIDevicePath> > devicePathList() const;
+    quint32 attributes() const;
 
+    // Setters
     void setName(const QString &name);
     void setIsVisible(bool isVisible);
     void setOptionalData(const QByteArray &optionalData);
+    void setAttributes(quint32 attributes);
 
-    void addDevicePath(QEFIDevicePath *dp); // Ownership is ours
+    // Convenience methods for attribute flags
+    bool isActive() const;
+    bool isHidden() const;
+    bool isForceReconnect() const;
+    quint8 category() const;
+
+    void setActive(bool active);
+    void setHidden(bool hidden);
+    void setForceReconnect(bool forceReconnect);
+    void setCategory(quint8 category);
+
+    // Device path management - now takes shared pointer
+    void addDevicePath(QSharedPointer<QEFIDevicePath> dp);
+    // Deprecated: raw pointer overload for source compatibility
+    Q_DECL_DEPRECATED_X("Use addDevicePath(QSharedPointer<QEFIDevicePath>)")
+    void addDevicePath(QEFIDevicePath *dp) { addDevicePath(QSharedPointer<QEFIDevicePath>(dp)); }
     void removeDevicePathAt(int index);
+    void clearDevicePaths();
 };
 
 // Subclasses for hardware
@@ -355,7 +401,7 @@ protected:
     quint16 m_target;
     quint16 m_lun;
 public:
-    QEFIDevicePathMessageSCSI(quint16 m_target, quint16 lun);
+    QEFIDevicePathMessageSCSI(quint16 target, quint16 lun);
     quint16 target() const;
     quint16 lun() const;
 };
@@ -546,7 +592,7 @@ protected:
     QList<quint16> m_serialNumber;  // TODO: Clarify the SN length
 public:
     QEFIDevicePathMessageUSBWWID(quint16 vendorId, quint16 productId,
-        quint16 *sn);
+        QList<quint16> sn);
     quint16 vendorId() const;
     quint16 productId() const;
     QList<quint16> serialNumber() const;
@@ -567,7 +613,7 @@ protected:
     quint16 m_lun;
 public:
     QEFIDevicePathMessageSATA(quint16 hbaPort,
-        quint16 portMultiplierPor, quint8 lun);
+        quint16 portMultiplierPort, quint16 lun);
     quint16 hbaPort() const;
     quint16 portMultiplierPort() const;
     quint16 lun() const;

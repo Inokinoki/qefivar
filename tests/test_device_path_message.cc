@@ -4,6 +4,7 @@
 
 #include "test_data.h"
 #include "../qefi.h"
+#include "../qefi_p.h"
 
 class TestDevicePathMessage: public QObject
 {
@@ -41,79 +42,6 @@ private slots:
     void test_qefi_dp_message_nvdimm();
 };
 
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-// Message parsing
-QEFIDevicePath *qefi_parse_dp_message_atapi(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_scsi(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_fibre_chan(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_1394(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_usb(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_i2o(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_infiniband(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_vendor(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_mac_addr(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_ipv4(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_ipv6(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_uart(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_usb_class(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_usb_wwid(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_lun(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_sata(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_iscsi(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_vlan(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_fibre_chan_ex(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_sas_ex(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_nvme(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_uri(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_ufs(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_sd(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_bt(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_wifi(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_emmc(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_btle(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_dns(
-    struct qefi_device_path_header *dp, int dp_size);
-QEFIDevicePath *qefi_parse_dp_message_nvdimm(
-    struct qefi_device_path_header *dp, int dp_size);
-
-// Format Message
-QByteArray qefi_private_format_message_subtype(QEFIDevicePath *dp);
 
 void TestDevicePathMessage::test_qefi_dp_message_atapi()
 {
@@ -124,21 +52,21 @@ void TestDevicePathMessage::test_qefi_dp_message_atapi()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_ATAPI);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_ATAPI);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_atapi(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageATAPI *subP =
         dynamic_cast<QEFIDevicePathMessageATAPI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->primary() == dp.primary());
-    QVERIFY(subP->slave() == dp.slave());
-    QVERIFY(subP->lun() == dp.lun());
+    QCOMPARE(subP->primary(), dp.primary());
+    QCOMPARE(subP->slave(), dp.slave());
+    QCOMPARE(subP->lun(), dp.lun());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_scsi()
@@ -149,20 +77,20 @@ void TestDevicePathMessage::test_qefi_dp_message_scsi()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_SCSI);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_SCSI);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_scsi(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageSCSI *subP =
         dynamic_cast<QEFIDevicePathMessageSCSI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->target() == dp.target());
-    QVERIFY(subP->lun() == dp.lun());
+    QCOMPARE(subP->target(), dp.target());
+    QCOMPARE(subP->lun(), dp.lun());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_fibre_chan()
@@ -174,21 +102,21 @@ void TestDevicePathMessage::test_qefi_dp_message_fibre_chan()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_FibreChan);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_FibreChan);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_fibre_chan(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageFibreChan *subP =
         dynamic_cast<QEFIDevicePathMessageFibreChan *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->reserved() == dp.reserved());
-    QVERIFY(subP->wwn() == dp.wwn());
-    QVERIFY(subP->lun() == dp.lun());
+    QCOMPARE(subP->reserved(), dp.reserved());
+    QCOMPARE(subP->wwn(), dp.wwn());
+    QCOMPARE(subP->lun(), dp.lun());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_1394()
@@ -200,20 +128,20 @@ void TestDevicePathMessage::test_qefi_dp_message_1394()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_1394);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_1394);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_1394(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessage1394 *subP =
         dynamic_cast<QEFIDevicePathMessage1394 *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->reserved() == dp.reserved());
-    QVERIFY(subP->guid() == dp.guid());
+    QCOMPARE(subP->reserved(), dp.reserved());
+    QCOMPARE(subP->guid(), dp.guid());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_usb()
@@ -225,20 +153,20 @@ void TestDevicePathMessage::test_qefi_dp_message_usb()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_USB);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_USB);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_usb(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageUSB *subP =
         dynamic_cast<QEFIDevicePathMessageUSB *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->parentPort() == dp.parentPort());
-    QVERIFY(subP->usbInterface() == dp.usbInterface());
+    QCOMPARE(subP->parentPort(), dp.parentPort());
+    QCOMPARE(subP->usbInterface(), dp.usbInterface());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_i2o()
@@ -249,19 +177,19 @@ void TestDevicePathMessage::test_qefi_dp_message_i2o()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_I2O);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_I2O);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_i2o(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageI2O *subP =
         dynamic_cast<QEFIDevicePathMessageI2O *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->target() == dp.target());
+    QCOMPARE(subP->target(), dp.target());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_infiniband()
@@ -278,25 +206,25 @@ void TestDevicePathMessage::test_qefi_dp_message_infiniband()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_InfiniBand);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_InfiniBand);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_infiniband(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageInfiniBand *subP =
         dynamic_cast<QEFIDevicePathMessageInfiniBand *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->resourceFlags() == dp.resourceFlags());
-    QVERIFY(subP->portGID1() == dp.portGID1());
-    QVERIFY(subP->portGID2() == dp.portGID2());
-    QVERIFY(subP->iocGuid() == dp.iocGuid());
-    QVERIFY(subP->serviceID() == dp.serviceID());
-    QVERIFY(subP->targetPortID() == dp.targetPortID());
-    QVERIFY(subP->deviceID() == dp.deviceID());
+    QCOMPARE(subP->resourceFlags(), dp.resourceFlags());
+    QCOMPARE(subP->portGID1(), dp.portGID1());
+    QCOMPARE(subP->portGID2(), dp.portGID2());
+    QCOMPARE(subP->iocGuid(), dp.iocGuid());
+    QCOMPARE(subP->serviceID(), dp.serviceID());
+    QCOMPARE(subP->targetPortID(), dp.targetPortID());
+    QCOMPARE(subP->deviceID(), dp.deviceID());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_vendor()
@@ -309,46 +237,45 @@ void TestDevicePathMessage::test_qefi_dp_message_vendor()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_Vendor);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_Vendor);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_vendor(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageVendor *subP =
         dynamic_cast<QEFIDevicePathMessageVendor *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->vendorGuid() == dp.vendorGuid());
-    QVERIFY(subP->vendorData() == dp.vendorData());
+    QCOMPARE(subP->vendorGuid(), dp.vendorGuid());
+    QCOMPARE(subP->vendorData(), dp.vendorData());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_mac_addr()
 {
-    struct QEFIDevicePathMessageMACAddress addr {
-        .address = { 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
-            0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
-            0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
-            0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99
-        }
-    };
+    struct QEFIDevicePathMessageMACAddress addr {{
+        0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+        0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+        0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+        0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99
+    }};
     QEFIDevicePathMessageMACAddr dp(addr.address, /* interfaceType */0xAA);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
 
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_MACAddr);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_MACAddr);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_mac_addr(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageMACAddr *subP =
         dynamic_cast<QEFIDevicePathMessageMACAddr *>(p.get());
     QVERIFY(subP != nullptr);
@@ -356,23 +283,15 @@ void TestDevicePathMessage::test_qefi_dp_message_mac_addr()
         QVERIFY(subP->macAddress().address[i]
             == dp.macAddress().address[i]);
     }
-    QVERIFY(subP->interfaceType() == dp.interfaceType());
+    QCOMPARE(subP->interfaceType(), dp.interfaceType());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_ipv4()
 {
-    struct QEFIIPv4Address localIPv4Address {
-        .address { 192, 168, 0, 1}
-    };
-    struct QEFIIPv4Address remoteIPv4Address {
-        .address { 192, 168, 0, 100}
-    };
-    struct QEFIIPv4Address gateway {
-        .address { 192, 168, 0, 254}
-    };
-    struct QEFIIPv4Address netmask {
-        .address { 255, 255, 255, 0}
-    };
+    struct QEFIIPv4Address localIPv4Address {{ 192, 168, 0, 1}};
+    struct QEFIIPv4Address remoteIPv4Address {{ 192, 168, 0, 100}};
+    struct QEFIIPv4Address gateway {{ 192, 168, 0, 254}};
+    struct QEFIIPv4Address netmask {{ 255, 255, 255, 0}};
     QEFIDevicePathMessageIPv4Addr dp(localIPv4Address.address,
         remoteIPv4Address.address, /* localPort */ 114, /* remotePort */ 514,
         /* protocol */ 0x55AA, /* staticIPAddress */ 1, gateway.address, netmask.address);
@@ -381,15 +300,15 @@ void TestDevicePathMessage::test_qefi_dp_message_ipv4()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_IPv4);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_IPv4);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_ipv4(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageIPv4Addr *subP =
         dynamic_cast<QEFIDevicePathMessageIPv4Addr *>(p.get());
     QVERIFY(subP != nullptr);
@@ -403,22 +322,22 @@ void TestDevicePathMessage::test_qefi_dp_message_ipv4()
         QVERIFY(subP->netmask().address[i]
             == dp.netmask().address[i]);
     }
-    QVERIFY(subP->localPort() == dp.localPort());
-    QVERIFY(subP->remotePort() == dp.remotePort());
-    QVERIFY(subP->protocol() == dp.protocol());
-    QVERIFY(subP->staticIPAddress() == dp.staticIPAddress());
+    QCOMPARE(subP->localPort(), dp.localPort());
+    QCOMPARE(subP->remotePort(), dp.remotePort());
+    QCOMPARE(subP->protocol(), dp.protocol());
+    QCOMPARE(subP->staticIPAddress(), dp.staticIPAddress());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_ipv6()
 {
-    struct QEFIIPv6Address localIPv6Address {
-        .address { 0xff, 0xee, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-            0x44, 0x55, 0x66, 0x77, 0x44, 0x55, 0x66, 0x77 }
-    };
-    struct QEFIIPv6Address remoteIPv6Address {
-        .address { 0xff, 0xee, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-            0x22, 0x33, 0x44, 0x55, 0x22, 0x33, 0x44, 0x55 }
-    };
+    struct QEFIIPv6Address localIPv6Address {{
+        0xff, 0xee, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+        0x44, 0x55, 0x66, 0x77, 0x44, 0x55, 0x66, 0x77
+    }};
+    struct QEFIIPv6Address remoteIPv6Address {{
+        0xff, 0xee, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+        0x22, 0x33, 0x44, 0x55, 0x22, 0x33, 0x44, 0x55
+    }};
     QEFIDevicePathMessageIPv6Addr dp(localIPv6Address.address,
         remoteIPv6Address.address, /* localPort */ 114, /* remotePort */ 514,
         /* protocol */ 0x55AA, /* ipAddressOrigin */ 0x55,
@@ -428,15 +347,15 @@ void TestDevicePathMessage::test_qefi_dp_message_ipv6()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_IPv6);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_IPv6);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_ipv6(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageIPv6Addr *subP =
         dynamic_cast<QEFIDevicePathMessageIPv6Addr *>(p.get());
     QVERIFY(subP != nullptr);
@@ -446,12 +365,12 @@ void TestDevicePathMessage::test_qefi_dp_message_ipv6()
         QVERIFY(subP->remoteIPv6Address().address[i]
             == dp.remoteIPv6Address().address[i]);
     }
-    QVERIFY(subP->localPort() == dp.localPort());
-    QVERIFY(subP->remotePort() == dp.remotePort());
-    QVERIFY(subP->protocol() == dp.protocol());
-    QVERIFY(subP->ipAddressOrigin() == dp.ipAddressOrigin());
-    QVERIFY(subP->prefixLength() == dp.prefixLength());
-    QVERIFY(subP->gatewayIPv6Address() == dp.gatewayIPv6Address());
+    QCOMPARE(subP->localPort(), dp.localPort());
+    QCOMPARE(subP->remotePort(), dp.remotePort());
+    QCOMPARE(subP->protocol(), dp.protocol());
+    QCOMPARE(subP->ipAddressOrigin(), dp.ipAddressOrigin());
+    QCOMPARE(subP->prefixLength(), dp.prefixLength());
+    QCOMPARE(subP->gatewayIPv6Address(), dp.gatewayIPv6Address());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_uart()
@@ -464,22 +383,22 @@ void TestDevicePathMessage::test_qefi_dp_message_uart()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_UART);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_UART);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_uart(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageUART *subP =
         dynamic_cast<QEFIDevicePathMessageUART *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->baudRate() == dp.baudRate());
-    QVERIFY(subP->dataBits() == dp.dataBits());
-    QVERIFY(subP->parity() == dp.parity());
-    QVERIFY(subP->stopBits() == dp.stopBits());
+    QCOMPARE(subP->baudRate(), dp.baudRate());
+    QCOMPARE(subP->dataBits(), dp.dataBits());
+    QCOMPARE(subP->parity(), dp.parity());
+    QCOMPARE(subP->stopBits(), dp.stopBits());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_usb_class()
@@ -493,50 +412,52 @@ void TestDevicePathMessage::test_qefi_dp_message_usb_class()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_USBClass);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_USBClass);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_usb_class(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageUSBClass *subP =
         dynamic_cast<QEFIDevicePathMessageUSBClass *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->vendorId() == dp.vendorId());
-    QVERIFY(subP->productId() == dp.productId());
-    QVERIFY(subP->deviceClass() == dp.deviceClass());
-    QVERIFY(subP->deviceSubclass() == dp.deviceSubclass());
-    QVERIFY(subP->deviceProtocol() == dp.deviceProtocol());
+    QCOMPARE(subP->vendorId(), dp.vendorId());
+    QCOMPARE(subP->productId(), dp.productId());
+    QCOMPARE(subP->deviceClass(), dp.deviceClass());
+    QCOMPARE(subP->deviceSubclass(), dp.deviceSubclass());
+    QCOMPARE(subP->deviceProtocol(), dp.deviceProtocol());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_usb_wwid()
 {
-    // TODO: Serial number
+    // Test with serial number data
     QList<quint16> serialNumber;
+    serialNumber << 0x1234 << 0x5678;
     QEFIDevicePathMessageUSBWWID dp(
-        /* vendorId */0x55AA, /* productId */0xAA55, {});
+        /* vendorId */0x55AA, /* productId */0xAA55, serialNumber);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
 
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_USBWWID);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_USBWWID);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_usb_wwid(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageUSBWWID *subP =
         dynamic_cast<QEFIDevicePathMessageUSBWWID *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->vendorId() == dp.vendorId());
-    QVERIFY(subP->productId() == dp.productId());
+    QCOMPARE(subP->vendorId(), dp.vendorId());
+    QCOMPARE(subP->productId(), dp.productId());
+    QCOMPARE(subP->serialNumber(), serialNumber);
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_lun()
@@ -547,19 +468,19 @@ void TestDevicePathMessage::test_qefi_dp_message_lun()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_LUN);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_LUN);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_lun(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageLUN *subP =
         dynamic_cast<QEFIDevicePathMessageLUN *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->lun() == dp.lun());
+    QCOMPARE(subP->lun(), dp.lun());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_sata()
@@ -571,28 +492,28 @@ void TestDevicePathMessage::test_qefi_dp_message_sata()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_SATA);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_SATA);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_sata(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageSATA *subP =
         dynamic_cast<QEFIDevicePathMessageSATA *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->hbaPort() == dp.hbaPort());
-    QVERIFY(subP->portMultiplierPort() == dp.portMultiplierPort());
-    QVERIFY(subP->lun() == dp.lun());
+    QCOMPARE(subP->hbaPort(), dp.hbaPort());
+    QCOMPARE(subP->portMultiplierPort(), dp.portMultiplierPort());
+    QCOMPARE(subP->lun(), dp.lun());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_iscsi()
 {
-    QEFIDevicePathMessageLun lun {
-        .data { 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00}
-    };
+    QEFIDevicePathMessageLun lun {{
+        0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00
+    }};
     QEFIDevicePathMessageISCSI dp(/* protocol */0x55AA,
         /* options */0xAA55, /* lun */lun.data, /* tpgt */0x55AA,
         QStringLiteral("TestISCSITarget"));
@@ -601,25 +522,25 @@ void TestDevicePathMessage::test_qefi_dp_message_iscsi()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_ISCSI);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_ISCSI);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_iscsi(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageISCSI *subP =
         dynamic_cast<QEFIDevicePathMessageISCSI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->protocol() == dp.protocol());
-    QVERIFY(subP->options() == dp.options());
+    QCOMPARE(subP->protocol(), dp.protocol());
+    QCOMPARE(subP->options(), dp.options());
     for (int i = 0; i < 8; i++) {
         QVERIFY(subP->lun().data[i] == dp.lun().data[i]);
     }
-    QVERIFY(subP->tpgt() == dp.tpgt());
-    QVERIFY(subP->targetName() == dp.targetName());
+    QCOMPARE(subP->tpgt(), dp.tpgt());
+    QCOMPARE(subP->targetName(), dp.targetName());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_vlan()
@@ -630,29 +551,29 @@ void TestDevicePathMessage::test_qefi_dp_message_vlan()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_VLAN);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_VLAN);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_vlan(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageVLAN *subP =
         dynamic_cast<QEFIDevicePathMessageVLAN *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->vlanID() == dp.vlanID());
+    QCOMPARE(subP->vlanID(), dp.vlanID());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_fibre_chan_ex()
 {
-    QEFIDevicePathMessageLun wwn {
-        .data { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77}
-    };
-    QEFIDevicePathMessageLun lun {
-        .data { 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00}
-    };
+    QEFIDevicePathMessageLun wwn {{
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77
+    }};
+    QEFIDevicePathMessageLun lun {{
+        0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00
+    }};
     QEFIDevicePathMessageFibreChanEx dp(/* reserved */0x0,
         /* portMultiplier */wwn.data, /* lun */lun.data);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
@@ -660,15 +581,15 @@ void TestDevicePathMessage::test_qefi_dp_message_fibre_chan_ex()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_FibreChanEx);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_FibreChanEx);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_fibre_chan_ex(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageFibreChanEx *subP =
         dynamic_cast<QEFIDevicePathMessageFibreChanEx *>(p.get());
     QVERIFY(subP != nullptr);
@@ -680,12 +601,12 @@ void TestDevicePathMessage::test_qefi_dp_message_fibre_chan_ex()
 
 void TestDevicePathMessage::test_qefi_dp_message_sas_ex()
 {
-    QEFIDevicePathMessageSASAddress sasAddress {
-        .address { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77}
-    };
-    QEFIDevicePathMessageLun lun {
-        .data { 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00}
-    };
+    QEFIDevicePathMessageSASAddress sasAddress {{
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77
+    }};
+    QEFIDevicePathMessageLun lun {{
+        0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00
+    }};
     QEFIDevicePathMessageSASEx dp(/* address */sasAddress.address,
         /* lun */lun.data, /* deviceTopologyInfo */0x55,
         /* driveBayID */0xAA, /* rtp */0x55AA);
@@ -694,15 +615,15 @@ void TestDevicePathMessage::test_qefi_dp_message_sas_ex()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_SASEX);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_SASEX);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_sas_ex(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageSASEx *subP =
         dynamic_cast<QEFIDevicePathMessageSASEx *>(p.get());
     QVERIFY(subP != nullptr);
@@ -711,16 +632,16 @@ void TestDevicePathMessage::test_qefi_dp_message_sas_ex()
         QVERIFY(subP->sasAddress().address[i] ==
             dp.sasAddress().address[i]);
     }
-    QVERIFY(subP->deviceTopologyInfo() == dp.deviceTopologyInfo());
-    QVERIFY(subP->driveBayID() == dp.driveBayID());
-    QVERIFY(subP->rtp() == dp.rtp());
+    QCOMPARE(subP->deviceTopologyInfo(), dp.deviceTopologyInfo());
+    QCOMPARE(subP->driveBayID(), dp.driveBayID());
+    QCOMPARE(subP->rtp(), dp.rtp());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_nvme()
 {
-    QEFIDevicePathMessageEUI64 eui {
-        .eui { 0x22, 0x33, 0x22, 0x33, 0x22, 0x11, 0x45, 0x14 }
-    };
+    QEFIDevicePathMessageEUI64 eui {{
+        0x22, 0x33, 0x22, 0x33, 0x22, 0x11, 0x45, 0x14
+    }};
     QEFIDevicePathMessageNVME dp(/* namespaceID */0x55,
         /* EUI */eui.eui);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
@@ -728,19 +649,19 @@ void TestDevicePathMessage::test_qefi_dp_message_nvme()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_NVME);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_NVME);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_nvme(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageNVME *subP =
         dynamic_cast<QEFIDevicePathMessageNVME *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->namespaceID() == dp.namespaceID());
+    QCOMPARE(subP->namespaceID(), dp.namespaceID());
     for (int i = 0; i < 8; i++)
         QVERIFY(subP->ieeeEui64().eui[i] == dp.ieeeEui64().eui[i]);
 }
@@ -753,19 +674,19 @@ void TestDevicePathMessage::test_qefi_dp_message_uri()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_URI);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_URI);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_uri(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageURI *subP =
         dynamic_cast<QEFIDevicePathMessageURI *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->uri() == dp.uri());
+    QCOMPARE(subP->uri(), dp.uri());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_ufs()
@@ -776,20 +697,20 @@ void TestDevicePathMessage::test_qefi_dp_message_ufs()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_UFS);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_UFS);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_ufs(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageUFS *subP =
         dynamic_cast<QEFIDevicePathMessageUFS *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->targetID() == dp.targetID());
-    QVERIFY(subP->lun() == dp.lun());
+    QCOMPARE(subP->targetID(), dp.targetID());
+    QCOMPARE(subP->lun(), dp.lun());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_sd()
@@ -800,41 +721,41 @@ void TestDevicePathMessage::test_qefi_dp_message_sd()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_SD);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_SD);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_sd(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageSD *subP =
         dynamic_cast<QEFIDevicePathMessageSD *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->slotNumber() == dp.slotNumber());
+    QCOMPARE(subP->slotNumber(), dp.slotNumber());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_bt()
 {
-    struct QEFIDevicePathMessageBTAddress address {
-        .address { 0xff, 0xee, 0x22, 0x33, 0x44, 0x55 }
-    };
+    struct QEFIDevicePathMessageBTAddress address {{
+        0xff, 0xee, 0x22, 0x33, 0x44, 0x55
+    }};
     QEFIDevicePathMessageBT dp(address.address);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
 
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_BT);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_BT);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_bt(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageBT *subP =
         dynamic_cast<QEFIDevicePathMessageBT *>(p.get());
     QVERIFY(subP != nullptr);
@@ -852,19 +773,19 @@ void TestDevicePathMessage::test_qefi_dp_message_wifi()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_WiFi);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_WiFi);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_wifi(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageWiFi *subP =
         dynamic_cast<QEFIDevicePathMessageWiFi *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->ssid() == dp.ssid());
+    QCOMPARE(subP->ssid(), dp.ssid());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_emmc()
@@ -875,41 +796,41 @@ void TestDevicePathMessage::test_qefi_dp_message_emmc()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_EMMC);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_EMMC);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_emmc(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageEMMC *subP =
         dynamic_cast<QEFIDevicePathMessageEMMC *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->slotNumber() == dp.slotNumber());
+    QCOMPARE(subP->slotNumber(), dp.slotNumber());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_btle()
 {
-    struct QEFIDevicePathMessageBTAddress address {
-        .address { 0xff, 0xee, 0x22, 0x33, 0x44, 0x55 }
-    };
+    struct QEFIDevicePathMessageBTAddress address {{
+        0xff, 0xee, 0x22, 0x33, 0x44, 0x55
+    }};
     QEFIDevicePathMessageBTLE dp(address.address, /* addressType */ 0xAA);
     QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
 
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_BTLE);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_BTLE);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_btle(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageBTLE *subP =
         dynamic_cast<QEFIDevicePathMessageBTLE *>(p.get());
     QVERIFY(subP != nullptr);
@@ -917,30 +838,30 @@ void TestDevicePathMessage::test_qefi_dp_message_btle()
         QVERIFY(subP->address().address[i]
             == dp.address().address[i]);
     }
-    QVERIFY(subP->addressType() == dp.addressType());
+    QCOMPARE(subP->addressType(), dp.addressType());
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_dns()
 {
-    // TODO: DNS tests
-    // QEFIDevicePathMessageDNS dp;
-    // QByteArray data = qefi_private_format_message_subtype((QEFIDevicePath *)&dp);
+    // DNS has minimal fields currently (isIPv6 flag + TODO addresses)
+    // Build raw binary with isIPv6=0 byte after header
+    QByteArray raw;
+    raw.append((char)QEFIDevicePathType::DP_Message);
+    raw.append((char)QEFIDevicePathMessageSubType::MSG_DNS);
+    raw.append((char)5); // length LE low
+    raw.append((char)0); // length LE high
+    raw.append((char)0); // isIPv6 = false
 
-    // struct qefi_device_path_header *dp_header =
-    //     (struct qefi_device_path_header *)data.data();
-    // // Test format
-    // QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    // QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_DNS);
-    // QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
-
-    // // Test parse
-    // QSharedPointer<QEFIDevicePath> p(
-    //     qefi_parse_dp_message_dns(dp_header, data.length()));
-    // QVERIFY(p->type() == dp.type());
-    // QVERIFY(p->subType() == dp.subType());
-    // QEFIDevicePathMessageDNS *subP =
-    //     dynamic_cast<QEFIDevicePathMessageDNS *>(p.get());
-    // QVERIFY(subP != nullptr);
+    struct qefi_device_path_header *dp_header =
+        (struct qefi_device_path_header *)raw.data();
+    QSharedPointer<QEFIDevicePath> p(
+        qefi_parse_dp_message_dns(dp_header, raw.length()));
+    QVERIFY(p != nullptr);
+    QCOMPARE(p->type(), QEFIDevicePathType::DP_Message);
+    QCOMPARE(p->subType(), QEFIDevicePathMessageSubType::MSG_DNS);
+    QEFIDevicePathMessageDNS *subP =
+        dynamic_cast<QEFIDevicePathMessageDNS *>(p.get());
+    QVERIFY(subP != nullptr);
 }
 
 void TestDevicePathMessage::test_qefi_dp_message_nvdimm()
@@ -951,21 +872,21 @@ void TestDevicePathMessage::test_qefi_dp_message_nvdimm()
     struct qefi_device_path_header *dp_header =
         (struct qefi_device_path_header *)data.data();
     // Test format
-    QVERIFY(dp_header->type == QEFIDevicePathType::DP_Message);
-    QVERIFY(dp_header->subtype == QEFIDevicePathMessageSubType::MSG_NVDIMM);
-    QVERIFY(qFromLittleEndian<quint16>(dp_header->length) == data.length());
+    QCOMPARE(dp_header->type, QEFIDevicePathType::DP_Message);
+    QCOMPARE(dp_header->subtype, QEFIDevicePathMessageSubType::MSG_NVDIMM);
+    QCOMPARE(qFromLittleEndian<quint16>(dp_header->length), (quint16)data.length());
 
     // Test parse
     QSharedPointer<QEFIDevicePath> p(
         qefi_parse_dp_message_nvdimm(dp_header, data.length()));
-    QVERIFY(p->type() == dp.type());
-    QVERIFY(p->subType() == dp.subType());
+    QCOMPARE(p->type(), dp.type());
+    QCOMPARE(p->subType(), dp.subType());
     QEFIDevicePathMessageNVDIMM *subP =
         dynamic_cast<QEFIDevicePathMessageNVDIMM *>(p.get());
     QVERIFY(subP != nullptr);
-    QVERIFY(subP->uuid() == dp.uuid());
+    QCOMPARE(subP->uuid(), dp.uuid());
 }
 
-QTEST_MAIN(TestDevicePathMessage)
+QTEST_APPLESS_MAIN(TestDevicePathMessage)
 
 #include "test_device_path_message.moc"

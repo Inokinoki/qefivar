@@ -1,31 +1,8 @@
 #include "qefi.h"
+#include "qefi_p.h"
 
 #include <QtEndian>
 #include <QDebug>
-
-#pragma pack(push, 1)
-struct qefi_load_option_header {
-    quint32 attributes;
-    quint16 path_list_length;
-};
-#pragma pack(pop)
-
-/* EFI device path header */
-#pragma pack(push, 1)
-struct qefi_device_path_header {
-    quint8 type;
-    quint8 subtype;
-    quint16 length;
-};
-#pragma pack(pop)
-
-// Utilities in qefi.cpp
-int qefi_dp_length(const struct qefi_device_path_header *dp_header);
-int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer,
-    int max_dp_size);
-int qefi_dp_total_size(struct qefi_device_path_header *dp_header_pointer,
-    int max_dp_size);
-QString qefi_parse_ucs2_string(quint8 *data, int max_size);
 
 // ACPI parsing
 QEFIDevicePath *qefi_parse_dp_acpi_hid(
@@ -40,17 +17,16 @@ QEFIDevicePath *qefi_parse_dp_acpi_hid(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint32))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint32)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint32 hid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint32 uid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     return new QEFIDevicePathACPIHID(hid, uid);
 }
 
@@ -66,20 +42,19 @@ QEFIDevicePath *qefi_parse_dp_acpi_hidex(
     if (length != dp_size || length <= 0) return nullptr;
 
     // Check size
-    if (dp_size < QEFI_DEVICE_PATH_HEADER_SIZE +
-        sizeof(quint32) + sizeof(quint32) + sizeof(quint32))
+    if (dp_size < (int)(QEFI_DEVICE_PATH_HEADER_SIZE + sizeof(quint32) + sizeof(quint32) + sizeof(quint32)))
         return nullptr;
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) +
         sizeof(struct qefi_device_path_header);
     quint32 hid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint32 uid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     quint32 cid =
-        qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+        qefi_read_le<quint32>(dp_inner_pointer);
     dp_inner_pointer += sizeof(quint32);
     // TODO: Parse strings, the string format is not clear
     return new QEFIDevicePathACPIHIDEX(hid, uid, cid,
@@ -103,7 +78,7 @@ QEFIDevicePath *qefi_parse_dp_acpi_adr(
     for (int i = sizeof(struct qefi_device_path_header); i < length;
         i += sizeof(quint32)) {
         addresses << 
-            qFromLittleEndian<quint32>(*((quint32 *)dp_inner_pointer));
+            qefi_read_le<quint32>(dp_inner_pointer);
         dp_inner_pointer += sizeof(quint32);
     }
     return new QEFIDevicePathACPIADR(addresses);
