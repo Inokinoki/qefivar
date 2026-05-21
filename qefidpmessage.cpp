@@ -661,7 +661,7 @@ QEFIDevicePath *qefi_parse_dp_message_wifi(
 
     quint8 *dp_inner_pointer = ((quint8 *)dp) + sizeof(struct qefi_device_path_header);
     int ssid_len = length - sizeof(struct qefi_device_path_header);
-    int ssid_buf_len = ssid_len < 32 ? ssid_len : 32;
+    int ssid_buf_len = qMax(0, ssid_len < 32 ? ssid_len : 32);
     // Note: UEFI spec says SSID is raw octets (1-32 bytes, no fixed encoding).
     // fromUtf8 handles the common case (ASCII/UTF-8 SSIDs) but will replace
     // invalid sequences for non-UTF-8 binary SSIDs (extremely rare in practice).

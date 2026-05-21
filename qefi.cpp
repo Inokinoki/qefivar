@@ -73,7 +73,7 @@ QString qefi_parse_ucs2_string(quint8 *data, int max_size)
     return str;
 }
 
-QByteArray qefi_format_string_to_ucs2(QString str, bool isEnd)
+QByteArray qefi_format_string_to_ucs2(const QString &str, bool isEnd)
 {
     // Use QString::utf16() for proper UTF-16 conversion including surrogate pairs
     const ushort *utf16 = str.utf16();
@@ -197,6 +197,7 @@ QEFIDevicePath *qefi_parse_dp(struct qefi_device_path_header *dp, int dp_size)
 
 QByteArray qefi_format_dp(QEFIDevicePath *dp)
 {
+    if (!dp) return QByteArray();
     QEFIDevicePathType type = dp->type();
     quint8 subtype = dp->subType();
     qCDebug(QEFI_LOG) << "Formatting DP: type" << type << "subtype" << subtype;
@@ -922,7 +923,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
         }
     }
 
-    return qFromLittleEndian<quint16>(value);
+    return value;
 }
 
 QByteArray qefi_get_variable(QUuid uuid, QString name)
