@@ -231,7 +231,7 @@ public:
     // Default constructor - creates empty load option
     QEFILoadOption();
     // Constructor from binary data - automatically parses
-    explicit QEFILoadOption(const QByteArray &bootData);
+    QEFILoadOption(const QByteArray &bootData);
     virtual ~QEFILoadOption();
 
     // Parse binary data - clears old state first
@@ -246,6 +246,9 @@ public:
 
     // Check if parsing was successful (renamed from isValidated)
     bool isValid() const;
+    // Deprecated alias
+    Q_DECL_DEPRECATED_X("Use isValid()")
+    bool isValidated() const { return isValid(); }
 
     // Getters
     QString name() const;
@@ -274,6 +277,9 @@ public:
 
     // Device path management - now takes shared pointer
     void addDevicePath(QSharedPointer<QEFIDevicePath> dp);
+    // Deprecated: raw pointer overload for source compatibility
+    Q_DECL_DEPRECATED_X("Use addDevicePath(QSharedPointer<QEFIDevicePath>)")
+    void addDevicePath(QEFIDevicePath *dp) { addDevicePath(QSharedPointer<QEFIDevicePath>(dp)); }
     void removeDevicePathAt(int index);
     void clearDevicePaths();
 };

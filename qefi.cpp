@@ -19,8 +19,12 @@ int qefi_dp_count(struct qefi_device_path_header *dp_header_pointer, int max_dp_
     int count = 0;
     int size = 0;
     while (size < max_dp_size) {
+        int remaining = max_dp_size - size;
+        if (remaining < (int)QEFI_DEVICE_PATH_HEADER_SIZE) return -1;
+
         int tempLength = qefi_dp_length(dp_header_pointer);
-        if (tempLength <= 0) return tempLength;
+        if (tempLength < (int)QEFI_DEVICE_PATH_HEADER_SIZE || tempLength > remaining)
+            return -1;
 
         size += tempLength;
         count++;
@@ -912,8 +916,7 @@ quint16 qefi_get_variable_uint16(QUuid uuid, QString name)
 
         qCDebug(QEFI_LOG) << filename;
         QFile file(filename);
-        if (file.exists()) {
-            file.open(QIODevice::ReadOnly);
+        if (file.exists() && file.open(QIODevice::ReadOnly)) {
             data = file.readAll();
             file.close();
 
@@ -938,8 +941,7 @@ QByteArray qefi_get_variable(QUuid uuid, QString name)
 
         qCDebug(QEFI_LOG) << filename;
         QFile file(filename);
-        if (file.exists()) {
-            file.open(QIODevice::ReadOnly);
+        if (file.exists() && file.open(QIODevice::ReadOnly)) {
             data = file.readAll();
             file.close();
         }
@@ -961,9 +963,10 @@ void qefi_set_variable_uint16(QUuid uuid, QString name, quint16 value)
         data.append((const char)(value >> 8));
         qCDebug(QEFI_LOG) << filename;
         QFile file(filename);
-        file.open(QIODevice::WriteOnly);
-        file.write(data);
-        file.close();
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(data);
+            file.close();
+        }
     }
 }
 
@@ -977,9 +980,10 @@ void qefi_set_variable(QUuid uuid, QString name, QByteArray value)
 
         qCDebug(QEFI_LOG) << filename;
         QFile file(filename);
-        file.open(QIODevice::WriteOnly);
-        file.write(value);
-        file.close();
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(value);
+            file.close();
+        }
     }
 }
 #endif
@@ -1106,6 +1110,27 @@ int qefi_internal_optional_data_length(const QByteArray &data)
 
 bool qefi_validate_load_option(const QByteArray &data)
 {
+    int size = data.size();
+    if (size < (int)sizeof(struct qefi_load_option_header)) return false;
+
+    int dpListLength = qefi_internal_dp_list_length(data);
+    if (dpListLength < 0) return false;
+
+    // Verify DP list fits within the data
+    int descLength = qefi_internal_description_length(data);
+    if (descLength < 0) return false;
+
+    int dpStart = sizeof(struct qefi_load_option_header) + descLength + 2; // +2 for null terminator
+    if (dpStart + dpListLength > size) return false;
+
+    // Verify device paths within the DP list are well-formed
+    if (dpListLength > 0) {
+        struct qefi_device_path_header *dp_header =
+            (struct qefi_device_path_header *)(data.data() + dpStart);
+        int count = qefi_dp_count(dp_header, dpListLength);
+        if (count < 0) return false;
+    }
+
     return qefi_internal_optional_data_length(data) >= 0;
 }
 
